@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store';
 
-export const starlinkStatus = writable({})
-export const starlinkHistory = writable( {})
+export const powerGraphData = writable({})
+export const powerCurrentData = writable( {})
+export const powerStatsData = writable({})
 

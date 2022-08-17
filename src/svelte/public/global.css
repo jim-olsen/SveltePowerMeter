@@ -10,7 +10,7 @@ body {
     margin: 0;
     padding: 8px;
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: Helvetica, serif
 }
 
 a {
@@ -19,6 +19,11 @@ a {
 }
 
 text, h2, h1, h3, h4, span, hr, label {
+    color: #BFDDE0;
+    fill: #BFDDE0;
+}
+
+table tbody tr td {
     color: #BFDDE0;
     fill: #BFDDE0;
 }
@@ -115,4 +120,5 @@ button:disabled{
     border-radius: 0;
     margin: 0;
     color: #cccccc;
+    font-size: 30px;
 }

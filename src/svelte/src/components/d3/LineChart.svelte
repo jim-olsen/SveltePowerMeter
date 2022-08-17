@@ -10,6 +10,7 @@
 
     export let XAxisTitle = "";
     export let YAxisTitle = "";
+    export let XAxisTickFormat = null;
     export let dataset = [];
     export let width = 900,
         height = 600;
@@ -38,7 +39,7 @@
 <main>
     <svg {width} {height}>
         <g class="lineChart" transform={`translate(${margin.left},${margin.top})`}>
-            <Axis {innerHeight} {margin} scale={xScale} position="bottom" />
+            <Axis {innerHeight} {margin} scale={xScale} position="bottom" tickFormat={XAxisTickFormat}/>
             <Axis {innerHeight} {margin} scale={yScale} position="left" />
             <text transform={`translate(${-30},${innerHeight}) rotate(-90)`}
             >{YAxisTitle}</text
