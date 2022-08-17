@@ -3,24 +3,47 @@
     import PowerDataFetcher from "./components/powermeter/PowerDataFetcher.svelte";
     import CurrentValues from "./components/powermeter/CurrentValues.svelte";
     import VoltageGraph from "./components/powermeter/VoltageGraph.svelte";
+    import SolarWattsGraph from "./components/powermeter/SolarWattsGraph.svelte";
+    import BatteryWattsGraph from "./components/powermeter/BatteryWattsGraph.svelte";
 
     let outerWidth = 0
     let stats = true;
-    let graphs = false;
+    let voltageGraph = false;
+    let solarGraph = false;
+    let batteryGraph = false;
 </script>
 
 <svelte:window bind:outerWidth />
 <PowerDataFetcher />
 
-{#if graphs}
-    <VoltageGraph />
+{#if voltageGraph}
+    <div style="display:flex; flex-flow: column;justify-content: center;">
+        <VoltageGraph chartWidth={(outerWidth - (outerWidth / 10)) } />
+    </div>
+{/if}
+
+{#if solarGraph}
+    <div style="display:flex; flex-flow: column;justify-content: center;">
+        <SolarWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} />
+    </div>
 {/if}
 
 {#if stats}
-    <CurrentValues />
-    <Statistics />
+    <div style="display:flex; flex-flow: column;justify-content: center;">
+        <CurrentValues />
+        <Statistics />
+    </div>
 {/if}
+
+{#if batteryGraph}
+    <div style="display:flex; flex-flow: column;justify-content: center;">
+        <BatteryWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} />
+    </div>
+{/if}
+
 <div style="display:flex; flex-flow:row;justify-content: space-between;">
-    <button class="tabButton" on:click={()=> {stats=true; graphs=false;}}>Statistics</button>
-    <button class="tabButton" on:click={()=> {stats=false; graphs=true}}>Graphs</button>
+    <button class="tabButton" on:click={()=> {stats=true; voltageGraph=false;solarGraph=false;batteryGraph=false;}}>Statistics</button>
+    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=true;solarGraph=false;batteryGraph=false;}}>Voltage</button>
+    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=true;batteryGraph=false;}}>Solar Watts</button>
+    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=false;batteryGraph=true;}}>Batt Watts</button>
 </div>

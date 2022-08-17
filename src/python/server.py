@@ -353,7 +353,7 @@ def main():
     graph_thread = threading.Thread(target=update_graph_values, args=())
     graph_thread.daemon = True
     graph_thread.start()
-    app.run(port=9999, debug=True)
+    app.run(port=8050, host='0.0.0.0')
 
 
 #

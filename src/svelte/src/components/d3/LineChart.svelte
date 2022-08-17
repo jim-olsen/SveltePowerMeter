@@ -46,10 +46,10 @@
 <main>
     <svg {width} {height}>
         <g class="lineChart" transform={`translate(${margin.left},${margin.top})`}>
-            <Axis {innerHeight} {margin} scale={xScale} position="bottom" tickFormat={XAxisTickFormat}/>
-            <Axis {innerHeight} {margin} scale={yScale} position="left" />
+            <Axis {innerHeight} {margin} {width} scale={xScale} position="bottom" tickFormat={XAxisTickFormat}/>
+            <Axis {innerHeight} {margin} {width} scale={yScale} position="left" />
             <text transform={`translate(${-30},${innerHeight}) rotate(-90)`}>{YAxisTitle}</text>
-            <path d={addl_line_gen} style="stroke: lightslategray" />
+            <path d={addl_line_gen} style="stroke: darkgoldenrod" />
             <path d={line_gen} style="stroke: white"/>
             <text x={innerWidth / 3} y={innerHeight + 35}>{XAxisTitle}</text>
         </g>

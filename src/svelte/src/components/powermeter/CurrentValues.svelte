@@ -18,8 +18,8 @@
         color: #fca503;
         }
 </style>
-<div style="display:flex; flex-flow:column">
-    <table>
+<div style="display:flex; flex-flow:column;justify-content: center;">
+    <table style="width: 100%;">
         <thead>
             <tr>
                 <td>Load (W)</td>
