@@ -12,6 +12,7 @@
     export let YAxisTitle = "";
     export let XAxisTickFormat = null;
     export let dataset = [];
+    export let additionalDataSet = [];
     export let width = 900,
         height = 600;
 
@@ -21,12 +22,12 @@
     $: innerWidth = width - margin.left - margin.right;
 
     $: xScale = scaleLinear()
-        .domain(extent(dataset, (d) => d.x))
+        .domain(extent(dataset.concat(additionalDataSet), (d) => d.x))
         .range([0, innerWidth])
         .nice();
 
     $: yScale = scaleLinear()
-        .domain(extent(dataset, (d) => d.y))
+        .domain(extent(dataset.concat(additionalDataSet), (d) => d.y))
         .range([innerHeight, 0])
         .nice();
 
@@ -34,6 +35,12 @@
         .curve(curveBasis)
         .x((d) => xScale(d.x))
         .y((d) => yScale(d.y))(dataset);
+
+    $: addl_line_gen = line()
+        .curve(curveBasis)
+        .x((d) => xScale(d.x))
+        .y((d) => yScale(d.y))(additionalDataSet);
+
 </script>
 
 <main>
@@ -41,10 +48,9 @@
         <g class="lineChart" transform={`translate(${margin.left},${margin.top})`}>
             <Axis {innerHeight} {margin} scale={xScale} position="bottom" tickFormat={XAxisTickFormat}/>
             <Axis {innerHeight} {margin} scale={yScale} position="left" />
-            <text transform={`translate(${-30},${innerHeight}) rotate(-90)`}
-            >{YAxisTitle}</text
-            >
-            <path d={line_gen} />
+            <text transform={`translate(${-30},${innerHeight}) rotate(-90)`}>{YAxisTitle}</text>
+            <path d={addl_line_gen} style="stroke: lightslategray" />
+            <path d={line_gen} style="stroke: white"/>
             <text x={innerWidth / 3} y={innerHeight + 35}>{XAxisTitle}</text>
         </g>
     </svg>

@@ -7,12 +7,27 @@
     export let chartHeight=300
 
     let graphData = [];
+    let secondGraphData = [];
 
     const unsubscribeGraph = powerGraphData.subscribe(data => {
         graphData = [];
+        secondGraphData = [];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
-                graphData.push({x: Date.parse(d), y: data?.battvoltage?.[i] ? data?.battvoltage?.[i] : 0 })
+                let value = data?.battvoltage?.[i] ? data?.battvoltage?.[i] : 0;
+                if ( value != 0 ) {
+                    graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                }
+                if (data.hasOwnProperty("targetbattvoltage")) {
+                    if (data.targetbattvoltage?.[i] == 0) {
+                        value = data?.battvoltage?.[i] ? data?.battvoltage?.[i] : 0;
+                    } else {
+                        value = data?.targetbattvoltage?.[i] ? data?.targetbattvoltage?.[i] : 0;
+                    }
+                }
+                if (value != 0) {
+                    secondGraphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                }
             })
         }
     });
@@ -25,4 +40,5 @@
     }
 
 </script>
-<LineChart XAxisTitle="Time" YAxisTitle="Volts" dataset={graphData} height={chartHeight} width={chartWidth} XAxisTickFormat={formatTime} />
+<LineChart XAxisTitle="Time" YAxisTitle="Volts" dataset={graphData} additionalDataSet={secondGraphData}
+           height={chartHeight} width={chartWidth} XAxisTickFormat={formatTime} />
