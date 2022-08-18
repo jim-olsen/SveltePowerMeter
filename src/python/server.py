@@ -8,6 +8,7 @@ from datetime import datetime
 import shutil
 from pymodbus.client.sync import ModbusTcpClient
 from os import path
+import logging
 
 graph_data = {
     'battload': [],
@@ -353,6 +354,7 @@ def main():
     graph_thread = threading.Thread(target=update_graph_values, args=())
     graph_thread.daemon = True
     graph_thread.start()
+    logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
     app.run(port=8050, host='0.0.0.0')
 
 

@@ -7,24 +7,27 @@
     import BatteryWattsGraph from "./components/powermeter/BatteryWattsGraph.svelte";
 
     let outerWidth = 0
+    let outerHeight = 0
     let stats = true;
     let voltageGraph = false;
     let solarGraph = false;
     let batteryGraph = false;
 </script>
 
-<svelte:window bind:outerWidth />
+<svelte:window bind:outerWidth bind:outerHeight/>
 <PowerDataFetcher />
 
 {#if voltageGraph}
     <div style="display:flex; flex-flow: column;justify-content: center;">
-        <VoltageGraph chartWidth={(outerWidth - (outerWidth / 10)) } />
+        <CurrentValues />
+        <VoltageGraph chartWidth={(outerWidth - (outerWidth / 10)) } chartHeight={outerHeight * 0.5} />
     </div>
 {/if}
 
 {#if solarGraph}
     <div style="display:flex; flex-flow: column;justify-content: center;">
-        <SolarWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} />
+        <CurrentValues />
+        <SolarWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.5} />
     </div>
 {/if}
 
@@ -37,7 +40,8 @@
 
 {#if batteryGraph}
     <div style="display:flex; flex-flow: column;justify-content: center;">
-        <BatteryWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} />
+        <CurrentValues />
+        <BatteryWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.5} />
     </div>
 {/if}
 
