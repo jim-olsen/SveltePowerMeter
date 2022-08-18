@@ -15,39 +15,52 @@
 </script>
 
 <svelte:window bind:outerWidth bind:outerHeight/>
-<PowerDataFetcher />
+<PowerDataFetcher/>
+<div style="display: flex; flex-flow: column;">
+    {#if voltageGraph}
+        <div style="display:flex; flex-flow: column;justify-content: flex-start;">
+            <CurrentValues/>
+            <div>
+                <VoltageGraph chartWidth={(outerWidth - (outerWidth / 10)) } chartHeight={outerHeight * 0.65}/>
+            </div>
+        </div>
+    {/if}
 
-{#if voltageGraph}
-    <div style="display:flex; flex-flow: column;justify-content: center;">
-        <CurrentValues />
-        <VoltageGraph chartWidth={(outerWidth - (outerWidth / 10)) } chartHeight={outerHeight * 0.5} />
+    {#if solarGraph}
+        <div style="display:flex; flex-flow: column;justify-content: center;">
+            <CurrentValues/>
+            <SolarWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.65}/>
+        </div>
+    {/if}
+
+    {#if stats}
+        <div style="display:flex; flex-flow: column;justify-content: center;gap: 10px;">
+            <CurrentValues/>
+            <Statistics/>
+        </div>
+    {/if}
+
+    {#if batteryGraph}
+        <div style="display:flex; flex-flow: column;justify-content: center; height: 100%;">
+            <CurrentValues/>
+            <BatteryWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.65}/>
+        </div>
+    {/if}
+
+    <div style="display:flex; flex-flow: column; justify-content: flex-end">
+    <div style="display:flex; flex-flow:row;justify-content: space-between;">
+        <button class="tabButton" on:click={()=> {stats=true; voltageGraph=false;solarGraph=false;batteryGraph=false;}}>
+            Statistics
+        </button>
+        <button class="tabButton" on:click={()=> {stats=false; voltageGraph=true;solarGraph=false;batteryGraph=false;}}>
+            Voltage
+        </button>
+        <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=true;batteryGraph=false;}}>
+            Solar Watts
+        </button>
+        <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=false;batteryGraph=true;}}>
+            Batt Watts
+        </button>
     </div>
-{/if}
-
-{#if solarGraph}
-    <div style="display:flex; flex-flow: column;justify-content: center;">
-        <CurrentValues />
-        <SolarWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.5} />
     </div>
-{/if}
-
-{#if stats}
-    <div style="display:flex; flex-flow: column;justify-content: center;">
-        <CurrentValues />
-        <Statistics />
-    </div>
-{/if}
-
-{#if batteryGraph}
-    <div style="display:flex; flex-flow: column;justify-content: center;">
-        <CurrentValues />
-        <BatteryWattsGraph chartWidth={(outerWidth - (outerWidth / 10))} chartHeight={outerHeight * 0.5} />
-    </div>
-{/if}
-
-<div style="display:flex; flex-flow:row;justify-content: space-between;">
-    <button class="tabButton" on:click={()=> {stats=true; voltageGraph=false;solarGraph=false;batteryGraph=false;}}>Statistics</button>
-    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=true;solarGraph=false;batteryGraph=false;}}>Voltage</button>
-    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=true;batteryGraph=false;}}>Solar Watts</button>
-    <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=false;batteryGraph=true;}}>Batt Watts</button>
 </div>

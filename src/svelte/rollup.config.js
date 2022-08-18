@@ -53,10 +53,19 @@ export default {
             dirs: ['public'],
             spa: 'public/index.html',
             port: 8080,
-            proxy: [{
-                from: '/starlink',
-                to: 'http://127.0.0.1:9999/starlink'
-            }]
+            proxy: [
+                {
+                from: '/graphData',
+                to: 'http://127.0.0.1:8050/graphData'
+                },
+                {
+                    from: '/currentData',
+                    to: 'http://127.0.0.1:8050/currentData'
+                },
+                {
+                    from: '/statsData',
+                    to: 'http://127.0.0.1:8050/statsData'
+                }]
         })
 //        !production && serve({
 //            contentBase: ['public'],
