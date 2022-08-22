@@ -56,15 +56,15 @@ export default {
             proxy: [
                 {
                 from: '/graphData',
-                to: 'http://127.0.0.1:8050/graphData'
+                to: 'http://10.0.10.32:8050/graphData'
                 },
                 {
                     from: '/currentData',
-                    to: 'http://127.0.0.1:8050/currentData'
+                    to: 'http://10.0.10.32:8050/currentData'
                 },
                 {
                     from: '/statsData',
-                    to: 'http://127.0.0.1:8050/statsData'
+                    to: 'http://10.0.10.32:8050/statsData'
                 }]
         })
 //        !production && serve({
