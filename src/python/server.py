@@ -17,7 +17,8 @@ graph_data = {
     'battwatts': [],
     'solarwatts': [],
     'targetbattvoltage': [],
-    'net_production': []
+    'net_production': [],
+    'load_watts': []
 }
 current_data = {}
 stats_data = {
@@ -219,6 +220,7 @@ def update_graph_values():
                 graph_data['targetbattvoltage'].append(current_data["target_regulation_voltage"])
             graph_data['solarwatts'].append(current_data["solar_watts"])
             graph_data['net_production'].append(stats_data['day_solar_wh'] - stats_data['day_load_wh'])
+            graph_data['load_watts'].append(current_data["load_amps"] * current_data["battery_voltage"])
 
             # If we have more than a days worth of graph data, start rotating out the old data
             while len(graph_data['time']) > 2880:
@@ -229,6 +231,7 @@ def update_graph_values():
                 graph_data['solarwatts'].pop(0)
                 graph_data['targetbattvoltage'].pop(0)
                 graph_data['net_production'].pop(0)
+                graph_data['load_watts'].pop(0)
 
             # persist the latest into a file to handle restarts
             with open('monitor_data.pkl.tmp', 'wb') as f:
@@ -318,6 +321,11 @@ def copy_graph_data(loaded_graph_data):
             for i in range(len(loaded_graph_data['net_production'])):
                 graph_data['net_production'].append(loaded_graph_data['net_production'][i])
                 graph_data['net_production'].pop(0)
+        graph_data['load_watts'] = [0] * graph_length
+        if 'load_watts' in loaded_graph_data:
+            for i in range(len(loaded_graph_data['load_watts'])):
+                graph_data['load_watts'].append(loaded_graph_data['load_watts'][i])
+                graph_data['load_watts'].pop(0)
 
 
 def main():
