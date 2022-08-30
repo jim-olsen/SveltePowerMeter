@@ -188,7 +188,7 @@ def update_tristar_values():
                 current_data["heatsink_temperature"] = rr.registers[35]
                 current_data["battery_temperature"] = rr.registers[36]
                 # Misc Statistics
-                charge_states = ["START", "NIGHT_CHECK", "DISCONNECT", "NIGHT", "FAULT", "MPPT", "ABSORPTION", "FLOAT",
+                charge_states = ["START", "NIGHT_CHECK", "DISCONNECT", "NIGHT", "FAULT", "MPPT", "ABSORB", "FLOAT",
                                  "EQUALIZE", "SLAVE"]
                 current_data["charge_state"] = charge_states[rr.registers[50]]
                 current_data["seconds_in_absorption_daily"] = rr.registers[77]

@@ -65,10 +65,10 @@
             Voltage
         </button>
         <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=true;batteryGraph=false;loadGraph=false;}}>
-            Solar Watts
+            Solar
         </button>
         <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=false;batteryGraph=true;loadGraph=false;}}>
-            Batt Watts
+            Battery
         </button>
         <button class="tabButton" on:click={()=> {stats=false; voltageGraph=false;solarGraph=false;batteryGraph=false;loadGraph=true;}}>
             Load
