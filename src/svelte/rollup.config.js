@@ -65,6 +65,10 @@ export default {
                 {
                     from: '/statsData',
                     to: 'http://10.0.10.32:8050/statsData'
+                },
+                {
+                    from: '/starlink',
+                    to: 'http://127.0.0.1:8050/starlink'
                 }]
         })
 //        !production && serve({

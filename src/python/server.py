@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, send_file
 import time
 import threading
 import os
@@ -8,6 +8,11 @@ from datetime import datetime
 import shutil
 from pymodbus.client.sync import ModbusTcpClient
 from os import path
+from PIL import Image
+from Starlink import Starlink
+import io
+import json
+import numpy as np
 import logging
 
 graph_data = {
@@ -44,6 +49,7 @@ tristar_addr = '10.0.10.10'
 arduino_addr = 'http://10.0.10.31/sensor/'
 
 app = Flask(__name__)
+dishy = Starlink()
 
 #
 # Fetch the data from the arduino and populate our central dictionary of values
@@ -277,6 +283,62 @@ def get_stats_data():
     global stats_data
 
     return stats_data
+
+#
+# provide the generic dishy status data through REST
+#
+@app.route("/starlink/status/")
+def starlink_status():
+    status = dishy.get_status()
+
+    return json.dumps(status, indent=3)
+
+
+#
+# provide the dishy historical data through REST
+#
+@app.route("/starlink/history/")
+def starlink_history():
+    history = dishy.get_history()
+    return json.dumps(history, indent=3)
+
+
+#
+# Get the obstruction image data, and transform into a png file and return through the get request
+#
+@app.route("/starlink/obstruction_image/")
+def starlink_obstruction_image():
+    obstruction_image = dishy.get_obstruction_map()
+    numpy_image = np.array(obstruction_image).astype('uint8')
+    img = Image.fromarray(numpy_image)
+    file_object = io.BytesIO()
+    img.save(file_object, 'PNG')
+    file_object.seek(0)
+    return send_file(file_object, mimetype='image/PNG')
+
+
+#
+# Issue a request to the disk to stow itself
+#
+@app.route("/starlink/stow", methods=['POST'])
+def stow_dish():
+    dishy.dish_stow()
+
+
+#
+# Issue a request to the dish to unstow itself
+#
+@app.route("/starlink/unstow", methods=['POST'])
+def unstow_dish():
+    dishy.dish_unstow()
+
+
+#
+# Issue a request for the dish to reboot itself
+#
+@app.route("/starlink/reboot", methods=['POST'])
+def reboot_dish():
+    dishy.dish_reboot()
 
 #
 # Copy the graph data into place, initializing all arrays to the length indicated by the time array.  This protects
