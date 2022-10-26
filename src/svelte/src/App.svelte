@@ -287,10 +287,10 @@
         {#if touchOutages}
             <div style="display:flex; flex-flow: column; justify-content: flex-start">
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutagesChart chartWidth={outerWidth - 10} chartHeight=200/>
+                    <StarlinkOutagesChart chartWidth={outerWidth - 20} chartHeight=200/>
                 </div>
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutageDurationChart chartWidth={outerWidth - 10} chartHeight=200/>
+                    <StarlinkOutageDurationChart chartWidth={outerWidth - 20} chartHeight=200/>
                 </div>
 
             </div>
