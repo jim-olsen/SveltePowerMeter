@@ -4,6 +4,8 @@
     import {starlinkHistory} from "../../stores";
 
     let outageDurationChartData = [];
+    export let chartWidth = 1200;
+    export let chartHeight = 300;
 
 
     const unsubscribeHistory = starlinkHistory.subscribe(history => {
@@ -27,5 +29,5 @@
     onDestroy(unsubscribeHistory);
 </script>
 <div class="center" style="display:flex; flex-flow:column; justify-content: center; align-items: center">
-    <BarChart XAxisTitle="Outage Type" YAxisTitle="Duration (s)" dataset={outageDurationChartData} width=1200 height=300 />
+    <BarChart XAxisTitle="Outage Type" YAxisTitle="Duration (s)" dataset={outageDurationChartData} width={chartWidth} height={chartHeight} />
 </div>
