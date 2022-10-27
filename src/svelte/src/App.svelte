@@ -51,7 +51,7 @@
 
 <svelte:window bind:outerWidth bind:outerHeight bind:innerWidth/>
 {#if fullScreenMenu}
-    <div style="display: flex; flex-flow: column">
+    <div style="display: flex; flex-flow: column;gap: 20px;">
         <button class="tabButton"
                 on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=true;fullScreenStarlink=false;touchScreenStarlink=false;}}>
             PowerMeter

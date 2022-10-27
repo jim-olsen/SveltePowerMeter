@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, send_file
+from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
 import os
@@ -10,6 +10,7 @@ from pymodbus.client.sync import ModbusTcpClient
 from os import path
 from PIL import Image
 from Starlink import Starlink
+from Shelly import Shelly
 import io
 import json
 import numpy as np
@@ -47,6 +48,8 @@ stats_data = {
 tristar_addr = '10.0.10.10'
 # Set this value to the base url of your arduino running the acs758 monitoring
 arduino_addr = 'http://10.0.10.31/sensor/'
+
+available_shellys = []
 
 app = Flask(__name__)
 dishy = Starlink()
@@ -340,6 +343,71 @@ def unstow_dish():
 def reboot_dish():
     dishy.dish_reboot()
 
+
+#
+# Get the shelly object instance matching the name.  Return none if no matching Shelly
+#
+def get_shelly_by_name(name) -> Shelly:
+    for shelly in available_shellys:
+        if shelly.get_settings().get("name", None) == name:
+            return shelly
+    return None
+
+
+#
+# Get the current relay status of a given device
+#
+@app.route("/shelly/relay/status", methods=['GET'])
+def relay_status():
+    relay_number = request.args.get("relay", default=0, type=int)
+    shelly_name = request.args.get("name", default="", type=str)
+    shelly = get_shelly_by_name(shelly_name)
+    if shelly is not None:
+        return shelly.get_relay_status(relay_number)
+    return {}
+
+
+#
+# turn the relay off of a given device
+#
+@app.route("/shelly/relay/off", methods=['GET'])
+def turn_relay_off():
+    relay_number = request.args.get("relay", default=0, type=int)
+    shelly_name = request.args.get("name", default="", type=str)
+    shelly = get_shelly_by_name(shelly_name)
+    if shelly is not None:
+        return shelly.turn_relay_off(relay_number)
+    return {}
+
+
+#
+# turn the relay on of a given device
+#
+@app.route("/shelly/relay/on", methods=['GET'])
+def turn_relay_on():
+    relay_number = request.args.get("relay", default=0, type=int)
+    shelly_name = request.args.get("name", default="", type=str)
+    shelly = get_shelly_by_name(shelly_name)
+    if shelly is not None:
+        return shelly.turn_relay_on(relay_number)
+    return {}
+
+
+#
+# power cycle the relay of a given device
+#
+@app.route("/shelly/relay/cycle", methods=['GET'])
+def power_cycle_relay():
+    relay_number = request.args.get("relay", default=0, type=int)
+    delay = request.args.get("delay", default=5, type=int)
+    shelly_name = request.args.get("name", default="", type=str)
+    shelly = get_shelly_by_name(shelly_name)
+    if shelly is not None:
+        return shelly.power_cycle_relay(relay=relay_number, delay=delay)
+
+    return {}
+
+
 #
 # Copy the graph data into place, initializing all arrays to the length indicated by the time array.  This protects
 # against empty or missing values from getting things out of whack
@@ -425,6 +493,8 @@ def main():
     graph_thread.daemon = True
     graph_thread.start()
     logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+
+    available_shellys.append(Shelly("http://10.0.10.40"))
     app.run(port=8050, host='0.0.0.0')
 
 
