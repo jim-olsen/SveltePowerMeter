@@ -180,7 +180,7 @@
                     </div>
                     <div style="display:flex; justify-content: flex-start; flex-flow: column; align-items: center; gap: 10px">
                         <span><b>Obstruction Map</b></span>
-                        <StarlinkObstructionMap width=200 height=200 />
+                        <StarlinkObstructionMap width=200 height=200/>
                     </div>
                 </div>
             </div>
@@ -188,24 +188,24 @@
                 <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                     <span><b>Upload Speed</b></span>
                     <hr style="width: 100%"/>
-                    <StarlinkUploadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200 />
+                    <StarlinkUploadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200/>
                 </div>
                 <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                     <span><b>Download Speed</b></span>
                     <hr style="width: 100%"/>
-                    <StarlinkDownloadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200 />
+                    <StarlinkDownloadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200/>
                 </div>
             </div>
             <div style="display:flex; flex-flow: row; justify-content: space-evenly; gap: 20px; flex-wrap: wrap;">
                 <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                     <span><b>Ping Latency</b></span>
                     <hr style="width: 100%"/>
-                    <StarlinkPingLatency chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200 />
+                    <StarlinkPingLatency chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200/>
                 </div>
                 <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                     <span><b>Ping Drop</b></span>
                     <hr style="width: 100%"/>
-                    <StarlinkPingDrop chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200 />
+                    <StarlinkPingDrop chartWidth={Math.min(600, outerWidth - 100)} chartHeight=200/>
                 </div>
             </div>
             <div style="display:flex; flex-flow: row; justify-content: space-around; flex-wrap: wrap;">
@@ -257,7 +257,7 @@
                     </div>
                     <div style="display:flex; justify-content: flex-start; flex-flow: column; align-items: center; gap: 10px">
                         <span><b>Obstruction Map</b></span>
-                        <StarlinkObstructionMap width=200 height=200 />
+                        <StarlinkObstructionMap width=200 height=200/>
                     </div>
                 </div>
             </div>
@@ -270,33 +270,33 @@
             <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                 <span><b>Upload Speed</b></span>
                 <hr style="width: 100%"/>
-                <StarlinkUploadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160 />
+                <StarlinkUploadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160/>
             </div>
             <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                 <span><b>Download Speed</b></span>
                 <hr style="width: 100%"/>
-                <StarlinkDownloadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160 />
+                <StarlinkDownloadDataRates chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160/>
             </div>
         {/if}
         {#if touchQuality}
             <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                 <span><b>Ping Latency</b></span>
                 <hr style="width: 100%"/>
-                <StarlinkPingLatency chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160 />
+                <StarlinkPingLatency chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160/>
             </div>
             <div style="display:flex; flex-flow: column; justify-content: flex-start;">
                 <span><b>Ping Drop</b></span>
                 <hr style="width: 100%"/>
-                <StarlinkPingDrop chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160 />
+                <StarlinkPingDrop chartWidth={Math.min(600, outerWidth - 100)} chartHeight=160/>
             </div>
         {/if}
         {#if touchOutages}
             <div style="display:flex; flex-flow: column; justify-content: flex-start">
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutagesChart chartWidth={outerWidth - 20} chartHeight=200 />
+                    <StarlinkOutagesChart chartWidth={outerWidth - 20} chartHeight=200/>
                 </div>
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutageDurationChart chartWidth={outerWidth - 20} chartHeight=200 />
+                    <StarlinkOutageDurationChart chartWidth={outerWidth - 20} chartHeight=200/>
                 </div>
 
             </div>
@@ -340,7 +340,15 @@
     </div>
 {/if}
 {#if shellyPowerDisplay}
-    <div>
-        <ShellyDeviceList />
+    <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%">
+        <ShellyDeviceList/>
+        <div style="display:flex; flex-flow: column; justify-content: flex-end'">
+            <div style="display:flex; flex-flow:row;justify-content: space-between;">
+                <button class="tabButton"
+                        on:click={()=> {shellyPowerDisplay=false;fullScreenMenu=true;}}>
+                    ...
+                </button>
+            </div>
+         </div>
     </div>
 {/if}
