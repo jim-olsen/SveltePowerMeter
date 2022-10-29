@@ -15,6 +15,7 @@
     import StarlinkUpTime from "./components/starlink/StarlinkUpTime.svelte";
     import StarlinkAntenna from "./components/starlink/StarlinkAntenna.svelte";
     import StarlinkControls from "./components/starlink/StarlinkControls.svelte";
+    import ShellyDeviceList from "./components/shelly/ShellyDeviceList.svelte";
 
     let dashboard = true;
     let outages = false;
@@ -42,6 +43,7 @@
     let fullScreenPowerMeter = true;
     let fullScreenMenu = false;
     let touchScreenStarlink = false;
+    let shellyPowerDisplay = false;
     let touchStatus = true;
     let touchSpeed = false;
     let touchQuality = false;
@@ -53,16 +55,20 @@
 {#if fullScreenMenu}
     <div style="display: flex; flex-flow: column;gap: 20px;">
         <button class="tabButton"
-                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=true;fullScreenStarlink=false;touchScreenStarlink=false;}}>
+                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=true;fullScreenStarlink=false;touchScreenStarlink=false;shellyPowerDisplay=false;}}>
             PowerMeter
         </button>
         <button class="tabButton"
-                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=false;fullScreenStarlink=true;touchScreenStarlink=false;}}>
+                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=false;fullScreenStarlink=true;touchScreenStarlink=false;shellyPowerDisplay=false;}}>
             Full Screen Starlink
         </button>
         <button class="tabButton"
-                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=false;fullScreenStarlink=false;touchScreenStarlink=true;}}>
+                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=false;fullScreenStarlink=false;touchScreenStarlink=true;shellyPowerDisplay=false;}}>
             Touch Screen Starlink
+        </button>
+        <button class="tabButton"
+                on:click={()=> {fullScreenMenu=false;fullScreenPowerMeter=false;fullScreenStarlink=false;touchScreenStarlink=false;shellyPowerDisplay=true;}}>
+            Shelly Devices
         </button>
     </div>
 {/if}
@@ -287,10 +293,10 @@
         {#if touchOutages}
             <div style="display:flex; flex-flow: column; justify-content: flex-start">
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutagesChart chartWidth={outerWidth - 20} chartHeight=200/>
+                    <StarlinkOutagesChart chartWidth={outerWidth - 20} chartHeight=200 />
                 </div>
                 <div style="display:flex; flex-flow:row; justify-content: space-around">
-                    <StarlinkOutageDurationChart chartWidth={outerWidth - 20} chartHeight=200/>
+                    <StarlinkOutageDurationChart chartWidth={outerWidth - 20} chartHeight=200 />
                 </div>
 
             </div>
@@ -331,5 +337,10 @@
                 </button>
             </div>
         </div>
+    </div>
+{/if}
+{#if shellyPowerDisplay}
+    <div>
+        <ShellyDeviceList />
     </div>
 {/if}

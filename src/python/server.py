@@ -353,6 +353,13 @@ def get_shelly_by_name(name) -> Shelly:
             return shelly
     return None
 
+#
+# Get the list of available shellys
+#
+@app.route("/shelly")
+def get_all_shellys():
+    return json.dumps([shelly.__dict__ for shelly in available_shellys])
+
 
 #
 # Get the current relay status of a given device

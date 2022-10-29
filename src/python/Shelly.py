@@ -2,10 +2,27 @@ import requests
 
 class Shelly:
     shelly_url = None
+    name = None
+    id = None
+    mac = None
+    model = None
+    generation = None
+    version = None
+    application = None
+    firmware_id = None
 
     def __init__(self, url):
         if url is not None:
             self.shelly_url = url
+            settings = self.get_settings()
+            self.name = settings.get("name", None)
+            self.id = settings.get("id", None)
+            self.mac = settings.get("mac", None)
+            self.model = settings.get("model", None)
+            self.generation = settings.get("gen", None)
+            self.version = settings.get("ver", None)
+            self.application = settings.get("app", None)
+            self.firmware_id = settings.get("fw_id", None)
 
     def get_status(self):
         r = requests.get(self.shelly_url + '/rpc.Sys.getStatus')

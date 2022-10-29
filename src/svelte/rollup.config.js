@@ -69,7 +69,12 @@ export default {
                 {
                     from: '/starlink',
                     to: 'http://127.0.0.1:8050/starlink'
-                }]
+                },
+                {
+                    from: '/shelly',
+                    to: 'http://127.0.0.1:8050/shelly'
+                }
+                ]
         })
 //        !production && serve({
 //            contentBase: ['public'],
