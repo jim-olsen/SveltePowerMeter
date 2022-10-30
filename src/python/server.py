@@ -252,6 +252,45 @@ def update_graph_values():
 
 
 #
+# Monitor the starlink for multiple potential problem situations.  First, make sure that the starlink is responding
+# correctly.  If the starlink unit is not available, eventually we want to try a power cycle on it.  Also check to see
+# if the unit has been stowed.  If it has been stowed for over 10 minutes, then we want to unstow it.
+#
+def manage_starlink():
+    start_stow_time = 0
+    start_not_connected_time = 0
+
+    while True:
+        try:
+            if not dishy.is_connected():
+                if start_not_connected_time == 0:
+                    print("Detected that dishy is not connected, starting countdown")
+                    start_not_connected_time = time.time()
+                elif time.time() - start_not_connected_time > 28800:
+                    print("Dishy not connected for over 8 hours, trying a power cycle")
+                    for shelly in available_shellys:
+                        if shelly.name.casefold() == "dishy".casefold():
+                            print("Found shelly dishy device, power cycling...")
+                            shelly.power_cycle_relay(0, 10)
+                            start_not_connected_time = time.time()
+            else:
+                start_not_connected_time = 0
+
+            if dishy.is_stowed():
+                print("Dishy is currently stowed")
+                if start_stow_time == 0:
+                    start_stow_time = time.time()
+                elif time.time() - start_stow_time > 600:
+                    print("Dishy stowed too long, unstowing dish")
+                    dishy.dish_unstow()
+            else:
+                start_stow_time = 0
+        except Exception as e:
+            print("Failure in starlink monitoring: " + str(e))
+        time.sleep(60)
+
+
+#
 # Serve up the svelte application
 #
 @app.route("/")
@@ -490,18 +529,31 @@ def main():
     arduino_thread = threading.Thread(target=update_arduino_values, args=())
     arduino_thread.daemon = True
     arduino_thread.start()
+
     tristar_thread = threading.Thread(target=update_tristar_values, args=())
     tristar_thread.daemon = True
     tristar_thread.start()
+
     stats_thread = threading.Thread(target=update_running_stats, args=())
     stats_thread.daemon = True
     stats_thread.start()
+
     graph_thread = threading.Thread(target=update_graph_values, args=())
     graph_thread.daemon = True
     graph_thread.start()
+
+    starlink_thread = threading.Thread(target=manage_starlink, args=())
+    starlink_thread.daemon = True
+    starlink_thread.start()
+
     logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
 
-    available_shellys.append(Shelly("http://10.0.10.40"))
+    try:
+        available_shellys.append(Shelly("http://10.0.10.40"))
+        available_shellys.append(Shelly("http://10.0.10.41"))
+    except Exception as e:
+        print("Failed to add shelly devices: " + str(e))
+
     app.run(port=8050, host='0.0.0.0')
 
 

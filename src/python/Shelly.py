@@ -81,7 +81,7 @@ class Shelly:
             return {}
 
 def main():
-    shelly = Shelly("http://10.0.10.40")
+    shelly = Shelly("http://10.0.10.41")
     print(shelly.get_settings())
     print(shelly.get_status())
     print(shelly.get_relay_status(0))

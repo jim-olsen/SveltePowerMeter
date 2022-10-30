@@ -5,7 +5,6 @@ import statistics
 from PIL import Image
 import yagrc.reflector
 import numpy as np
-import time
 
 try:
     from yagrc import importer
@@ -27,6 +26,7 @@ from spacex.api.device import dish_pb2
 #
 class Starlink:
     starlinkurl = None
+    initialized = False
 
     #
     # url - The url to which we should connect to the dish.  The default provided value is likely what it should be
@@ -35,14 +35,23 @@ class Starlink:
     def __init__(self, url="192.168.100.1:9200"):
         if url is not None:
             self.starlinkurl = url
-        with grpc.insecure_channel(self.starlinkurl) as channel:
-            importer.resolve_lazy_imports(channel)
+            self.initialize_grpc()
+
+    def initialize_grpc(self):
+        try:
+            with grpc.insecure_channel(self.starlinkurl) as channel:
+                importer.resolve_lazy_imports(channel)
+                self.initialized = True
+        except Exception as e:
+            print("Failed to initialize Starlink, delaying...")
 
     #
     # return a status structure containing the values from a get_status request to the gRPC service.  This data has
     # been simplified into a structure that is more readily consumable by a ui or a web client
     #
     def get_status(self):
+        if not self.initialized:
+            self.initialize_grpc()
         with grpc.insecure_channel(self.starlinkurl) as channel:
             stub = device_pb2_grpc.DeviceStub(channel)
             response = stub.Handle(device_pb2.Request(get_status={}), timeout=10)
@@ -104,6 +113,8 @@ class Starlink:
     # mean, min, max of the data over the time period recorded.  It does not cover longer term historical data.
     #
     def get_history_object(self, source, field, target_name):
+        if not self.initialized:
+            self.initialize_grpc()
         result = {}
         result[target_name] = []
         total_val = 0.0
@@ -134,6 +145,8 @@ class Starlink:
     # the outage data into buckets to look at the occurrences of outages by type.
     #
     def get_history(self):
+        if not self.initialized:
+            self.initialize_grpc()
         with grpc.insecure_channel(self.starlinkurl) as channel:
             stub = device_pb2_grpc.DeviceStub(channel)
             response = stub.Handle(device_pb2.Request(get_history={}), timeout=10)
@@ -173,6 +186,8 @@ class Starlink:
     # will be between 0.0 and 1.0, with 1.0 being the strongest signal.
     #
     def get_obstruction_map_data(self):
+        if not self.initialized:
+            self.initialize_grpc()
         with grpc.insecure_channel(self.starlinkurl) as channel:
             stub = device_pb2_grpc.DeviceStub(channel)
             response = stub.Handle(device_pb2.Request(dish_get_obstruction_map={}), timeout=10)
@@ -238,6 +253,8 @@ class Starlink:
     # Issue the command to ask the dish to stow itself
     #
     def dish_stow(self):
+        if not self.initialized:
+            self.initialize_grpc()
         reflector = yagrc.reflector.GrpcReflectionClient()
         try:
             with grpc.insecure_channel(self.starlinkurl) as channel:
@@ -259,6 +276,8 @@ class Starlink:
     # Issue the command to ask the dish to unstow itself
     #
     def dish_unstow(self):
+        if not self.initialized:
+            self.initialize_grpc()
         reflector = yagrc.reflector.GrpcReflectionClient()
         try:
             with grpc.insecure_channel(self.starlinkurl) as channel:
@@ -280,6 +299,8 @@ class Starlink:
     # Issue the command to ask the dish to reboot itself
     #
     def dish_reboot(self):
+        if not self.initialized:
+            self.initialize_grpc()
         reflector = yagrc.reflector.GrpcReflectionClient()
         try:
             with grpc.insecure_channel(self.starlinkurl) as channel:
@@ -296,6 +317,18 @@ class Starlink:
                 print("Failed to reboot dish for an unknown reason")
 
         return False
+
+    def is_stowed(self):
+        status = self.get_status()
+        return status.get('state', '') == "STOWED"
+
+    def is_connected(self):
+        try:
+            status = self.get_status()
+            return status.get('state', '') == "CONNECTED"
+        except Exception as e:
+            return False
+
 
 #
 # If you just run this class instead of the server.py file that actually runs the flask server, run through each command
