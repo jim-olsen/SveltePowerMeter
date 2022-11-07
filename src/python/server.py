@@ -259,6 +259,7 @@ def update_graph_values():
 def manage_starlink():
     start_stow_time = 0
     start_not_connected_time = 0
+    start_power_off_time = 0
 
     while True:
         try:
@@ -270,11 +271,29 @@ def manage_starlink():
                     print("Dishy not connected for over 8 hours, trying a power cycle")
                     for shelly in available_shellys:
                         if shelly.name.casefold() == "dishy".casefold():
-                            print("Found shelly dishy device, power cycling...")
-                            shelly.power_cycle_relay(0, 10)
+                            print("Found shelly dishy device, power cycling dishy due to disconnected state...")
+                            status = shelly.get_relay_status(0)
+                            if status["ison"] is False:
+                                shelly.turn_relay_on(0)
+                            else:
+                                shelly.power_cycle_relay(0, 10)
                             start_not_connected_time = time.time()
             else:
                 start_not_connected_time = 0
+
+            for shelly in available_shellys:
+                if shelly.name.casefold() == "dishy".casefold():
+                    status = shelly.get_relay_status(0)
+                    if status["ison"] is False:
+                        if start_power_off_time == 0:
+                            print("Found dishy powered off, starting counter")
+                            start_power_off_time = time.time()
+                        elif time.time() - start_power_off_time > 600:
+                            print("Dishy off for over 10 minutes, turning back on")
+                            shelly.turn_relay_on(0)
+                            start_power_off_time = 0
+                    else:
+                        start_power_off_time = 0
 
             if dishy.is_stowed():
                 print("Dishy is currently stowed")
