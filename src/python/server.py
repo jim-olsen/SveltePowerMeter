@@ -567,11 +567,32 @@ def main():
 
     logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
 
-    try:
-        available_shellys.append(Shelly("http://10.0.10.40"))
-        available_shellys.append(Shelly("http://10.0.10.41"))
-    except Exception as e:
-        print("Failed to add shelly devices: " + str(e))
+    retry_count = 0
+    while True:
+        try:
+            available_shellys.append(Shelly("http://10.0.10.41"))
+            print("Shelly device 10.0.10.41 successfully added")
+            break
+        except Exception as e:
+            retry_count += 1
+            print("Failed to add shelly device 10.0.10.41: " + str(e))
+            if retry_count > 5:
+                break
+            time.sleep(15)
+
+    retry_count = 0
+    while True:
+        try:
+            available_shellys.append(Shelly("http://10.0.10.40"))
+            print("Shelly device 10.0.10.40 successfully added")
+            break
+        except Exception as e:
+            retry_count += 1
+            print("Failed to add shelly device 10.0.10.40: " + str(e))
+            if retry_count > 5:
+                break
+            time.sleep(15)
+
 
     app.run(port=8050, host='0.0.0.0')
 
