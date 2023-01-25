@@ -33,8 +33,9 @@
             <tr>
                 <td>{currentData?.load_amps ? (currentData?.load_amps * currentData?.battery_voltage)?.toFixed(1) : '---'} <small>w</small></td>
                 <td>{currentData?.battery_voltage ? currentData?.battery_voltage?.toFixed(2) : '---'} <small>v</small></td>
-                <td>{currentData?.battery_voltage ? (currentData?.battery_voltage * currentData?.battery_load)?.toFixed(1) : '---'} <small>w</small></td>
-                <td>{currentData?.solar_watts ? currentData?.solar_watts?.toFixed(1) : '---'} <small>w</small></td>
+<!--                <td>{currentData?.battery_voltage ? (currentData?.battery_voltage * currentData?.battery_load)?.toFixed(1) : '---'} <small>w</small></td> -->
+                <td>{currentData?.battery_load ? currentData?.battery_load.toFixed(1) : '---'} <small>a</small></td>
+                <td>{currentData?.solar_watts ? currentData?.solar_watts.toFixed(1) : '---'} <small>w</small></td>
                 <td>{currentData?.charge_state ? currentData?.charge_state : '---'}</td>
             </tr>
         </tbody>
