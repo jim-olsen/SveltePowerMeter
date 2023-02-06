@@ -1,13 +1,12 @@
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
-import os
-import requests
-import pickle
 from datetime import datetime
-import shutil
+import asyncio
 from pymodbus.client.sync import ModbusTcpClient
-from os import path
+from asyncio.exceptions import CancelledError, TimeoutError
+from bleak import BleakClient, BleakScanner
+from bleak.exc import BleakDeviceNotFoundError
 from PIL import Image
 from Starlink import Starlink
 from Shelly import Shelly
@@ -15,6 +14,7 @@ import io
 import json
 import numpy as np
 import logging
+import sqlite3
 
 graph_data = {
     'battload': [],
@@ -39,52 +39,109 @@ stats_data = {
     'avg_load': 0.0,
     'avg_net': 0.0,
     'avg_solar': 0.0,
-    'thirty_days_net': [0] * 30,
-    'thirty_days_load': [0] * 30,
-    'thirty_days_solar': [0] * 30,
-    'thirty_days_batt_wh': [0] * 30
 }
+
+UART_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for TX
+UART_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for RX
+
 # Set this value to the ip of your tristar charge controller
 tristar_addr = '10.0.10.10'
-# Set this value to the base url of your arduino running the acs758 monitoring
-arduino_addr = 'http://10.0.10.31/sensor/'
 
 available_shellys = []
 
 app = Flask(__name__)
 dishy = Starlink()
 
+
 #
-# Fetch the data from the arduino and populate our central dictionary of values
+# Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
+# code for how this is implemented
 #
-def update_arduino_values():
+async def update_ble_values(ble_address, loop):
+    data_received = asyncio.Event()
+
+    def notification_handler(sender, data):
+        """Simple notification handler which prints the data received."""
+        print("{0}: {1}".format(sender, data))
+        sensor_values = data.decode("utf-8").split(':')
+        current_data["battery_voltage"] = float(sensor_values[0])
+        current_data["battery_load"] = float(sensor_values[1])
+        current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
+        print(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
+              f"Load: {current_data['load_amps']}")
+        data_received.set()
+
     while True:
         try:
-            resp = requests.get(arduino_addr + '/A0')
-            current_load = 'N/A'
-            resp_dict = {}
-            if resp.status_code == 200:
-                resp_dict = resp.json()
-                current_data["battery_load"] = resp_dict['A0']
-            else:
-                print('Failed to communicate to arduino: ' + str(resp.status_code))
-                current_data["battery_load"] = 0
-        except Exception as e:
-            print('Failed to communicate to arduino: ' + str(e))
+            print("Trying to connect to sensor at", str(ble_address))
+            async with BleakClient(ble_address, loop=loop) as client:
 
-        try:
-            resp = requests.get(arduino_addr + '/A1')
-            current_load = 'N/A'
-            resp_dict = {}
-            if resp.status_code == 200:
-                resp_dict = resp.json()
-                current_data["load_amps"] = resp_dict['A1']
-            else:
-                print('Failed to communicate to arduino: ' + str(resp.status_code))
-                current_data["load_amps"] = 0
-        except Exception as e:
-            print('Failed to communicate to arduino: ' + str(e))
-        time.sleep(5)
+                # wait for BLE client to be connected
+                while not client.is_connected():
+                    await asyncio.sleep(1)
+                print("Connected to BLE Sensor")
+
+                data_received.clear()
+                # wait for data to be sent from client
+                await client.start_notify(UART_RX_UUID, notification_handler)
+
+                while client.is_connected():
+                    await asyncio.wait_for(data_received.wait(), 20)
+                    data_received.clear()
+
+                print("Client has disconnected from BLE Sensor")
+                client.stop_notify()
+        except (OSError, CancelledError, TimeoutError, BleakDeviceNotFoundError):
+            print("Client is disconnected by OS")
+            pass
+
+        print("Disconnected, retrying connection....")
+
+
+def update_sql_tables():
+    sql_connection = sqlite3.connect("powerdata.db")
+    with sql_connection:
+        cursor = sql_connection.cursor()
+        result = cursor.execute('''INSERT OR REPLACE INTO daily_power_data (record_date, day_load_wh, day_solar_wh, 
+                day_batt_wh, last_charge_state) VALUES (?,?,?,?,?);''',
+                           (
+                           int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple())),
+                           stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
+                           stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
+        print("Inserted into daily, cursor rowid: ", cursor.lastrowid)
+
+        result = sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
+                                battery_voltage, battery_sense_voltage, battery_voltage_slow, 
+                                battery_daily_minimum_voltage, battery_daily_maximum_voltage,
+                                target_regulation_voltage, array_voltage, array_charge_current, battery_charge_current,
+                                battery_charge_current_slow, input_power, solar_watts, heatsink_temperature,
+                                battery_temperature, charge_state, seconds_in_absorption_daily,
+                                seconds_in_float_daily, seconds_in_equalization_daily) VALUES 
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
+                                    (
+                                        int(time.time()),
+                                        current_data.get('battery_load', None),
+                                        current_data.get('load_amps', None),
+                                        current_data.get('battery_voltage', None),
+                                        current_data.get('battery_sense_voltage', None),
+                                        current_data.get('battery_voltage_slow', None),
+                                        current_data.get('battery_daily_minimum_voltage', None),
+                                        current_data.get('battery_daily_maximum_voltage', None),
+                                        current_data.get('target_regulation_voltage', None),
+                                        current_data.get('array_voltage', None),
+                                        current_data.get('array_charge_current', None),
+                                        current_data.get('battery_charge_current', None),
+                                        current_data.get('battery_charge_current_slow', None),
+                                        current_data.get('input_power', None),
+                                        current_data.get('solar_watts', None),
+                                        current_data.get('heatsink_temperature', None),
+                                        current_data.get('battery_temperature', None),
+                                        current_data.get('charge_state', None),
+                                        current_data.get('seconds_in_absorption_daily', None),
+                                        current_data.get('seconds_in_float_daily', None),
+                                        current_data.get('seconds_in_equalization_daily', None)
+                                    ))
+        print("Inserted into power data, cursor rowid: ", cursor.lastrowid)
 
 
 #
@@ -95,60 +152,13 @@ def update_running_stats():
     while True:
         try:
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
-                stats_data['day_load_wh'] += 0.00139 * (current_data['load_amps'] * current_data['battery_voltage'])
-                stats_data['day_solar_wh'] += 0.00139 * current_data['solar_watts']
-                stats_data['day_batt_wh'] += 0.00139 * current_data['battery_load'] * current_data['battery_voltage']
-                stats_data['total_load_wh'] += 0.00139 * (current_data['load_amps'] * current_data['battery_voltage'])
-                stats_data['total_solar_wh'] += 0.00139 * current_data['solar_watts']
-                if stats_data['current_date'] != datetime.today().date():
-                    print('Start of new day : ' + str(stats_data['current_date']) + ' ---> ' + str(datetime.today().date()))
-                    stats_data['current_date'] = datetime.today().date()
-                    stats_data['thirty_days_batt_wh'].pop(0)
-                    stats_data['thirty_days_batt_wh'].append(stats_data['day_batt_wh'])
-
-                    stats_data['thirty_days_net'].pop(0)
-                    stats_data['thirty_days_net'].append(stats_data['day_solar_wh'] - stats_data['day_load_wh'])
-                    num_valid_entries = 0.0
-                    avg_sum = 0.0
-                    for val in stats_data['thirty_days_net']:
-                        if val != 0:
-                            avg_sum += val
-                            num_valid_entries += 1
-                    if num_valid_entries > 0:
-                        stats_data['avg_net'] = avg_sum / num_valid_entries
-
-                    stats_data['thirty_days_load'].pop(0)
-                    stats_data['thirty_days_load'].append(stats_data['day_load_wh'])
-                    num_valid_entries = 0.0
-                    avg_sum = 0.0
-                    for val in stats_data['thirty_days_load']:
-                        if val != 0:
-                            avg_sum += val
-                            num_valid_entries += 1
-                    if num_valid_entries > 0:
-                        stats_data['avg_load'] = avg_sum / num_valid_entries
-
-                    stats_data['thirty_days_solar'].pop(0)
-                    stats_data['thirty_days_solar'].append(stats_data['day_solar_wh'])
-                    num_valid_entries = 0.0
-                    avg_sum = 0.0
-                    for val in stats_data['thirty_days_solar']:
-                        if val != 0:
-                            avg_sum += val
-                            num_valid_entries += 1
-                    if num_valid_entries > 0:
-                        stats_data['avg_solar'] = avg_sum / num_valid_entries
-
-                    stats_data['total_net'].append(stats_data['day_solar_wh'] - stats_data['day_load_wh'])
-                    stats_data['day_load_wh'] = 0
-                    stats_data['day_solar_wh'] = 0
-                    stats_data['day_batt_wh'] = 0
-
-                stats_data['last_charge_state'] = current_data['charge_state']
-            # persist the latest into a file to handle restarts
-            with open('monitor_stats_data.pkl.tmp', 'wb') as f:
-                pickle.dump(stats_data, f)
-            shutil.move(os.path.join(os.getcwd(), 'monitor_stats_data.pkl.tmp'), os.path.join(os.getcwd(), 'monitor_stats_data.pkl'))
+                stats_data['day_load_wh'] += 0.00139 * (
+                            current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
+                stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
+                stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
+                                             current_data.get('battery_voltage', 0)
+                stats_data['last_charge_state'] = current_data.get('charge_state', 'NIGHT')
+            update_sql_tables()
             time.sleep(5)
         except Exception as e:
             print('Failure in updating stats: ' + str(e))
@@ -173,7 +183,7 @@ def update_tristar_values():
                 amperage_scaling_factor = (float(rr.registers[2]) + (float(rr.registers[3]) / 100))
 
                 # Voltage Related Statistics
-                current_data["battery_voltage"] = float(rr.registers[24]) * voltage_scaling_factor * 2 ** (-15)
+                # current_data["battery_voltage"] = float(rr.registers[24]) * voltage_scaling_factor * 2 ** (-15)
                 current_data["battery_sense_voltage"] = float(rr.registers[26]) * voltage_scaling_factor * 2 ** (-15)
                 current_data["battery_voltage_slow"] = float(rr.registers[38]) * voltage_scaling_factor * 2 ** (-15)
                 current_data["battery_daily_minimum_voltage"] = float(
@@ -208,47 +218,6 @@ def update_tristar_values():
             print("Failed to connect to tristar modbus")
             modbus_client.close()
         time.sleep(5)
-
-
-#
-# Update the graph values in the background
-#
-def update_graph_values():
-    while True:
-        try:
-            global graph_data
-            graph_data['time'].append(datetime.now())
-            graph_data['battload'].append(current_data["battery_load"])
-            graph_data['battvoltage'].append(current_data["battery_voltage"])
-            graph_data['battwatts'].append(current_data["battery_voltage"] * current_data["battery_load"])
-            # At night this value plummets to zero and screws up the graph, so let's follow the voltage
-            # for night time mode
-            if current_data["target_regulation_voltage"] == 0:
-                graph_data['targetbattvoltage'].append(current_data["battery_voltage"])
-            else:
-                graph_data['targetbattvoltage'].append(current_data["target_regulation_voltage"])
-            graph_data['solarwatts'].append(current_data["solar_watts"])
-            graph_data['net_production'].append(stats_data['day_solar_wh'] - stats_data['day_load_wh'])
-            graph_data['load_watts'].append(current_data["load_amps"] * current_data["battery_voltage"])
-
-            # If we have more than a days worth of graph data, start rotating out the old data
-            while len(graph_data['time']) > 2880:
-                graph_data['time'].pop(0)
-                graph_data['battload'].pop(0)
-                graph_data['battvoltage'].pop(0)
-                graph_data['battwatts'].pop(0)
-                graph_data['solarwatts'].pop(0)
-                graph_data['targetbattvoltage'].pop(0)
-                graph_data['net_production'].pop(0)
-                graph_data['load_watts'].pop(0)
-
-            # persist the latest into a file to handle restarts
-            with open('monitor_data.pkl.tmp', 'wb') as f:
-                pickle.dump(graph_data, f)
-            shutil.move(os.path.join(os.getcwd(), 'monitor_data.pkl.tmp'), os.path.join(os.getcwd(), 'monitor_data.pkl'))
-        except Exception as e:
-            print("Failed to update graph statistics: " + str(e))
-        time.sleep(60)
 
 
 #
@@ -324,6 +293,7 @@ def base():
 def home(path):
     return send_from_directory('../svelte/public', path)
 
+
 #
 # Handle a request for the graph data
 #
@@ -333,17 +303,20 @@ def get_graph_data():
 
     return graph_data
 
+
 @app.route("/currentData")
 def get_current_data():
     global current_data
 
     return current_data
 
+
 @app.route("/statsData")
 def get_stats_data():
     global stats_data
 
     return stats_data
+
 
 #
 # provide the generic dishy status data through REST
@@ -411,6 +384,7 @@ def get_shelly_by_name(name) -> Shelly:
             return shelly
     return None
 
+
 #
 # Get the list of available shellys
 #
@@ -473,81 +447,61 @@ def power_cycle_relay():
     return {}
 
 
-#
-# Copy the graph data into place, initializing all arrays to the length indicated by the time array.  This protects
-# against empty or missing values from getting things out of whack
-#
-def copy_graph_data(loaded_graph_data):
-    graph_length = 0
-    if 'time' in loaded_graph_data:
-        graph_length = len(loaded_graph_data['time'])
-    if graph_length > 0:
-        graph_data['time'] = [0] * graph_length
-        if 'time' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['time'])):
-                graph_data['time'][i] = loaded_graph_data['time'][i]
-        graph_data['battload'] = [0] * graph_length
-        if 'battload' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['battload'])):
-                graph_data['battload'].append(loaded_graph_data['battload'][i])
-                graph_data['battload'].pop(0)
-        graph_data['battvoltage'] = [23] * graph_length
-        if 'battvoltage' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['battvoltage'])):
-                graph_data['battvoltage'].append(loaded_graph_data['battvoltage'][i])
-                graph_data['battvoltage'].pop(0)
-        graph_data['battwatts'] = [0] * graph_length
-        if 'battwatts' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['battwatts'])):
-                graph_data['battwatts'].append(loaded_graph_data['battwatts'][i])
-                graph_data['battwatts'].pop(0)
-        graph_data['solarwatts'] = [0] * graph_length
-        if 'solarwatts' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['solarwatts'])):
-                graph_data['solarwatts'].append(loaded_graph_data['solarwatts'][i])
-                graph_data['solarwatts'].pop(0)
-        graph_data['targetbattvoltage'] = [23] * graph_length
-        if 'targetbattvoltage' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['targetbattvoltage'])):
-                graph_data['targetbattvoltage'].append(loaded_graph_data['targetbattvoltage'][i])
-                graph_data['targetbattvoltage'].pop(0)
-        graph_data['net_production'] = [0] * graph_length
-        if 'net_production' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['net_production'])):
-                graph_data['net_production'].append(loaded_graph_data['net_production'][i])
-                graph_data['net_production'].pop(0)
-        graph_data['load_watts'] = [0] * graph_length
-        if 'load_watts' in loaded_graph_data:
-            for i in range(len(loaded_graph_data['load_watts'])):
-                graph_data['load_watts'].append(loaded_graph_data['load_watts'][i])
-                graph_data['load_watts'].pop(0)
+def run_ble_thread(address, loop):
+    loop.run_until_complete(update_ble_values(address, loop))
+
+
+async def async_find_cabin_sensor():
+    print("Finding cabin sensor")
+    devices = await BleakScanner.discover(timeout=10, return_adv=False)
+    for d in devices:
+        print(str(d.name), str(d.address), str(d.metadata), str(d.rssi))
+        if d.name == 'CabinSensor':
+            return d.address
+    return None
+
+
+def find_cabin_sensor():
+    return asyncio.run(async_find_cabin_sensor())
 
 
 def main():
     global graph_data
     global stats_data
-    if path.exists('monitor_data.pkl'):
-        try:
-            with open('monitor_data.pkl', 'rb') as f:
-                # Load into a temp variable so if it fails we stick with initial values
-                print("loading graph data from pkl file")
-                loaded_graph_data = pickle.loads(f.read())
-                copy_graph_data(loaded_graph_data)
-        except Exception as e:
-            print("Failed to load monitor pkl data: " + str(e))
-    if path.exists('monitor_stats_data.pkl'):
-        try:
-            with open('monitor_stats_data.pkl', 'rb') as f:
-                # Load into a temp variale so if it fails we stick with the initial values
-                print("Loading stats data from pkl file")
-                load_stats_data = pickle.loads(f.read())
-                for key, value in load_stats_data.items():
-                    stats_data[key] = value
-        except Exception as e:
-            print("Failed to load stats monitor pkl data: " + str(e))
-    arduino_thread = threading.Thread(target=update_arduino_values, args=())
-    arduino_thread.daemon = True
-    arduino_thread.start()
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
+                battery_load REAL,
+                load_amps REAL,
+                battery_voltage REAL,
+                battery_sense_voltage REAL,
+                battery_voltage_slow REAL,
+                battery_daily_minimum_voltage REAL,
+                battery_daily_maximum_voltage REAL,
+                target_regulation_voltage REAL,
+                array_voltage REAL,
+                array_charge_current REAL,
+                battery_charge_current REAL,
+                battery_charge_current_slow REAL,
+                input_power REAL,
+                solar_watts REAL,
+                heatsink_temperature REAL,
+                battery_temperature REAL,
+                charge_state TEXT,
+                seconds_in_absorption_daily INTEGER,
+                seconds_in_float_daily INTEGER,
+                seconds_in_equalization_daily INTEGER)
+                ''')
+    sql_connection.execute('''CREATE TABLE IF NOT EXISTS daily_power_data (record_date INTEGER PRIMARY KEY,
+                day_load_wh REAL,
+                day_solar_wh REAL,
+                day_batt_wh REAL,
+                last_charge_state TEXT
+                )
+                ''')
+    results = sql_connection.execute("SELECT * from daily_power_data")
+    for result in results:
+        print(result)
+    sql_connection.close()
 
     tristar_thread = threading.Thread(target=update_tristar_values, args=())
     tristar_thread.daemon = True
@@ -557,17 +511,22 @@ def main():
     stats_thread.daemon = True
     stats_thread.start()
 
-    graph_thread = threading.Thread(target=update_graph_values, args=())
-    graph_thread.daemon = True
-    graph_thread.start()
-
     starlink_thread = threading.Thread(target=manage_starlink, args=())
     starlink_thread.daemon = True
     starlink_thread.start()
 
+    loop = asyncio.get_event_loop()
+    while True:
+        ble_address = loop.run_until_complete(async_find_cabin_sensor())
+        if ble_address is not None:
+            break
+    ble_thread = threading.Thread(target=run_ble_thread, args=(ble_address, loop))
+    ble_thread.daemon = True
+    ble_thread.start()
+
     logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
 
-    retry_count = 0
+    retry_count = 5
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.41"))
@@ -580,7 +539,7 @@ def main():
                 break
             time.sleep(15)
 
-    retry_count = 0
+    retry_count = 5
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.40"))
@@ -592,7 +551,6 @@ def main():
             if retry_count > 5:
                 break
             time.sleep(15)
-
 
     app.run(port=8050, host='0.0.0.0')
 
