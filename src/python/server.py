@@ -108,8 +108,6 @@ def update_sql_tables():
                            int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple())),
                            stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
                            stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
-        print("Inserted into daily, cursor rowid: ", cursor.lastrowid)
-
         result = sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
                                 battery_voltage, battery_sense_voltage, battery_voltage_slow, 
                                 battery_daily_minimum_voltage, battery_daily_maximum_voltage,
@@ -141,7 +139,6 @@ def update_sql_tables():
                                         current_data.get('seconds_in_float_daily', None),
                                         current_data.get('seconds_in_equalization_daily', None)
                                     ))
-        print("Inserted into power data, cursor rowid: ", cursor.lastrowid)
 
 
 #
@@ -306,9 +303,11 @@ def get_graph_data():
 
 @app.route("/currentData")
 def get_current_data():
-    global current_data
-
-    return current_data
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        data = sql_connection.execute("SELECT * FROM power_data ORDER BY record_time DESC LIMIT 1")
+    return dict(data.fetchone())
 
 
 @app.route("/statsData")
@@ -507,10 +506,6 @@ def main():
     tristar_thread.daemon = True
     tristar_thread.start()
 
-    stats_thread = threading.Thread(target=update_running_stats, args=())
-    stats_thread.daemon = True
-    stats_thread.start()
-
     starlink_thread = threading.Thread(target=manage_starlink, args=())
     starlink_thread.daemon = True
     starlink_thread.start()
@@ -551,6 +546,11 @@ def main():
             if retry_count > 5:
                 break
             time.sleep(15)
+
+    stats_thread = threading.Thread(target=update_running_stats, args=())
+    stats_thread.daemon = True
+    stats_thread.start()
+
 
     app.run(port=8050, host='0.0.0.0')
 
