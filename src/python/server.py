@@ -1,7 +1,7 @@
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from pymodbus.client.sync import ModbusTcpClient
 from asyncio.exceptions import CancelledError, TimeoutError
@@ -16,16 +16,6 @@ import numpy as np
 import logging
 import sqlite3
 
-graph_data = {
-    'battload': [],
-    'time': [],
-    'battvoltage': [],
-    'battwatts': [],
-    'solarwatts': [],
-    'targetbattvoltage': [],
-    'net_production': [],
-    'load_watts': []
-}
 current_data = {}
 stats_data = {
     'current_date': datetime.today().date(),
@@ -99,6 +89,7 @@ async def update_ble_values(ble_address, loop):
 
 
 def update_sql_tables():
+    print("Updating SQL Tables")
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
         cursor = sql_connection.cursor()
@@ -109,18 +100,21 @@ def update_sql_tables():
                            stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
                            stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
         result = sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
-                                battery_voltage, battery_sense_voltage, battery_voltage_slow, 
-                                battery_daily_minimum_voltage, battery_daily_maximum_voltage,
+                                load_watts, battery_voltage, battery_watts, net_production, battery_sense_voltage, 
+                                battery_voltage_slow, battery_daily_minimum_voltage, battery_daily_maximum_voltage,
                                 target_regulation_voltage, array_voltage, array_charge_current, battery_charge_current,
                                 battery_charge_current_slow, input_power, solar_watts, heatsink_temperature,
                                 battery_temperature, charge_state, seconds_in_absorption_daily,
                                 seconds_in_float_daily, seconds_in_equalization_daily) VALUES 
-                                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
                                     (
                                         int(time.time()),
                                         current_data.get('battery_load', None),
                                         current_data.get('load_amps', None),
+                                        current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0),
                                         current_data.get('battery_voltage', None),
+                                        current_data.get('battery_voltage', 0) * current_data.get('battery_load', 0),
+                                        current_data.get('day_solar_wh', 0) - current_data.get('day_load_wh', 0),
                                         current_data.get('battery_sense_voltage', None),
                                         current_data.get('battery_voltage_slow', None),
                                         current_data.get('battery_daily_minimum_voltage', None),
@@ -146,6 +140,7 @@ def update_sql_tables():
 #
 def update_running_stats():
     global stats_data
+    last_update = datetime.today()
     while True:
         try:
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
@@ -155,7 +150,11 @@ def update_running_stats():
                 stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
                                              current_data.get('battery_voltage', 0)
                 stats_data['last_charge_state'] = current_data.get('charge_state', 'NIGHT')
-            update_sql_tables()
+
+            if datetime.today() > last_update + timedelta(minutes=1):
+                update_sql_tables()
+                last_update = datetime.today()
+
             time.sleep(5)
         except Exception as e:
             print('Failure in updating stats: ' + str(e))
@@ -296,18 +295,42 @@ def home(path):
 #
 @app.route("/graphData")
 def get_graph_data():
-    global graph_data
+    days = request.args.get('days', 4)
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute("SELECT * FROM power_data WHERE record_time >= ? ORDER BY record_time ASC",
+                                        [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
+    graph_data = {
+        'battload': [],
+        'time': [],
+        'battvoltage': [],
+        'battwatts': [],
+        'solarwatts': [],
+        'targetbattvoltage': [],
+        'net_production': [],
+        'load_watts': []
+    }
+    for row in cursor.fetchall():
+        rowdict = dict(row)
+        graph_data['battload'].append(rowdict.get('battery_load', 0))
+        graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+        graph_data['battvoltage'].append(rowdict.get('battery_voltage', 0))
+        graph_data['battwatts'].append(rowdict.get('battery_watts', 0))
+        graph_data['solarwatts'].append(rowdict.get('solar_watts', 0))
+        graph_data['targetbattvoltage'].append(rowdict.get('target_regulation_voltage', 0))
+        graph_data['net_production'].append(rowdict.get('net_production', 0))
+        graph_data['load_watts'].append(rowdict.get('load_watts', 0))
 
     return graph_data
 
 
+
 @app.route("/currentData")
 def get_current_data():
-    sql_connection = sqlite3.connect("powerdata.db")
-    sql_connection.row_factory = sqlite3.Row
-    with sql_connection:
-        data = sql_connection.execute("SELECT * FROM power_data ORDER BY record_time DESC LIMIT 1")
-    return dict(data.fetchone())
+    global current_data
+
+    return current_data
 
 
 @app.route("/statsData")
@@ -464,14 +487,31 @@ def find_cabin_sensor():
     return asyncio.run(async_find_cabin_sensor())
 
 
+#
+# Update the day accumulated data from the daily table for today.  If none is present for today, just skip updating
+#
+def refresh_daily_data():
+    sql_connection = sqlite3.connect("powerdata.db")
+    with sql_connection:
+        cursor = sql_connection.execute("SELECT * FROM daily_power_data WHERE record_date = ?",
+                                        [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
+        if cursor.rowcount > 0:
+            row = cursor.fetchone()
+            stats_data['day_load_wh'] = row['day_load_wh']
+            stats_data['day_solar_wh'] = row['day_solar_wh']
+            stats_data['day_batt_wh'] = row['day_batt_wh']
+            stats_data['last_charge_state'] = row['last_charge_state']
+
+
 def main():
-    global graph_data
-    global stats_data
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
                 battery_load REAL,
                 load_amps REAL,
+                load_watts REAL,
                 battery_voltage REAL,
+                battery_watts REAL,
+                net_production REAL,
                 battery_sense_voltage REAL,
                 battery_voltage_slow REAL,
                 battery_daily_minimum_voltage REAL,
@@ -497,10 +537,7 @@ def main():
                 last_charge_state TEXT
                 )
                 ''')
-    results = sql_connection.execute("SELECT * from daily_power_data")
-    for result in results:
-        print(result)
-    sql_connection.close()
+    refresh_daily_data()
 
     tristar_thread = threading.Thread(target=update_tristar_values, args=())
     tristar_thread.daemon = True
