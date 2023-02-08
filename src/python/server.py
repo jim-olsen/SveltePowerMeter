@@ -92,14 +92,20 @@ def update_sql_tables():
     print("Updating SQL Tables")
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
-        cursor = sql_connection.cursor()
-        result = cursor.execute('''INSERT OR REPLACE INTO daily_power_data (record_date, day_load_wh, day_solar_wh, 
+        cursor = sql_connection.execute("SELECT record_date FROM daily_power_data where record_date = ?",
+                       [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
+        if cursor.fetchone() is None:
+            stats_data['day_load_wh'] = 0
+            stats_data['day_solar_wh'] = 0
+            stats_data['day_batt_wh'] = 0
+
+        sql_connection.execute('''INSERT OR REPLACE INTO daily_power_data (record_date, day_load_wh, day_solar_wh, 
                 day_batt_wh, last_charge_state) VALUES (?,?,?,?,?);''',
                            (
                            int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple())),
                            stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
                            stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
-        result = sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
+        sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
                                 load_watts, battery_voltage, battery_watts, net_production, battery_sense_voltage, 
                                 battery_voltage_slow, battery_daily_minimum_voltage, battery_daily_maximum_voltage,
                                 target_regulation_voltage, array_voltage, array_charge_current, battery_charge_current,
@@ -336,6 +342,48 @@ def get_current_data():
 @app.route("/statsData")
 def get_stats_data():
     global stats_data
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute('''SELECT avg(day_batt_wh) AS avg_net, avg(day_load_wh) AS avg_load, 
+        avg(day_solar_wh) AS avg_solar, sum(day_load_wh) AS total_load_wh, sum(day_solar_wh) AS total_solar_wh 
+        FROM daily_power_data
+        ''')
+        summary_data = cursor.fetchone()
+        stats_data['avg_net'] = summary_data['avg_net']
+        stats_data['avg_load'] = summary_data['avg_load']
+        stats_data['avg_solar'] = summary_data['avg_solar']
+        stats_data['total_load_wh'] = summary_data['total_load_wh']
+        stats_data['total_solar_wh'] = summary_data['total_solar_wh']
+
+        cursor = sql_connection.execute(
+            '''
+            SELECT day_batt_wh AS yesterday_batt_wh, day_load_wh AS yesterday_load_wh, 
+                day_solar_wh - day_load_wh as yesterday_net_wh FROM daily_power_data WHERE record_date = ?
+            ''',
+            [int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
+            ])
+        yesterdays_data = cursor.fetchone()
+        stats_data['yesterday_batt_wh'] = yesterdays_data['yesterday_batt_wh']
+        stats_data['yesterday_load_wh'] = yesterdays_data['yesterday_load_wh']
+        stats_data['yesterday_net_wh'] = yesterdays_data['yesterday_net_wh']
+        cursor = sql_connection.execute('''
+            SELECT sum(day_solar_wh - day_load_wh) AS five_day_net FROM daily_power_data WHERE record_date >= ?
+            ''',
+            [int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=5)).timetuple()))
+            ])
+        net_data = cursor.fetchone();
+        stats_data['five_day_net'] = net_data['five_day_net']
+        cursor = sql_connection.execute('''
+            SELECT sum(day_solar_wh - day_load_wh) AS ten_day_net FROM daily_power_data WHERE record_date >= ?
+            ''',
+            [int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=10)).timetuple()))
+            ])
+        net_data = cursor.fetchone();
+        stats_data['ten_day_net'] = net_data['ten_day_net']
 
     return stats_data
 
@@ -492,15 +540,18 @@ def find_cabin_sensor():
 #
 def refresh_daily_data():
     sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
     with sql_connection:
         cursor = sql_connection.execute("SELECT * FROM daily_power_data WHERE record_date = ?",
-                                        [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
-        if cursor.rowcount > 0:
-            row = cursor.fetchone()
-            stats_data['day_load_wh'] = row['day_load_wh']
-            stats_data['day_solar_wh'] = row['day_solar_wh']
-            stats_data['day_batt_wh'] = row['day_batt_wh']
-            stats_data['last_charge_state'] = row['last_charge_state']
+
+                                     [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
+        row = cursor.fetchone()
+        if row is not None:
+            rowdict = dict(row)
+            stats_data['day_load_wh'] = rowdict['day_load_wh']
+            stats_data['day_solar_wh'] = rowdict['day_solar_wh']
+            stats_data['day_batt_wh'] = rowdict['day_batt_wh']
+            stats_data['last_charge_state'] = rowdict['last_charge_state']
 
 
 def main():
