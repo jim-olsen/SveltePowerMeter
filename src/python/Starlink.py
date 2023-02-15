@@ -2,6 +2,7 @@ import grpc
 import math
 import json
 import statistics
+import logging
 from PIL import Image
 import yagrc.reflector
 import numpy as np
@@ -16,6 +17,10 @@ except (ImportError, AttributeError):
 from spacex.api.device import device_pb2
 from spacex.api.device import device_pb2_grpc
 from spacex.api.device import dish_pb2
+
+logging.basicConfig()
+logging.getLogger('starlink').setLevel(logging.WARNING)
+logger = logging.getLogger('starlink')
 
 
 #
@@ -43,7 +48,7 @@ class Starlink:
                 importer.resolve_lazy_imports(channel)
                 self.initialized = True
         except Exception as e:
-            print("Failed to initialize Starlink, delaying...")
+            logger.warning("Failed to initialize Starlink, delaying...")
 
     #
     # return a status structure containing the values from a get_status request to the gRPC service.  This data has
@@ -152,8 +157,7 @@ class Starlink:
             response = stub.Handle(device_pb2.Request(get_history={}), timeout=10)
             result = response.dish_get_history
 
-        history = {}
-        history["current"] = result.current
+        history = {"current": result.current}
         history.update(self.get_history_object(result, "pop_ping_drop_rate", "ping_drop_rate"))
         history.update(self.get_history_object(result, "pop_ping_latency_ms", "ping_latency"))
         history.update(self.get_history_object(result, "downlink_throughput_bps", "downlink_bps"))
@@ -265,10 +269,10 @@ class Starlink:
                 response = stub.Handle(request, timeout=120)
                 return True
         except grpc.RpcError as e:
-            if (isinstance(e, grpc.Call)):
-                print("Failed to stow dish: " + e.details())
+            if isinstance(e, grpc.Call):
+                logger.error(f"Failed to stow dish: {e.details()}")
             else:
-                print("Failed to stow dish for an unknown reason")
+                logger.error("Failed to stow dish for an unknown reason")
 
         return False
 
@@ -288,10 +292,10 @@ class Starlink:
                 response = stub.Handle(request, timeout=120)
                 return True
         except grpc.RpcError as e:
-            if (isinstance(e, grpc.Call)):
-                print("Failed to unstow dish: " + e.details())
+            if isinstance(e, grpc.Call):
+                logger.error(f"Failed to unstow dish: {e.details()}")
             else:
-                print("Failed to unstow dish for an unknown reason")
+                logger.error("Failed to unstow dish for an unknown reason")
 
         return False
 
@@ -311,10 +315,10 @@ class Starlink:
                 response = stub.Handle(request, timeout=120)
                 return True
         except grpc.RpcError as e:
-            if (isinstance(e, grpc.Call)):
-                print("Failed to reboot dish: " + e.details())
+            if isinstance(e, grpc.Call):
+                logger.error(f"Failed to reboot dish: {e.details()}")
             else:
-                print("Failed to reboot dish for an unknown reason")
+                logger.error("Failed to reboot dish for an unknown reason")
 
         return False
 
@@ -327,6 +331,7 @@ class Starlink:
             status = self.get_status()
             return status.get('state', '') == "CONNECTED"
         except Exception as e:
+            logger.error(f"Failed to get the connection status {e}")
             return False
 
 

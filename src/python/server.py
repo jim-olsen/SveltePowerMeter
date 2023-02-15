@@ -17,7 +17,7 @@ import sqlite3
 import logging
 
 logging.basicConfig()
-logging.getLogger('power_meter').setLevel(logging.DEBUG)
+logging.getLogger('power_meter').setLevel(logging.INFO)
 logger = logging.getLogger('power_meter')
 
 current_data = {}
@@ -67,7 +67,7 @@ async def update_ble_values(ble_address, loop):
 
     while True:
         try:
-            logger.info("Trying to connect to sensor at", str(ble_address))
+            logger.info(f"Trying to connect to sensor at {str(ble_address)}")
             async with BleakClient(ble_address, loop=loop) as client:
 
                 # wait for BLE client to be connected
@@ -544,7 +544,7 @@ async def async_find_cabin_sensor():
     logger.info("Finding cabin sensor")
     devices = await BleakScanner.discover(timeout=10, return_adv=False)
     for d in devices:
-        logger.info(str(d.name), str(d.address), str(d.metadata), str(d.rssi))
+        logger.info(f"{d.name} {d.address} {d.metadata} {d.rssi}")
         if d.name == 'CabinSensor':
             return d.address
     return None
