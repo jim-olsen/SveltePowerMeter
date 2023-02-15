@@ -365,25 +365,30 @@ def get_stats_data():
                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
             ])
         yesterdays_data = cursor.fetchone()
-        stats_data['yesterday_batt_wh'] = yesterdays_data['yesterday_batt_wh']
-        stats_data['yesterday_load_wh'] = yesterdays_data['yesterday_load_wh']
-        stats_data['yesterday_net_wh'] = yesterdays_data['yesterday_net_wh']
+        if yesterdays_data is not None:
+            stats_data['yesterday_batt_wh'] = yesterdays_data['yesterday_batt_wh']
+            stats_data['yesterday_load_wh'] = yesterdays_data['yesterday_load_wh']
+            stats_data['yesterday_net_wh'] = yesterdays_data['yesterday_net_wh']
+
         cursor = sql_connection.execute('''
             SELECT sum(day_solar_wh - day_load_wh) AS five_day_net FROM daily_power_data WHERE record_date >= ?
             ''',
             [int(time.mktime(
                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=5)).timetuple()))
             ])
-        net_data = cursor.fetchone();
-        stats_data['five_day_net'] = net_data['five_day_net']
+        net_data = cursor.fetchone()
+        if net_data is not None:
+            stats_data['five_day_net'] = net_data['five_day_net']
+
         cursor = sql_connection.execute('''
             SELECT sum(day_solar_wh - day_load_wh) AS ten_day_net FROM daily_power_data WHERE record_date >= ?
             ''',
             [int(time.mktime(
                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=10)).timetuple()))
             ])
-        net_data = cursor.fetchone();
-        stats_data['ten_day_net'] = net_data['ten_day_net']
+        net_data = cursor.fetchone()
+        if net_data is not None:
+            stats_data['ten_day_net'] = net_data['ten_day_net']
 
     return stats_data
 
