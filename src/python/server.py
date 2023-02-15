@@ -13,8 +13,12 @@ from Shelly import Shelly
 import io
 import json
 import numpy as np
-import logging
 import sqlite3
+import logging
+
+logging.basicConfig()
+logging.getLogger('power_meter').setLevel(logging.DEBUG)
+logger = logging.getLogger('power_meter')
 
 current_data = {}
 stats_data = {
@@ -52,24 +56,24 @@ async def update_ble_values(ble_address, loop):
 
     def notification_handler(sender, data):
         """Simple notification handler which prints the data received."""
-        print("{0}: {1}".format(sender, data))
+        logger.debug("{0}: {1}".format(sender, data))
         sensor_values = data.decode("utf-8").split(':')
         current_data["battery_voltage"] = float(sensor_values[0])
         current_data["battery_load"] = float(sensor_values[1])
         current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
-        print(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
-              f"Load: {current_data['load_amps']}")
+        logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
+                     f"Load: {current_data['load_amps']}")
         data_received.set()
 
     while True:
         try:
-            print("Trying to connect to sensor at", str(ble_address))
+            logger.info("Trying to connect to sensor at", str(ble_address))
             async with BleakClient(ble_address, loop=loop) as client:
 
                 # wait for BLE client to be connected
                 while not client.is_connected():
                     await asyncio.sleep(1)
-                print("Connected to BLE Sensor")
+                logger.info("Connected to BLE Sensor")
 
                 data_received.clear()
                 # wait for data to be sent from client
@@ -79,13 +83,13 @@ async def update_ble_values(ble_address, loop):
                     await asyncio.wait_for(data_received.wait(), 20)
                     data_received.clear()
 
-                print("Client has disconnected from BLE Sensor")
+                logger.info("Client has disconnected from BLE Sensor")
                 client.stop_notify()
         except (OSError, CancelledError, TimeoutError, BleakDeviceNotFoundError):
-            print("Client is disconnected by OS")
+            logger.error("Client is disconnected by OS")
             pass
 
-        print("Disconnected, retrying connection....")
+        logger.info("Disconnected, retrying connection....")
 
 
 def update_sql_tables():
@@ -93,7 +97,8 @@ def update_sql_tables():
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
         cursor = sql_connection.execute("SELECT record_date FROM daily_power_data where record_date = ?",
-                       [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
+                                        [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0,
+                                                                                  microsecond=0).timetuple()))])
         if cursor.fetchone() is None:
             stats_data['day_load_wh'] = 0
             stats_data['day_solar_wh'] = 0
@@ -101,10 +106,11 @@ def update_sql_tables():
 
         sql_connection.execute('''INSERT OR REPLACE INTO daily_power_data (record_date, day_load_wh, day_solar_wh, 
                 day_batt_wh, last_charge_state) VALUES (?,?,?,?,?);''',
-                           (
-                           int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple())),
-                           stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
-                           stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
+                               (
+                                   int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0,
+                                                                            microsecond=0).timetuple())),
+                                   stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
+                                   stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
         sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
                                 load_watts, battery_voltage, battery_watts, net_production, battery_sense_voltage, 
                                 battery_voltage_slow, battery_daily_minimum_voltage, battery_daily_maximum_voltage,
@@ -113,32 +119,32 @@ def update_sql_tables():
                                 battery_temperature, charge_state, seconds_in_absorption_daily,
                                 seconds_in_float_daily, seconds_in_equalization_daily) VALUES 
                                 (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
-                                    (
-                                        int(time.time()),
-                                        current_data.get('battery_load', None),
-                                        current_data.get('load_amps', None),
-                                        current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0),
-                                        current_data.get('battery_voltage', None),
-                                        current_data.get('battery_voltage', 0) * current_data.get('battery_load', 0),
-                                        current_data.get('day_solar_wh', 0) - current_data.get('day_load_wh', 0),
-                                        current_data.get('battery_sense_voltage', None),
-                                        current_data.get('battery_voltage_slow', None),
-                                        current_data.get('battery_daily_minimum_voltage', None),
-                                        current_data.get('battery_daily_maximum_voltage', None),
-                                        current_data.get('target_regulation_voltage', None),
-                                        current_data.get('array_voltage', None),
-                                        current_data.get('array_charge_current', None),
-                                        current_data.get('battery_charge_current', None),
-                                        current_data.get('battery_charge_current_slow', None),
-                                        current_data.get('input_power', None),
-                                        current_data.get('solar_watts', None),
-                                        current_data.get('heatsink_temperature', None),
-                                        current_data.get('battery_temperature', None),
-                                        current_data.get('charge_state', None),
-                                        current_data.get('seconds_in_absorption_daily', None),
-                                        current_data.get('seconds_in_float_daily', None),
-                                        current_data.get('seconds_in_equalization_daily', None)
-                                    ))
+                               (
+                                   int(time.time()),
+                                   current_data.get('battery_load', None),
+                                   current_data.get('load_amps', None),
+                                   current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0),
+                                   current_data.get('battery_voltage', None),
+                                   current_data.get('battery_voltage', 0) * current_data.get('battery_load', 0),
+                                   current_data.get('day_solar_wh', 0) - current_data.get('day_load_wh', 0),
+                                   current_data.get('battery_sense_voltage', None),
+                                   current_data.get('battery_voltage_slow', None),
+                                   current_data.get('battery_daily_minimum_voltage', None),
+                                   current_data.get('battery_daily_maximum_voltage', None),
+                                   current_data.get('target_regulation_voltage', None),
+                                   current_data.get('array_voltage', None),
+                                   current_data.get('array_charge_current', None),
+                                   current_data.get('battery_charge_current', None),
+                                   current_data.get('battery_charge_current_slow', None),
+                                   current_data.get('input_power', None),
+                                   current_data.get('solar_watts', None),
+                                   current_data.get('heatsink_temperature', None),
+                                   current_data.get('battery_temperature', None),
+                                   current_data.get('charge_state', None),
+                                   current_data.get('seconds_in_absorption_daily', None),
+                                   current_data.get('seconds_in_float_daily', None),
+                                   current_data.get('seconds_in_equalization_daily', None)
+                               ))
 
 
 #
@@ -151,7 +157,7 @@ def update_running_stats():
         try:
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
                 stats_data['day_load_wh'] += 0.00139 * (
-                            current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
+                        current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
                 stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
                 stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
                                              current_data.get('battery_voltage', 0)
@@ -163,7 +169,7 @@ def update_running_stats():
 
             time.sleep(5)
         except Exception as e:
-            print('Failure in updating stats: ' + str(e))
+            logger.error('Failure in updating stats: ' + str(e))
 
 
 #
@@ -179,7 +185,7 @@ def update_tristar_values():
             rr = modbus_client.read_holding_registers(0, 91, unit=1)
             if rr is None:
                 modbus_client.close()
-                print("Failed to connect and read from tristar modbus")
+                logger.error("Failed to connect and read from tristar modbus")
             else:
                 voltage_scaling_factor = (float(rr.registers[0]) + (float(rr.registers[1]) / 100))
                 amperage_scaling_factor = (float(rr.registers[2]) + (float(rr.registers[3]) / 100))
@@ -217,7 +223,7 @@ def update_tristar_values():
                 current_data["seconds_in_equalization_daily"] = rr.registers[78]
                 modbus_client.close()
         except Exception as e:
-            print("Failed to connect to tristar modbus")
+            logger.error("Failed to connect to tristar modbus")
             modbus_client.close()
         time.sleep(5)
 
@@ -236,13 +242,14 @@ def manage_starlink():
         try:
             if not dishy.is_connected():
                 if start_not_connected_time == 0:
-                    print("Detected that dishy is not connected, starting countdown")
+                    logger.info("Detected that dishy is not connected, starting countdown")
                     start_not_connected_time = time.time()
                 elif time.time() - start_not_connected_time > 28800:
-                    print("Dishy not connected for over 8 hours, trying a power cycle")
+                    logger.warning("Dishy not connected for over 8 hours, trying a power cycle")
                     for shelly in available_shellys:
                         if shelly.name.casefold() == "dishy".casefold():
-                            print("Found shelly dishy device, power cycling dishy due to disconnected state...")
+                            logger.warning(
+                                "Found shelly dishy device, power cycling dishy due to disconnected state...")
                             status = shelly.get_relay_status(0)
                             if status["ison"] is False:
                                 shelly.turn_relay_on(0)
@@ -257,26 +264,26 @@ def manage_starlink():
                     status = shelly.get_relay_status(0)
                     if status["ison"] is False:
                         if start_power_off_time == 0:
-                            print("Found dishy powered off, starting counter")
+                            logger.info("Found dishy powered off, starting counter")
                             start_power_off_time = time.time()
                         elif time.time() - start_power_off_time > 600:
-                            print("Dishy off for over 10 minutes, turning back on")
+                            logger.warning("Dishy off for over 10 minutes, turning back on")
                             shelly.turn_relay_on(0)
                             start_power_off_time = 0
                     else:
                         start_power_off_time = 0
 
             if dishy.is_stowed():
-                print("Dishy is currently stowed")
+                logger.info("Dishy is currently stowed")
                 if start_stow_time == 0:
                     start_stow_time = time.time()
                 elif time.time() - start_stow_time > 600:
-                    print("Dishy stowed too long, unstowing dish")
+                    logger.warn("Dishy stowed too long, unstowing dish")
                     dishy.dish_unstow()
             else:
                 start_stow_time = 0
         except Exception as e:
-            print("Failure in starlink monitoring: " + str(e))
+            logger.error("Failure in starlink monitoring: " + str(e))
         time.sleep(60)
 
 
@@ -331,7 +338,6 @@ def get_graph_data():
     return graph_data
 
 
-
 @app.route("/currentData")
 def get_current_data():
     global current_data
@@ -373,9 +379,10 @@ def get_stats_data():
         cursor = sql_connection.execute('''
             SELECT sum(day_solar_wh - day_load_wh) AS five_day_net FROM daily_power_data WHERE record_date >= ?
             ''',
-            [int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=5)).timetuple()))
-            ])
+                                        [int(time.mktime(
+                                            (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                      microsecond=0) - timedelta(days=5)).timetuple()))
+                                        ])
         net_data = cursor.fetchone()
         if net_data is not None:
             stats_data['five_day_net'] = net_data['five_day_net']
@@ -383,9 +390,10 @@ def get_stats_data():
         cursor = sql_connection.execute('''
             SELECT sum(day_solar_wh - day_load_wh) AS ten_day_net FROM daily_power_data WHERE record_date >= ?
             ''',
-            [int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=10)).timetuple()))
-            ])
+                                        [int(time.mktime(
+                                            (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                      microsecond=0) - timedelta(days=10)).timetuple()))
+                                        ])
         net_data = cursor.fetchone()
         if net_data is not None:
             stats_data['ten_day_net'] = net_data['ten_day_net']
@@ -526,16 +534,28 @@ def run_ble_thread(address, loop):
     loop.run_until_complete(update_ble_values(address, loop))
 
 
+#
+# Look through all available bluetooth devices and fine one with the name CabinSensor and get its address
+#
+# RETURNS:
+#  Either None if no sensor was found, or the address of the bluetooth device representing the sensor
+#
 async def async_find_cabin_sensor():
-    print("Finding cabin sensor")
+    logger.info("Finding cabin sensor")
     devices = await BleakScanner.discover(timeout=10, return_adv=False)
     for d in devices:
-        print(str(d.name), str(d.address), str(d.metadata), str(d.rssi))
+        logger.info(str(d.name), str(d.address), str(d.metadata), str(d.rssi))
         if d.name == 'CabinSensor':
             return d.address
     return None
 
 
+#
+# The synchronous version for async_find_cabin_sensor()
+#
+# RETURNS:
+#  Either None if no sensor was found, or the address of the bluetooth device representing the sensor
+#
 def find_cabin_sensor():
     return asyncio.run(async_find_cabin_sensor())
 
@@ -549,7 +569,8 @@ def refresh_daily_data():
     with sql_connection:
         cursor = sql_connection.execute("SELECT * FROM daily_power_data WHERE record_date = ?",
 
-                                     [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0, microsecond=0).timetuple()))])
+                                        [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0,
+                                                                                  microsecond=0).timetuple()))])
         row = cursor.fetchone()
         if row is not None:
             rowdict = dict(row)
@@ -618,11 +639,11 @@ def main():
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.41"))
-            print("Shelly device 10.0.10.41 successfully added")
+            logger.info("Shelly device 10.0.10.41 successfully added")
             break
         except Exception as e:
             retry_count += 1
-            print("Failed to add shelly device 10.0.10.41: " + str(e))
+            logger.error("Failed to add shelly device 10.0.10.41: " + str(e))
             if retry_count > 5:
                 break
             time.sleep(15)
@@ -631,11 +652,11 @@ def main():
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.40"))
-            print("Shelly device 10.0.10.40 successfully added")
+            logger.info("Shelly device 10.0.10.40 successfully added")
             break
         except Exception as e:
             retry_count += 1
-            print("Failed to add shelly device 10.0.10.40: " + str(e))
+            logger.error("Failed to add shelly device 10.0.10.40: " + str(e))
             if retry_count > 5:
                 break
             time.sleep(15)
@@ -643,7 +664,6 @@ def main():
     stats_thread = threading.Thread(target=update_running_stats, args=())
     stats_thread.daemon = True
     stats_thread.start()
-
 
     app.run(port=8050, host='0.0.0.0')
 
