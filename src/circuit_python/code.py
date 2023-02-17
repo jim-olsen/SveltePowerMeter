@@ -21,11 +21,28 @@ while True:
 
     while radio.connected:
         # The 3.273 comes from the fact that the voltage divider circuit maxes out at 3.273 at 36v
+
+        # throw the first reading away
         current_battery_voltage = (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
+
+        current_battery_voltage = (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
+        current_battery_voltage += (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
+        current_battery_voltage += (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
+        current_battery_voltage /= 3
         print("Battery Voltage:", current_battery_voltage)
-        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 60.6
+        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+
+        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+        current_battery_load /= 3
         print("Battery Load:", current_battery_load, "A")
-        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * 60.6
+        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+
+        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+        current_load /= 3
         print("Current Load:", current_load, "A")
         uart_server.write(bytes("{:.2f}".format(current_battery_voltage) + ":" + "{:.2f}".format(current_battery_load) + ":" + "{:.2f}*".format(current_load), 'UTF-8'))
         time.sleep(10)
