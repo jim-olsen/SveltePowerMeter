@@ -6,7 +6,7 @@ import asyncio
 from pymodbus.client.sync import ModbusTcpClient
 from asyncio.exceptions import CancelledError, TimeoutError
 from bleak import BleakClient, BleakScanner
-from bleak.exc import BleakDeviceNotFoundError
+from bleak.exc import BleakDeviceNotFoundError, BleakDBusError
 from PIL import Image
 from Starlink import Starlink
 from Shelly import Shelly
@@ -85,7 +85,7 @@ async def update_ble_values(ble_address, loop):
 
                 logger.info("Client has disconnected from BLE Sensor")
                 client.stop_notify()
-        except (OSError, CancelledError, TimeoutError, BleakDeviceNotFoundError):
+        except (OSError, CancelledError, TimeoutError, BleakDeviceNotFoundError, BleakDBusError):
             logger.error("Client is disconnected by OS")
             pass
 
