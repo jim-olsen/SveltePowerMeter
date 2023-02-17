@@ -12,6 +12,7 @@ print(''.join('{:02x}'.format(x) for x in radio.address_bytes))
 adc_battery_voltage = analogio.AnalogIn(board.A0)
 adc_battery_load = analogio.AnalogIn(board.A1)
 adc_load = analogio.AnalogIn(board.A2)
+current_sensor_factor = 74
 uart_server = UARTService()
 advertisement = ProvideServicesAdvertisement(uart_server)
 while True:
@@ -30,18 +31,18 @@ while True:
         current_battery_voltage += (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
         current_battery_voltage /= 3
         print("Battery Voltage:", current_battery_voltage)
-        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
 
-        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
-        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
-        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * 50
+        current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
+        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
+        current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
         current_battery_load /= 3
         print("Battery Load:", current_battery_load, "A")
-        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
 
-        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * 50
-        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * 50
-        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * 50
+        current_load = (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
+        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
+        current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
         current_load /= 3
         print("Current Load:", current_load, "A")
         uart_server.write(bytes("{:.2f}".format(current_battery_voltage) + ":" + "{:.2f}".format(current_battery_load) + ":" + "{:.2f}*".format(current_load), 'UTF-8'))
