@@ -1,4 +1,10 @@
 import requests
+import logging
+
+logging.basicConfig()
+logging.getLogger('shelly_device').setLevel(logging.WARNING)
+logger = logging.getLogger('shelly_device')
+
 
 class Shelly:
     shelly_url = None
@@ -29,7 +35,7 @@ class Shelly:
         if r.status_code == 200:
             return r.json()
         else:
-            print("Failed to retrieve status from Shelly+ " + r.status_code)
+            logger.error(f"Failed to retrieve status from Shelly+ {r.status_code}")
             return {}
 
     def get_settings(self):
@@ -37,7 +43,7 @@ class Shelly:
         if r.status_code == 200:
             return r.json()
         else:
-            print("Failed to retrieve settings from Shelly+ " + r.status_code)
+            logger.error(f"Failed to retrieve settings from Shelly+ {r.status_code}")
             return {}
 
     def get_relay_status(self, relay=0):
@@ -45,7 +51,7 @@ class Shelly:
         if r.status_code == 200:
             return r.json()
         else:
-            print("Failed to retrieve relay status from Shelly+ " + r.status_code)
+            logger.error(f"Failed to retrieve relay status from Shelly+ {r.status_code}")
             return {}
 
     def turn_relay_on(self, relay=0):
@@ -53,7 +59,7 @@ class Shelly:
         if r.status_code == 200:
             return r.json()
         else:
-            print("Failed to turn relay on for Shelly+ " + r.status_code)
+            logger.error(f"Failed to turn relay on for Shelly+ {r.status_code}")
             return {}
 
     def turn_relay_off(self, relay=0):
@@ -61,7 +67,7 @@ class Shelly:
         if r.status_code == 200:
             return r.json()
         else:
-            print("Failed to turn relay off for Shelly+ " + r.status_code)
+            logger.error(f"Failed to turn relay off for Shelly+ {r.status_code}")
             return {}
 
     def power_cycle_relay(self, relay=0, delay=5):
@@ -73,12 +79,13 @@ class Shelly:
                     if current_status["ison"]:
                         break
                 else:
-                    print("Received a status response on power cycle with no relay status, aborting... " + current_status)
+                    logger.error(f"Received a status response on power cycle with no relay status, aborting... {current_status}")
                     break
             return r.json()
         else:
-            print("Failed to turn relay off for Shelly+ " + r.status_code)
+            logger.error(f"Failed to turn relay off for Shelly+ {r.status_code}")
             return {}
+
 
 def main():
     shelly = Shelly("http://10.0.10.41")
