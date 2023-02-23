@@ -4,9 +4,19 @@
     // This is done centrally so the timing is consistent between components and the fetches are reduced by sharing the
     // data between all components.  Any component wanting data should subscribe to this datasource
     //
+    import {onDestroy} from "svelte";
     import {powerStatsData} from "../../stores";
     import {powerGraphData} from "../../stores";
     import {powerCurrentData} from "../../stores";
+    import {powerGraphDuration} from "../../stores";
+
+    let graphDuration = $powerGraphDuration
+
+    const unsubscribeDuration = powerGraphDuration.subscribe(data => {
+        graphDuration = data;
+    })
+
+    onDestroy(unsubscribeDuration)
 
     function getStatsData() {
         fetch("/statsData", {
@@ -21,7 +31,7 @@
     }
 
     function getGraphData() {
-        fetch("/graphData", {
+        fetch(`/graphData?days=${graphDuration}`, {
             headers: {
                 "Accept": "application/json"
             }

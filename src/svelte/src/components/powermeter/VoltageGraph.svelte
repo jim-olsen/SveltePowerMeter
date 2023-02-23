@@ -1,6 +1,7 @@
 <script>
     import {onDestroy} from 'svelte'
     import {powerGraphData} from "../../stores";
+    import {powerGraphDuration} from "../../stores";
     import LineChart from "../d3/LineChart.svelte";
 
     export let chartWidth=800
@@ -40,5 +41,11 @@
     }
 
 </script>
-<LineChart XAxisTitle="Time" YAxisTitle="Volts" dataset={graphData} additionalDataSet={secondGraphData}
+<div style="display:flex; flex-flow:row">
+    <LineChart XAxisTitle="Time" YAxisTitle="Volts" dataset={graphData} additionalDataSet={secondGraphData}
            height={chartHeight} width={chartWidth} XAxisTickFormat={formatTime} />
+    <div style="display:flex; flex-flow:column">
+        <button on:click={()=> {$graphData+= 1;}}>&nbsp;&nbsp;+&nbsp;&nbsp;</button>
+        <button on:click={()=> {$graphData > 1 ? $graphData-= 1 : $graphData = 1;}}>&nbsp;&nbsp;-&nbsp;&nbsp;</button>
+    </div>
+</div>

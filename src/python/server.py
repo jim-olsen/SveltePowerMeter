@@ -308,7 +308,7 @@ def home(path):
 #
 @app.route("/graphData")
 def get_graph_data():
-    days = request.args.get('days', 4)
+    days = int(request.args.get('days', 4))
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.row_factory = sqlite3.Row
     with sql_connection:
