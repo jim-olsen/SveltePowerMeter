@@ -14,6 +14,7 @@
 
     const unsubscribeDuration = powerGraphDuration.subscribe(data => {
         graphDuration = data;
+        getGraphData();
     })
 
     onDestroy(unsubscribeDuration)

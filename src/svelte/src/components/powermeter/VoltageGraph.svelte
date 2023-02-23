@@ -40,12 +40,26 @@
             .format(new Date(timeVal));
     }
 
+    function handleKeyDown(event) {
+        if (!event.repeat) {
+            switch(event.key) {
+                case "a":
+                    $powerGraphDuration > 1 ? $powerGraphDuration-= 1 : $powerGraphDuration = 1;
+                    break;
+                case "s":
+                    $powerGraphDuration+= 1;
+                    break;
+            }
+        }
+    }
+
 </script>
+<svelte:window on:keydown={handleKeyDown}/>
 <div style="display:flex; flex-flow:row">
     <LineChart XAxisTitle="Time" YAxisTitle="Volts" dataset={graphData} additionalDataSet={secondGraphData}
            height={chartHeight} width={chartWidth} XAxisTickFormat={formatTime} />
     <div style="display:flex; flex-flow:column">
-        <button on:click={()=> {$graphData+= 1;}}>&nbsp;&nbsp;+&nbsp;&nbsp;</button>
-        <button on:click={()=> {$graphData > 1 ? $graphData-= 1 : $graphData = 1;}}>&nbsp;&nbsp;-&nbsp;&nbsp;</button>
+        <button on:click={()=> {$powerGraphDuration+= 1;}}>&nbsp;&nbsp;+&nbsp;&nbsp;</button>
+        <button on:click={()=> {$powerGraphDuration > 1 ? $powerGraphDuration-= 1 : $powerGraphDuration = 1;}}>&nbsp;&nbsp;-&nbsp;&nbsp;</button>
     </div>
 </div>
