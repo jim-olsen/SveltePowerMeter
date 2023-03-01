@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
 
-export const powerGraphDuration = writable(4)
+export const powerGraphDuration = writable(2)
 
 /**
  * Retrieve the graph data for values over time.  The powerGraphDuration writeable provides the number of days over
@@ -26,7 +26,7 @@ function getPowerGraphData() {
 export const powerGraphData = writable({}, () => {
     let unsubscribe = powerGraphDuration.subscribe(getPowerGraphData)
     getPowerGraphData()
-    let powerGraphInterval = setInterval(getPowerGraphData, 5000);
+    let powerGraphInterval = setInterval(getPowerGraphData, 15000);
     return () => {
         unsubscribe();
         clearInterval(powerGraphInterval);
