@@ -398,6 +398,23 @@ def get_stats_data():
         if net_data is not None:
             stats_data['ten_day_net'] = net_data['ten_day_net']
 
+        cursor = sql_connection.execute('''
+            SELECT avg(load_watts) AS five_min_load_watts, avg(battery_watts) AS five_min_battery_watts, 
+            avg(solar_watts) AS five_min_solar_watts, avg(battery_voltage) AS five_min_battery_voltage 
+            FROM daily_power_data WHERE record_date >= ? 
+            ''',
+                                        [int(time.mktime(
+                                            (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                      microsecond=0) -
+                                             timedelta(minutes=5)).timetuple()))
+                                        ])
+        net_data = cursor.fetchone()
+        if net_data is not None:
+            stats_data['five_min_load_watts'] = net_data['five_min_load_watts']
+            stats_data['five_min_battery_watts'] = net_data['five_min_battery_watts']
+            stats_data['five_min_solar_watts'] = net_data['five_min_solar_watts']
+            stats_data['five_min_battery_voltage'] = net_data['five_min_battery_voltage']
+
     return stats_data
 
 
