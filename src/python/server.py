@@ -401,11 +401,10 @@ def get_stats_data():
         cursor = sql_connection.execute('''
             SELECT avg(load_watts) AS five_min_load_watts, avg(battery_watts) AS five_min_battery_watts, 
             avg(solar_watts) AS five_min_solar_watts, avg(battery_voltage) AS five_min_battery_voltage 
-            FROM power_data WHERE record_date >= ? 
+            FROM power_data WHERE record_time >= ? 
             ''',
                                         [int(time.mktime(
-                                            (datetime.today().replace(hour=0, minute=0, second=0,
-                                                                      microsecond=0) -
+                                            (datetime.today() -
                                              timedelta(minutes=5)).timetuple()))
                                         ])
         net_data = cursor.fetchone()
