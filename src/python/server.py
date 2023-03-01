@@ -278,7 +278,7 @@ def manage_starlink():
                 if start_stow_time == 0:
                     start_stow_time = time.time()
                 elif time.time() - start_stow_time > 600:
-                    logger.warn("Dishy stowed too long, unstowing dish")
+                    logger.warning("Dishy stowed too long, unstowing dish")
                     dishy.dish_unstow()
             else:
                 start_stow_time = 0
@@ -401,7 +401,7 @@ def get_stats_data():
         cursor = sql_connection.execute('''
             SELECT avg(load_watts) AS five_min_load_watts, avg(battery_watts) AS five_min_battery_watts, 
             avg(solar_watts) AS five_min_solar_watts, avg(battery_voltage) AS five_min_battery_voltage 
-            FROM daily_power_data WHERE record_date >= ? 
+            FROM power_data WHERE record_date >= ? 
             ''',
                                         [int(time.mktime(
                                             (datetime.today().replace(hour=0, minute=0, second=0,
