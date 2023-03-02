@@ -15,6 +15,9 @@ import json
 import numpy as np
 import sqlite3
 import logging
+import paho.mqtt.client as mqtt
+import requests
+import uuid
 
 logging.basicConfig()
 logging.getLogger('power_meter').setLevel(logging.INFO)
@@ -34,6 +37,8 @@ stats_data = {
     'avg_net': 0.0,
     'avg_solar': 0.0,
 }
+weather_data = {}
+blueiris_alert = {}
 
 UART_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for TX
 UART_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for RX
@@ -229,6 +234,23 @@ def update_tristar_values():
 
 
 #
+# For development purposes, allow collection of the live power data from an existing instance rather than going live
+# to the bluetooth device.  This allows development to be done from a remote location.
+#
+def update_through_proxy(proxy):
+    global current_data
+
+    while True:
+        try:
+            r = requests.get(proxy + '/currentData')
+            if r.status_code == 200:
+                current_data = r.json()
+        except Exception as e:
+            logger.error(f"Failed to contact proxy: {e}")
+        time.sleep(5)
+
+
+#
 # Monitor the starlink for multiple potential problem situations.  First, make sure that the starlink is responding
 # correctly.  If the starlink unit is not available, eventually we want to try a power cycle on it.  Also check to see
 # if the unit has been stowed.  If it has been stowed for over 10 minutes, then we want to unstow it.
@@ -343,6 +365,19 @@ def get_current_data():
     global current_data
 
     return current_data
+
+
+@app.route("/weatherData")
+def get_weather_data():
+    global weather_data
+
+    return weather_data
+
+@app.route("/blueIrisAlert")
+def get_blueiris_alert():
+    global blueiris_alert
+
+    return blueiris_alert
 
 
 @app.route("/statsData")
@@ -477,7 +512,7 @@ def reboot_dish():
 #
 # Get the shelly object instance matching the name.  Return none if no matching Shelly
 #
-def get_shelly_by_name(name) -> Shelly:
+def get_shelly_by_name(name):
     for shelly in available_shellys:
         if shelly.get_settings().get("name", None) == name:
             return shelly
@@ -596,7 +631,31 @@ def refresh_daily_data():
             stats_data['last_charge_state'] = rowdict['last_charge_state']
 
 
-def main():
+def start_mqtt_client():
+    def on_connect(client, userdata, flags, rc):
+        logger.info("MQTT Client Connected, subscribing...")
+        client.subscribe("weather/loop")
+        client.subscribe("blueiris")
+
+    def on_message(client, userdata, msg):
+        global weather_data, blueiris_alert
+
+        logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
+        if msg.topic == "weather/loop":
+            weather_data = json.loads(msg.payload)
+        elif msg.topic == "blueiris":
+            blueiris_alert = json.loads(msg.payload)
+            blueiris_alert['time'] = int(time.mktime(datetime.today().timetuple()))
+            blueiris_alert['id'] = str(uuid.uuid4())
+
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect("10.0.10.31", 1883, 60)
+    client.loop_forever()
+
+
+def main(proxy=None):
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
                 battery_load REAL,
@@ -632,26 +691,34 @@ def main():
                 ''')
     refresh_daily_data()
 
-    tristar_thread = threading.Thread(target=update_tristar_values, args=())
-    tristar_thread.daemon = True
-    tristar_thread.start()
-
     starlink_thread = threading.Thread(target=manage_starlink, args=())
     starlink_thread.daemon = True
     starlink_thread.start()
 
-    loop = asyncio.get_event_loop()
-    while True:
-        ble_address = loop.run_until_complete(async_find_cabin_sensor())
+    if proxy is None:
+        tristar_thread = threading.Thread(target=update_tristar_values, args=())
+        tristar_thread.daemon = True
+        tristar_thread.start()
+
+        loop = asyncio.get_event_loop()
+        retry_count = 0
+        while True:
+            ble_address = loop.run_until_complete(async_find_cabin_sensor())
+            retry_count += 1
+            if ble_address is not None or retry_count > 5:
+                break
         if ble_address is not None:
-            break
-    ble_thread = threading.Thread(target=run_ble_thread, args=(ble_address, loop))
-    ble_thread.daemon = True
-    ble_thread.start()
+            ble_thread = threading.Thread(target=run_ble_thread, args=(ble_address, loop))
+            ble_thread.daemon = True
+            ble_thread.start()
 
-    logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+        logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+    else:
+        proxy_thread = threading.Thread(target=update_through_proxy, args=(proxy,))
+        proxy_thread.daemon = True
+        proxy_thread.start()
 
-    retry_count = 5
+    retry_count = 0
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.41"))
@@ -664,7 +731,7 @@ def main():
                 break
             time.sleep(15)
 
-    retry_count = 5
+    retry_count = 0
     while True:
         try:
             available_shellys.append(Shelly("http://10.0.10.40"))
@@ -681,6 +748,10 @@ def main():
     stats_thread.daemon = True
     stats_thread.start()
 
+    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
+    mqtt_thread.daemon = True
+    mqtt_thread.start()
+
     app.run(port=8050, host='0.0.0.0')
 
 
@@ -689,4 +760,5 @@ def main():
 # execute this python file to startup your server and serve the svelte app
 #
 if __name__ == "__main__":
-    main()
+    main(proxy="http://10.0.10.32:8050")
+    # main()
