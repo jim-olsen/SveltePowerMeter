@@ -760,5 +760,5 @@ def main(proxy=None):
 # execute this python file to startup your server and serve the svelte app
 #
 if __name__ == "__main__":
-    main(proxy="http://10.0.10.32:8050")
-    # main()
+    # main(proxy="http://10.0.10.32:8050")
+    main()
