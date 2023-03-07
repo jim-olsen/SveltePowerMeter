@@ -383,7 +383,7 @@ def get_blueiris_alert():
     return_value = blueiris_alert.copy()
 
     if no_image:
-        return_value.pop('camera', None)
+        return_value.pop('alertImage', None)
 
     return return_value
 
