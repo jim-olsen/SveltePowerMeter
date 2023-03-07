@@ -380,14 +380,12 @@ def get_blueiris_alert():
 
     no_image = request.args.get('noImage', 'False').lower() == 'true'
 
-    if no_image:
-        return {
-            'camera': blueiris_alert['camera'],
-            'id': blueiris_alert['id'],
-            'time': blueiris_alert['time']
-        }
+    return_value = blueiris_alert.copy()
 
-    return blueiris_alert
+    if no_image:
+        return_value.pop('camera', None)
+
+    return return_value
 
 
 @app.route("/statsData")
