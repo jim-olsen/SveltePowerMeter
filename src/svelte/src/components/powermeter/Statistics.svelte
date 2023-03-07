@@ -18,7 +18,7 @@
         color: #fca503;
         }
 </style>
-<div style="display:flex; flex-flow:column">
+<div style="display:flex; flex-flow:column;">
     <table>
         <tbody>
             <tr>

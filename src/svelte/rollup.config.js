@@ -73,6 +73,14 @@ export default {
                 {
                     from: '/shelly',
                     to: 'http://10.0.10.32:8050/shelly'
+                },
+                {
+                    from: '/blueIrisAlert',
+                    to: 'http://10.0.10.32:8050/blueIrisAlert'
+                },
+                {
+                    from: '/weatherData',
+                    to: 'http://10.0.10.32:8050/weatherData'
                 }
                 ]
         })
