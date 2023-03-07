@@ -1,6 +1,6 @@
 <script xmlns="http://www.w3.org/1999/xhtml">
     import ShellyRelayDevice from "./ShellyRelayDevice.svelte";
-    import { onMount } from "svelte";
+    import {onDestroy, onMount} from "svelte";
 
     let shellyDevices = []
 
@@ -25,6 +25,8 @@
         clearInterval(deviceInterval);
         deviceInterval = setInterval(getDevices, 5000);
     }
+
+    onDestroy(() => { clearInterval(deviceInterval)})
 </script>
 {#each shellyDevices as device}
     <div style="display:flex; flex-flow: column; gap:10px">

@@ -1,6 +1,6 @@
 <script xmlns="http://www.w3.org/1999/xhtml">
     import Switch from "../Switch.svelte";
-    import { onMount } from "svelte";
+    import {onDestroy, onMount} from "svelte";
 
     export let shellyDeviceName
 
@@ -67,5 +67,7 @@
     }
 
     $:switchValue && executeCommand();
+
+    onDestroy(() => clearInterval(statusInterval));
 </script>
 <Switch bind:value={switchValue} label={shellyDeviceName} cycleButton=true cycleButtonAction={powerCycle} fontSize={24} design="slider" />
