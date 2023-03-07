@@ -22,10 +22,11 @@
     import BatteryWattsGraph from "./components/powermeter/BatteryWattsGraph.svelte";
     import LoadGraph from "./components/powermeter/LoadGraph.svelte";
     import Fa from 'svelte-fa'
+    import BlueIrisAlert from "./components/blueiris/BlueIrisAlert.svelte";
     import {
         faDashboard, faPlug, faWifiStrong, faHandPointer, faLightbulb, faSnowflake, faBarChart,
         faSun, faCarBattery, faBoltLightning, faPlugCircleBolt, faSatelliteDish, faTachographDigital,
-        faGaugeHigh, faLinkSlash, faGamepad
+        faGaugeHigh, faLinkSlash, faGamepad, faExclamationTriangle
     } from '@fortawesome/free-solid-svg-icons'
 
     let dashboard = true;
@@ -66,6 +67,10 @@
         <button class="tabButton"
                 on:click={()=> {currentView = 'weather'}}>
             <Fa icon={faSnowflake} size="2x"/>
+        </button>
+        <button class="tabButton"
+                on:click={()=> {currentView = 'alerts'}}>
+            <Fa icon={faExclamationTriangle} size="2x"/>
         </button>
     </div>
     {#if currentView === 'powerMeter'}
@@ -324,5 +329,8 @@
         <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;">
             <ShellyDeviceList/>
         </div>
+    {/if}
+    {#if currentView === 'alerts'}
+        <BlueIrisAlert />
     {/if}
 </div>

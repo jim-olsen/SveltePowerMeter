@@ -52,6 +52,7 @@ export default {
         !production && dev({
             dirs: ['public'],
             spa: 'public/index.html',
+            host: '0.0.0.0',
             port: 8080,
             proxy: [
                 {

@@ -2,6 +2,8 @@ import { writable, get } from 'svelte/store';
 
 export const powerGraphDuration = writable(2)
 
+let lastBlueIrisAlert = {};
+
 /**
  * Retrieve the graph data for values over time.  The powerGraphDuration writeable provides the number of days over
  * which to fetch the data.
@@ -86,6 +88,39 @@ export const powerStatsData = writable({}, () => {
         clearInterval(powerStatsInterval);
     };
 });
+
+/**
+ * Retrieve the last recorded alert from blue iris
+ */
+function getBlueIrisAlert() {
+    fetch("/blueIrisAlert", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            if (d.hasOwnProperty("id") &&
+                (!lastBlueIrisAlert.hasOwnProperty("id") || lastBlueIrisAlert.id !== d.id)) {
+                    blueIrisAlert.set(d)
+                    lastBlueIrisAlert = d;
+                    console.log("Setting blue iris alert " + lastBlueIrisAlert.id + "!=" + d.id );
+            }
+        });
+}
+
+/**
+ * A subscribable that contains the latest alert from blue iris
+ * @type {Writeable<{}>}
+ */
+export const blueIrisAlert = writable({}, () => {
+    getBlueIrisAlert();
+    let blueIrisAlertInterval = setInterval(getBlueIrisAlert, 10000);
+    return () => {
+        clearInterval(blueIrisAlertInterval);
+        lastBlueIrisAlert = {};
+    }
+})
 
 /**
  * Returns live starlink status values as defined by the dishy component of starlink
