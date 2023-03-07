@@ -373,9 +373,19 @@ def get_weather_data():
 
     return weather_data
 
+
 @app.route("/blueIrisAlert")
 def get_blueiris_alert():
     global blueiris_alert
+
+    no_image = request.args.get('noImage', 'False').lower() == 'true'
+
+    if no_image:
+        return {
+            'camera': blueiris_alert['camera'],
+            'id': blueiris_alert['id'],
+            'time': blueiris_alert['time']
+        }
 
     return blueiris_alert
 
@@ -645,7 +655,7 @@ def start_mqtt_client():
             weather_data = json.loads(msg.payload)
         elif msg.topic == "blueiris":
             blueiris_alert = json.loads(msg.payload)
-            blueiris_alert['time'] = int(time.mktime(datetime.today().timetuple()))
+            blueiris_alert['time'] = int(time.time() * 1000)
             blueiris_alert['id'] = str(uuid.uuid4())
 
     client = mqtt.Client()
