@@ -16,5 +16,5 @@
     onDestroy(unsubscribeStatus)
 </script>
 <div style="display:flex; flex-flow: column;justify-content: center;">
-    <span><b>Uptime: {uptime}</b></span>
+    <span class="mediumSmallText">Uptime: {uptime}</span>
 </div>

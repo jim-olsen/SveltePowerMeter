@@ -32,12 +32,15 @@
     onDestroy(unsubscribeStatus);
     onDestroy(unsubscribeHistory);
 </script>
-<div style="display:flex; flex-flow: row; gap:10px">
-    <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Upload (MBps)" dataset={uploadChartData} width={chartWidth}
+<div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center;">
+    <span class="mediumSmallText">Upload Speeds</span>
+    <div style="display:flex; flex-flow: row; gap:10px">
+        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Upload (MBps)" dataset={uploadChartData} width={chartWidth}
                height={chartHeight}/>
-    <div style="display:flex; flex-flow: column;justify-content: flex-start;">
-        <span><b>Cur: {uploadMbps}</b></span>
-        <span><b>Avg: {uploadAvgMbps}</b></span>
-        <span><b>Max: {uploadMaxMbps}</b></span>
+        <div style="display:flex; flex-flow: column;justify-content: flex-start;">
+            <span class="mediumSmallText">Cur: {uploadMbps}</span>
+            <span class="mediumSmallText">Avg: {uploadAvgMbps}</span>
+            <span class="mediumSmallText">Max: {uploadMaxMbps}</span>
+        </div>
     </div>
 </div>

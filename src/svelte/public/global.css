@@ -122,3 +122,43 @@ button:disabled{
     color: #cccccc;
     font-size: 30px;
 }
+
+h2 {
+    font-size: 3.2vh;
+    color: #fca503;
+}
+
+body tbody {
+    font-size: 1vh;
+    color: #fca503;
+}
+
+.largeText {
+    font-size: 12vh;
+    color: #fca503;
+}
+
+.largerText {
+    font-size: 9vh;
+    color: #fca503;
+}
+
+.normalText {
+    font-size: 7vh;
+    color: #fca503;
+}
+
+.mediumSmallText {
+    font-size: 5vh;
+    color: #fca503;
+}
+
+.smallText {
+    font-size: 3vh;
+    color: #fca503;
+}
+
+.xSmallText {
+    font-size: 3vh;
+    color: #fca503;
+}

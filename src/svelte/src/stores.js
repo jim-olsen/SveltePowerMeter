@@ -1,8 +1,10 @@
-import { writable, get } from 'svelte/store';
+import {writable, get} from 'svelte/store';
 
 export const powerGraphDuration = writable(2)
 
 let lastBlueIrisAlert = {};
+
+export const currentView = writable('dashboard');
 
 /**
  * Retrieve the graph data for values over time.  The powerGraphDuration writeable provides the number of days over
@@ -54,7 +56,7 @@ function getPowerCurrentData() {
  * A subscribable that contains the latest live values for power related values
  * @type {Writable<{}>}
  */
-export const powerCurrentData = writable( {}, () => {
+export const powerCurrentData = writable({}, () => {
     getPowerCurrentData();
     let powerCurrentInterval = setInterval(getPowerCurrentData, 5000);
     return () => {
@@ -93,7 +95,7 @@ export const powerStatsData = writable({}, () => {
  * Retrieve the last recorded alert from blue iris
  */
 function getBlueIrisAlert() {
-    fetch("/blueIrisAlert", {
+    fetch("/blueIrisAlert?noImage=True", {
         headers: {
             "Accept": "application/json"
         }
@@ -102,9 +104,18 @@ function getBlueIrisAlert() {
         .then(d => {
             if (d.hasOwnProperty("id") &&
                 (!lastBlueIrisAlert.hasOwnProperty("id") || lastBlueIrisAlert.id !== d.id)) {
-                    blueIrisAlert.set(d)
-                    lastBlueIrisAlert = d;
-                    console.log("Setting blue iris alert " + lastBlueIrisAlert.id + "!=" + d.id );
+                fetch("/blueIrisAlert", {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                })
+                    .then(d => d.json())
+                    .then(d => {
+                        blueIrisAlert.set(d)
+                        lastBlueIrisAlert = d;
+                    });
+            } else {
+                blueIrisAlert.set(lastBlueIrisAlert)
             }
         });
 }
@@ -115,7 +126,7 @@ function getBlueIrisAlert() {
  */
 export const blueIrisAlert = writable({}, () => {
     getBlueIrisAlert();
-    let blueIrisAlertInterval = setInterval(getBlueIrisAlert, 10000);
+    let blueIrisAlertInterval = setInterval(getBlueIrisAlert, 3000);
     return () => {
         clearInterval(blueIrisAlertInterval);
         lastBlueIrisAlert = {};
@@ -143,7 +154,7 @@ function getStarlinkStatus() {
  */
 export const starlinkStatus = writable({}, () => {
     getStarlinkStatus();
-    let statusInterval = setInterval(getStarlinkStatus, 500)
+    let statusInterval = setInterval(getStarlinkStatus, 5000)
     return () => {
         clearInterval(statusInterval)
     }
@@ -168,12 +179,38 @@ function getStarlinkHistory() {
  * A subscribable that contains the latest historical data from the dishy component of starlink
  * @type {Writable<{}>}
  */
-export const starlinkHistory = writable( {}, () => {
+export const starlinkHistory = writable({}, () => {
     getStarlinkHistory();
-    let historyInterval = setInterval(getStarlinkHistory, 1000);
+    let historyInterval = setInterval(getStarlinkHistory, 10000);
     return () => {
         clearInterval(historyInterval);
     }
 })
 
+/**
+ * Retrieve the current weather data
+ */
+function getWeatherData() {
+    fetch("/weatherData", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            weatherData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest historical data from the dishy component of starlink
+ * @type {Writable<{}>}
+ */
+export const weatherData = writable({}, () => {
+    getWeatherData()
+    let weatherInterval = setInterval(getWeatherData, 5000);
+    return () => {
+        clearInterval(weatherInterval);
+    }
+})
 

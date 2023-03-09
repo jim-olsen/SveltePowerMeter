@@ -25,13 +25,15 @@
 
     onDestroy(unsubscribeHistory);
 </script>
-<div style="display:flex; flex-flow: row;gap: 10px;">
-    <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Success %" dataset={pingDropChartData} height={chartHeight}
+<div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center;">
+    <span class="mediumSmallText">Ping Drop Percent</span>
+    <div style="display:flex; flex-flow: row;gap: 10px;">
+        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Success %" dataset={pingDropChartData} height={chartHeight}
                width={chartWidth}/>
-    <div style="display:flex; flex-flow: column; justify-content: flex-start;">
-        <span><b>Ping Loss %</b></span>
-        <span><b>Cur: {pingDrop}%</b></span>
-        <span><b>Avg: {pingDropAvg}%</b></span>
-        <span><b>Max: {pingDropMax}%</b></span>
+        <div style="display:flex; flex-flow: column; justify-content: flex-start;">
+            <span class="mediumSmallText">Cur: {pingDrop}%</span>
+            <span class="mediumSmallText">Avg: {pingDropAvg}%</span>
+            <span class="mediumSmallText">Max: {pingDropMax}%</span>
+        </div>
     </div>
 </div>

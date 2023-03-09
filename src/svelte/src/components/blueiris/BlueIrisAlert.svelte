@@ -11,12 +11,6 @@
 
     onDestroy(unsubscribeBlueIris)
 </script>
-<style>
-    h2 {
-        font-size: 30px;
-        color: #fca503;
-    }
-</style>
 <div style="display:flex; flex-flow:column; justify-content: center;">
     {#if currentAlert.hasOwnProperty("alertImage")}
         <h2>Blue Iris Alert on {currentAlert.hasOwnProperty("camera") ? currentAlert.camera : 'None'} {currentAlert.hasOwnProperty("time") ? 'at ' + new Date(currentAlert.time).toLocaleString() : ''}</h2>

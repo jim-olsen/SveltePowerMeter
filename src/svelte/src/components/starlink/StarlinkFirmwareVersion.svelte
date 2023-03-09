@@ -13,5 +13,5 @@
     onDestroy(unsubscribeStatus)
 </script>
 <div style="display:flex; flex-flow: column;justify-content: center;">
-    <span><b>Firwmare Version: {firmware}</b></span>
+    <span class="mediumSmallText">Fw: {firmware}</span>
 </div>

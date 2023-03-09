@@ -17,23 +17,23 @@
 
     onDestroy(unsubscribeStatus)
 </script>
-<div style="display:flex; flex-flow:column">
+<div style="display:flex; flex-flow:column; justify-content: space-between;">
     <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; gap: 30px;">
-        <h4>{state}</h4>
+        <span class="normalText">{state}</span>
         {#if state == 'CONNECTED'}
-            <div style="background-color: green; border-radius: 9999px; height: 30px; width: 30px"></div>
+            <div style="background-color: lightgreen; border-radius: 9999px; height: 30px; width: 30px"></div>
         {:else}
-            <div style="background-color: red; border-radius: 9999px; height: 30px; width: 30px"></div>
+            <div style="background-color: orangered; border-radius: 9999px; height: 30px; width: 30px"></div>
         {/if}
     </div>
     <div style="display:flex; flex-flow: row; justify-content: space-around; gap: 20px;">
         {#each services as service}
             <div style="display:flex; flex-flow: row; justify-content: space-between; align-items: center; gap:10px;">
-                <h4>{service.serviceName}</h4>
+                <span class="smallText">{service.serviceName}</span>
                 {#if service.serviceState}
-                    <div style="background-color: green; border-radius: 9999px; height: 10px; width: 10px"></div>
+                    <div style="background-color: lightgreen; border-radius: 9999px; height: 10px; width: 10px"></div>
                 {:else}
-                    <div style="background-color: red; border-radius: 9999px; height: 10px; width: 10px"></div>
+                    <div style="background-color: orangered; border-radius: 9999px; height: 10px; width: 10px"></div>
                 {/if}
             </div>
         {/each}
