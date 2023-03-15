@@ -10,7 +10,10 @@ body {
     margin: 0;
     padding: 8px;
     box-sizing: border-box;
-    font-family: Helvetica, serif
+    font-family: Helvetica, serif;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
 }
 
 a {
@@ -133,6 +136,14 @@ body tbody {
     color: #fca503;
 }
 
+.card {
+    box-shadow: 0 -4px 8px 3px rgba(169,169,169,0.4);
+    transition: 0.3s;
+    border-radius: 20px;
+    box-sizing: border-box;
+    padding: 10px;
+}
+
 .largeText {
     font-size: 12vh;
     color: #fca503;
@@ -161,4 +172,36 @@ body tbody {
 .xSmallText {
     font-size: 3vh;
     color: #fca503;
+}
+
+.icon-spinner {
+    animation: spin-animation 25s linear infinite;
+    display: inline-block;
+    will-change: transform;
+}
+
+@keyframes spin-animation {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+
+.icon-pulser {
+    animation: pulse 5s linear infinite;
+    display: inline-block;
+    will-change: transform;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.50);
+    }
+
+    70% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(0.50);
+    }
 }

@@ -10,7 +10,7 @@
 
     onDestroy(unsubscribeCurrent);
 </script>
-<div style="display:flex; flex-flow:row; justify-content: space-between;" on:click={() => currentView.set('dashboard')}>
+<div style="display:flex; flex-flow:row; justify-content: space-between;" class="card" on:click={() => currentView.set('dashboard')}>
     <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
         <span class="normalText">{currentData?.battery_voltage ? (currentData?.battery_voltage)?.toFixed(1) : '---'}</span>
         <div style="display:flex; flex-flow:column; justify-content: stretch;">

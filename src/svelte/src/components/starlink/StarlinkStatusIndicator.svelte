@@ -20,7 +20,7 @@
 <div style="display:flex; flex-flow:column; justify-content: space-between;">
     <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; gap: 30px;">
         <span class="normalText">{state}</span>
-        {#if state == 'CONNECTED'}
+        {#if state === 'CONNECTED'}
             <div style="background-color: lightgreen; border-radius: 9999px; height: 30px; width: 30px"></div>
         {:else}
             <div style="background-color: orangered; border-radius: 9999px; height: 30px; width: 30px"></div>
