@@ -19,10 +19,10 @@
         <WindDisplay diameter={windDiameter}></WindDisplay>
     </div>
     <div style="display:flex; flex-flow: column; justify-content: space-between; flex: 9; gap: 20px; height: 96%;">
-        <div class="card" style="display:flex; flex-flow: row;">
-            <Thermometer temperatureField="outTemp_F" title="Outside"></Thermometer>
-            <Thermometer temperatureField="windchill_F" title="Windchill"></Thermometer>
-            <Thermometer temperatureField="inTemp_F" title="Inside"></Thermometer>
+        <div class="card" style="display:flex; flex-flow: row; justify-content: space-evenly; align-items: stretch;">
+            <Thermometer temperatureField="outTemp_F" title="Outside" height="200"></Thermometer>
+            <Thermometer temperatureField="windchill_F" title="Windchill" height="200"></Thermometer>
+            <Thermometer temperatureField="inTemp_F" title="Inside" height="200"></Thermometer>
         </div>
         <div style="display:flex; flex-flow: row wrap; justify-content: flex-start; row-gap: 20px; column-gap: 10px;">
             <div class="card" style="display:flex; flex-flow:column; justify-content: center; align-items: center; flex: 1">

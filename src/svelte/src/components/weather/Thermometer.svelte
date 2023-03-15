@@ -6,6 +6,7 @@
     export let title = temperatureField;
     export let minTemp = -20;
     export let maxTemp = 100;
+    export let height = 240;
 
     let temperatureDiv;
     let wxData = {};
@@ -23,20 +24,19 @@
 </script>
 <style>
     .thermometerWrapper {
-        margin: auto;
         display: flex;
         flex-direction: column;
+        justify-content: space-between;
         align-items: center;
+        gap: 10px;
     }
     .thermometer {
-        width: 25px;
         background: #38383f;
-        height: 240px;
         position: relative;
         border: 9px solid #2a2a2e;
         border-radius: 20px;
         z-index: 1;
-        margin-bottom: 50px;
+        margin-bottom: 20%;
     }
     .thermometer:before, .thermometer:after {
         position: absolute;
@@ -52,10 +52,10 @@
     }
     .thermometer:after {
         transform: translateX(-50%);
-        width: 50px;
-        height: 50px;
+        width: 160%;
+        height: 20%;
         background-color: #3dcadf;
-        bottom: -41px;
+        bottom: -15%;
         border: 9px solid #2a2a2e;
         z-index: -3;
         left: 50%;
@@ -87,19 +87,6 @@
     .thermometer .temperature, .thermometer .temperature:before, .thermometer .temperature:after {
         position: absolute;
     }
-    .thermometer .temperature:before {
-        content: attr(data-value);
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        z-index: 2;
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-size: 1em;
-        line-height: 1;
-        transform: translateY(50%);
-        left: calc(100% + 1em / 1.5);
-        top: calc(-1em + 5px - 5px * 2);
-    }
     .thermometer .temperature:after {
         content: "";
         border-top: 0.4545454545em solid transparent;
@@ -111,8 +98,9 @@
 </style>
 <div class="thermometerWrapper">
     <span class="mediumSmallText">{title}</span>
-    <div class="thermometer">
+    <div class="thermometer" style="height: {height}px; width: {height / 10}px;">
         <div class="temperature" bind:this={temperatureDiv} style="height:0" data-value="---"></div>
         <div class="graduations"></div>
     </div>
+    <span class="mediumSmallText">{temperature ? Number(temperature).toFixed(1) : "---"}°F</span>
 </div>
