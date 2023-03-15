@@ -4,7 +4,6 @@ import {onDestroy} from "svelte";
 
 let compass, arrow, text;
 let wxData = {};
-export let diameter = 500;
 
 const unsubscribeWeather = weatherData.subscribe(data => {
     wxData = data;

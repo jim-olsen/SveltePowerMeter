@@ -58,7 +58,7 @@
         unsubscribeBlueIris();
     });
 
-    let graphWidth, graphHeight, obstructionMapWidth;
+    let graphWidth, graphHeight;
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics'];
 </script>
 
@@ -89,7 +89,7 @@
         </div>
     {/if}
     {#if $currentView === 'starlinkStatus'}
-        <StarlinkStatus obstructionMapWidth="{obstructionMapWidth}"/>
+        <StarlinkStatus />
     {/if}
     {#if $currentView === 'starlinkSpeedGraphs'}
         <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.set('dashboard')}>

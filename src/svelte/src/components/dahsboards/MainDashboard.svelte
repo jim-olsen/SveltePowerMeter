@@ -79,17 +79,17 @@
     }
 
 </script>
-<div style="display:flex; flex-flow:column; justify-content: space-evenly; align-items: flex-start; width: 100%;">
+<div style="display:flex; flex-flow:column; justify-content: space-evenly; align-items: flex-start; width: 100%; gap: 5px;">
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         {#if currentData && (isCharging() || isFloating())}
             <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: yellow; font-size: 6vh;"
                      on:click={()=>currentView.set('statistics')}>
-                <Fa id="sunChargingIcon" icon="{faSun}" size="2x"/>
+                <Fa id="sunChargingIcon" icon="{faSun}" style="font-size: 6vw;"/>
             </div>
         {:else}
             <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: grey; font-size: 6vh;"
                  on:click={()=>currentView.set('statistics')}>
-                <Fa id="moonNightIcon" icon="{faCloudMoon}" size="2x" />
+                <Fa id="moonNightIcon" icon="{faCloudMoon}"  style="font-size: 6vw;"/>
             </div>
         {/if}
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
@@ -119,7 +119,7 @@
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; font-size: 6vh;"
                 on:click={()=> currentView.set('statistics')}>
-            <Fa icon="{faCarBattery}" id="carBatteryIcon" size="2x" style="color: orangered;" />
+            <Fa icon="{faCarBattery}" id="carBatteryIcon" style="font-size: 6vw; color: orangered;" />
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
                 on:click={()=>currentView.set('voltageGraph')}>
@@ -148,7 +148,7 @@
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: slateblue; font-size: 6vh;"
              on:click={()=> currentView.set('weather')}>
-            <Fa icon="{faSnowflake}" size="2x"/>
+            <Fa icon="{faSnowflake}" style="font-size: 6vw;"/>
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
             <span class="largeText">{wxData?.outTemp_F ? Number(wxData?.outTemp_F)?.toFixed(1) + ' F' : '---'}</span>
@@ -174,7 +174,7 @@
     </div>
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: slategray; font-size: 6vh;">
-            <Fa icon="{faSatelliteDish}" size="2x"/>
+            <Fa icon="{faSatelliteDish}" style="font-size: 6vw;"/>
         </div>
         <div style="display:flex; flex-flow: column; flex: 2;">
             <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;" on:click={()=>currentView.set('starlinkStatus')}>

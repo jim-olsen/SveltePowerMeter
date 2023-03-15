@@ -5,7 +5,8 @@
     import Thermometer from "./Thermometer.svelte";
 
     let wxData = {};
-    let windDiameter = 0;
+    let wxHeight = 0;
+    let wxWidth = 0;
 
     const unsubscribeWeather = weatherData.subscribe(data => {
         wxData = data;
@@ -14,9 +15,9 @@
     onDestroy(unsubscribeWeather);
 </script>
 <div style="display:flex; flex-flow: row; justify-content: center; align-content: center; width: 100%; gap: 10px;"
-     on:click={() => currentView.set('dashboard')}>
-    <div class="card" style="flex: 1; height: 96%; aspect-ratio: 1 / 1;" bind:clientHeight={windDiameter}>
-        <WindDisplay diameter={windDiameter}></WindDisplay>
+     on:click={() => currentView.set('dashboard')} bind:clientHeight={wxHeight} bind:clientWidth={wxWidth}>
+    <div class="card" style="flex: 1; height: {Math.min(wxHeight, wxWidth * 0.5)}px; aspect-ratio: 1 / 1;">
+        <WindDisplay diameter={Math.min(wxHeight, wxWidth)}></WindDisplay>
     </div>
     <div style="display:flex; flex-flow: column; justify-content: space-between; flex: 9; gap: 20px; height: 96%;">
         <div class="card" style="display:flex; flex-flow: row; justify-content: space-evenly; align-items: stretch;">
