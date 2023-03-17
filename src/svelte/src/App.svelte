@@ -1,5 +1,5 @@
 <script>
-    import {onDestroy} from "svelte";
+    import {onDestroy, onMount} from "svelte";
     import StarlinkUploadDataRates from "./components/starlink/StarlinkUploadDataRates.svelte"
     import StarlinkDownloadDataRates from "./components/starlink/StarlinkDownloadDataRates.svelte"
     import StarlinkPingLatency from "./components/starlink/StarlinkPingLatency.svelte";
@@ -17,15 +17,17 @@
     import MainDashboard from "./components/dahsboards/MainDashboard.svelte";
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
+    import MainNavigation from "./components/navigation/MainNavigation.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
     let outerHeight = 0
     let stats = true;
-
+    let graphWidth, graphHeight;
+    let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics'];
     let powerView = 'stats';
     let touchStarlinkView = 'status';
-    let lastBlueIrisAlert = { "id" : ""}
+    let lastBlueIrisAlert = {};
 
     /**
      * Cause the Blue iris alert to pop up and display the view of the new alert we have received
@@ -47,23 +49,48 @@
     const unsubscribeBlueIris = blueIrisAlert.subscribe(data => {
         if (!lastBlueIrisAlert.hasOwnProperty("id")) {
             lastBlueIrisAlert = data;
-            displayBlueIrisAlert();
-        } else if (data.hasOwnProperty("id") && lastBlueIrisAlert.id != "" && lastBlueIrisAlert.id !== data.id) {
+        } else if (data.hasOwnProperty("id") && lastBlueIrisAlert.id !== data.id) {
             lastBlueIrisAlert = data;
             displayBlueIrisAlert();
         }
     });
 
+    /**
+     * If there is not any currently defined alerts on the server after a delay to let it try and get the latest one,
+     * then set a dummy id so that we do receive the first real alert to come in.
+     */
+    onMount(() => {
+        setTimeout(() => {
+            if (!lastBlueIrisAlert.hasOwnProperty("id")) {
+                lastBlueIrisAlert = {"id": "dummyid"};
+                console.log("Setting dummy id");
+            }
+        }, 15000)
+    })
+
     onDestroy(() => {
         unsubscribeBlueIris();
     });
 
-    let graphWidth, graphHeight;
-    let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics'];
+    function onKeyDown(event) {
+        if (!event.repeat) {
+            switch(event.key) {
+                case "f":
+                    currentView.set("navigation");
+                    break;
+            }
+        }
+    }
+
+    function onDoubleTap() {
+        currentView.set("navigation");
+    }
+
 </script>
 
-<svelte:window bind:outerWidth bind:outerHeight bind:innerWidth/>
-<div style="display:flex; flex-flow: row; align-content: center; gap: 20px; width: 100%; height:{outerHeight - (outerHeight * 0.05)}px;">
+<svelte:window bind:outerWidth bind:outerHeight bind:innerWidth on:keydown={onKeyDown}/>
+<div style="display:flex; flex-flow: row; align-content: center; gap: 20px; width: 100%; height:{outerHeight - (outerHeight * 0.05)}px;"
+        on:dblclick={onDoubleTap}>
     {#if $currentView === 'dashboard'}
         <MainDashboard></MainDashboard>
     {:else if graphViews.includes($currentView)}
@@ -104,7 +131,8 @@
         </div>
     {/if}
     {#if $currentView === 'shelley'}
-        <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;">
+        <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;"
+             on:click={() => currentView.set('dashboard')}>
             <ShellyDeviceList/>
         </div>
     {/if}
@@ -113,5 +141,8 @@
     {/if}
     {#if $currentView === 'weather'}
         <WxDashboard />
+    {/if}
+    {#if $currentView === 'navigation'}
+        <MainNavigation />
     {/if}
 </div>
