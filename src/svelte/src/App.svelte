@@ -35,9 +35,9 @@
     function displayBlueIrisAlert() {
         if ($currentView !== 'alerts') {
             let returnView = $currentView;
-            currentView.set('alerts');
+            $currentView = 'alerts';
             setTimeout(() => {
-                currentView.set(returnView)
+                $currentView = returnView;
             }, 30000);
         }
     }
@@ -76,14 +76,14 @@
         if (!event.repeat) {
             switch(event.key) {
                 case "f":
-                    currentView.set("navigation");
+                    $currentView = "navigation";
                     break;
             }
         }
     }
 
     function onDoubleTap() {
-        currentView.set("navigation");
+        $currentView = "navigation";
     }
 
 </script>
@@ -119,20 +119,20 @@
         <StarlinkStatus />
     {/if}
     {#if $currentView === 'starlinkSpeedGraphs'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.set('dashboard')}>
+        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
             <StarlinkUploadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
             <StarlinkDownloadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
         </div>
     {/if}
     {#if $currentView === 'starlinkPingGraphs'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.set('dashboard')}>
+        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
             <StarlinkPingLatency chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
             <StarlinkPingDrop chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
         </div>
     {/if}
     {#if $currentView === 'shelley'}
         <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;"
-             on:click={() => currentView.set('dashboard')}>
+             on:click={() => $currentView = 'dashboard'}>
             <ShellyDeviceList/>
         </div>
     {/if}

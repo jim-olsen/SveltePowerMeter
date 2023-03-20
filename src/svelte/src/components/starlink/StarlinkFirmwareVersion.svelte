@@ -1,17 +1,6 @@
 <script>
-    import {onDestroy} from 'svelte';
     import {starlinkStatus} from "../../stores";
-
-    let firmware = "UNKNOWN";
-
-    const unsubscribeStatus = starlinkStatus.subscribe(status => {
-        if (status.hasOwnProperty("software_version")) {
-            firmware = status["software_version"];
-        }
-    });
-
-    onDestroy(unsubscribeStatus)
 </script>
 <div style="display:flex; flex-flow: column;justify-content: center;">
-    <span class="mediumSmallText">Fw: {firmware}</span>
+    <span class="mediumSmallText">Fw: {$starlinkStatus?.software_version ? $starlinkStatus?.software_version : 'UNKNOWN'}</span>
 </div>

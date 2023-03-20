@@ -9,10 +9,10 @@
     let obstructionMapWidth, obstructionMapHeight;
 </script>
 
-<div style="display:flex; flex-flow: column; justify-content: space-between; width: 100%;" on:click={() => currentView.set('dashboard')}>
+<div style="display:flex; flex-flow: column; justify-content: space-between; width: 100%;" on:click={() => $currentView = 'dashboard'}>
     <div style="display:flex; flex-flow: row; justify-content: space-evenly; align-items: center; flex: 9; gap: 10px;">
         <div style="display:flex; flex-flow: column; justify-content: space-between; gap: 20px" class="card">
-            <StarlinkStatusIndicator/>
+            <StarlinkStatusIndicator />
             <div style="display:flex; justify-content: center; flex-flow: column; align-items: center;gap: 10px">
                 <span class="smallText"><b>Alerts</b></span>
                 <StarlinkAlerts/>

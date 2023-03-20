@@ -5,32 +5,32 @@
 </script>
     <div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 15px; gap: 15px;">
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
-                on:click={()=> {currentView.set('dashboard')}}>
+                on:click={()=> $currentView = 'dashboard'}>
             <Fa icon={faDashboard} style="font-size: 6vw; color: cadetblue;"/>
             <span class="largeText">Dashboard</span>
         </div>
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
-                on:click={()=> {currentView.set('statistics')}}>
+                on:click={()=> $currentView = 'statistics'}>
             <Fa icon={faPlug} style="font-size: 6vw; color: cadetblue;"/>
             <span class="largeText">Power</span>
         </div>
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
-                on:click={()=> {currentView.set('starlinkStatus')}}>
+                on:click={()=> $currentView = 'starlinkStatus'}>
             <Fa icon={faSatelliteDish} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">Starlink</span>
         </div>
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
-                on:click={()=> {currentView.set('shelley')}}>
+                on:click={()=> $currentView = 'shelley'}>
             <Fa icon={faLightbulb} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">Devices</span>
         </div>
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
-                on:click={()=> {currentView.set('weather')}}>
+                on:click={()=> $currentView = 'weather'}>
             <Fa icon={faSnowflake} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">Weather</span>
         </div>
         <div class="card" style="display: flex; flex-flow: column; justify-content: center;  align-items: center;flex: 1 0 25%;"
-                on:click={()=> {currentView.set('alerts')}}>
+                on:click={()=> $currentView = 'alerts'}>
             <Fa icon={faExclamationTriangle} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">Alerts</span>
         </div>

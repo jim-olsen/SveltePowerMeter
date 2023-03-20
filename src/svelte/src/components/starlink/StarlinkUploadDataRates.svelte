@@ -2,7 +2,7 @@
     import {onDestroy} from 'svelte';
     import LineChart from "../d3/LineChart.svelte";
     import {starlinkStatus} from "../../stores";
-    import {starlinkHistory} from "../../stores";
+    import {starlinkGraphHistory} from "../../stores";
 
     export let chartWidth = 600;
     export let chartHeight = 300;
@@ -18,7 +18,7 @@
         }
     });
 
-    const unsubscribeHistory = starlinkHistory.subscribe(history => {
+    const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("uplink_bps")) {
             uploadChartData = []
             history.uplink_bps.forEach((value, i) => {
