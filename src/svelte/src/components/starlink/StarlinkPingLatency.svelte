@@ -1,7 +1,7 @@
 <script>
     import {onDestroy} from 'svelte';
     import LineChart from "../d3/LineChart.svelte";
-    import {starlinkHistory} from "../../stores";
+    import {starlinkGraphHistory} from "../../stores";
 
     export let chartWidth = 600;
     export let chartHeight = 300;
@@ -12,7 +12,7 @@
     let pingLatencyAvg = 0.0;
     let pingLatencyChartData = [];
 
-    const unsubscribeHistory = starlinkHistory.subscribe(history => {
+    const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("uplink_bps")) {
             pingLatencyChartData = [];
             history.ping_latency.forEach((value, i) => {

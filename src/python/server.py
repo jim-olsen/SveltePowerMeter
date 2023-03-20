@@ -463,7 +463,7 @@ def get_stats_data():
 #
 # provide the generic dishy status data through REST
 #
-@app.route("/starlink/status/")
+@app.route("/starlink/status")
 def starlink_status():
     status = dishy.get_status()
 
@@ -473,16 +473,22 @@ def starlink_status():
 #
 # provide the dishy historical data through REST
 #
-@app.route("/starlink/history/")
+@app.route("/starlink/history")
 def starlink_history():
+    skip_graphs = request.args.get('skipGraphs', "False").lower() == 'True'
     history = dishy.get_history()
+    if skip_graphs:
+        history.pop('ping_drop_rate')
+        history.pop('ping_latency')
+        history.pop('downlink_bps')
+        history.pop('uplink_bps')
     return json.dumps(history, indent=3)
 
 
 #
 # Get the obstruction image data, and transform into a png file and return through the get request
 #
-@app.route("/starlink/obstruction_image/")
+@app.route("/starlink/obstruction_image")
 def starlink_obstruction_image():
     obstruction_image = dishy.get_obstruction_map()
     numpy_image = np.array(obstruction_image).astype('uint8')

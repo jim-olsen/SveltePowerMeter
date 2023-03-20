@@ -1,7 +1,7 @@
 <script>
     import {onDestroy} from 'svelte';
     import LineChart from "../d3/LineChart.svelte";
-    import {starlinkHistory} from "../../stores";
+    import {starlinkGraphHistory} from "../../stores";
 
     export let chartWidth = 600;
     export let chartHeight = 300;
@@ -11,7 +11,7 @@
     let pingDropAvg = 0.0;
     let pingDropChartData = [];
 
-    const unsubscribeHistory = starlinkHistory.subscribe(history => {
+    const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("ping_drop_rate")) {
             pingDropChartData = [];
             history.ping_drop_rate.forEach((value, i) => {

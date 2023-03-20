@@ -164,7 +164,7 @@ export const starlinkStatus = writable({}, () => {
  * Retrieve historical values available from the dishy component of starlink
  */
 function getStarlinkHistory() {
-    fetch("/starlink/history/", {
+    fetch("/starlink/history?skipGraphs=True", {
         headers: {
             "Accept": "application/json"
         }
@@ -182,6 +182,33 @@ function getStarlinkHistory() {
 export const starlinkHistory = writable({}, () => {
     getStarlinkHistory();
     let historyInterval = setInterval(getStarlinkHistory, 10000);
+    return () => {
+        clearInterval(historyInterval);
+    }
+})
+
+/**
+ * Retrieve historical values available from the dishy component of starlink
+ */
+function getStarlinkGraphHistory() {
+    fetch("/starlink/history?skipGraphs=False", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            starlinkGraphHistory.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest historical data from the dishy component of starlink
+ * @type {Writable<{}>}
+ */
+export const starlinkGraphHistory = writable({}, () => {
+    getStarlinkGraphHistory();
+    let historyInterval = setInterval(getStarlinkGraphHistory, 10000);
     return () => {
         clearInterval(historyInterval);
     }
