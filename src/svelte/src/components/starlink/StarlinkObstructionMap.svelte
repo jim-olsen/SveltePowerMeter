@@ -1,5 +1,5 @@
 <script>
-    export let imageUrl = './starlink/obstruction_image/'
+    export let imageUrl = './starlink/obstruction_image'
     export let width = 400, height=400
 </script>
 
