@@ -137,7 +137,7 @@ export const blueIrisAlert = writable({}, () => {
  * Returns live starlink status values as defined by the dishy component of starlink
  */
 function getStarlinkStatus() {
-    fetch("/starlink/status/", {
+    fetch("/starlink/status", {
         headers: {
             "Accept": "application/json"
         }

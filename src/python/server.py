@@ -475,7 +475,7 @@ def starlink_status():
 #
 @app.route("/starlink/history")
 def starlink_history():
-    skip_graphs = request.args.get('skipGraphs', "False").lower() == 'True'
+    skip_graphs = request.args.get('skipGraphs', "False").lower() == 'true'
     history = dishy.get_history()
     if skip_graphs:
         history.pop('ping_drop_rate')
