@@ -94,7 +94,7 @@
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         <div bind:this={batteryIcon} style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; font-size: 6vh;"
                 on:click={()=> $currentView = 'statistics'}>
-            <Fa icon="{faCarBattery}" style="font-size: 6vw; color: orangered;" />
+            <Fa icon="{faCarBattery}" style="font-size: 6vw;" />
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
                 on:click={()=> $currentView = 'voltageGraph'}>
@@ -148,11 +148,11 @@
         </div>
     </div>
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
-        <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: slategray; font-size: 6vh;">
+        <div on:click={()=> $currentView = 'starlinkStatus'} style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: slategray; font-size: 6vh;">
             <Fa icon="{faSatelliteDish}" style="font-size: 6vw;"/>
         </div>
         <div style="display:flex; flex-flow: column; flex: 2;">
-            <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;" on:click={()=> $currentView = 'starlinkStatus'}>
+            <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;" on:click={()=> $currentView = 'starlinkOutages'}>
                 <span class="normalText" style="color: {$starlinkStatus?.state === 'CONNECTED' ? 'greenyellow' : 'orangered'};">{$starlinkStatus?.state ? $starlinkStatus.state : 'UNKNOWN'}</span>
             </div>
             <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;">

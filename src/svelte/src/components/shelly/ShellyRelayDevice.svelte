@@ -1,11 +1,12 @@
 <script xmlns="http://www.w3.org/1999/xhtml">
-    import Switch from "../Switch.svelte";
     import {onDestroy, onMount} from "svelte";
+    import {faLightbulb, faRefresh} from "@fortawesome/free-solid-svg-icons";
+    import Fa from "svelte-fa";
 
     export let shellyDeviceName
 
     let isOn = true;
-    let switchValue = 'on';
+    let deviceIcon;
 
     function getRelayStatus() {
         fetch(`/shelly/relay/status?name=${shellyDeviceName}&relay=0`, {
@@ -16,6 +17,11 @@
             .then(d => d.json())
             .then(d => {
                 isOn = d.ison;
+                if (deviceIcon?.style?.color && isOn) {
+                    deviceIcon.style.color = 'gold';
+                } else {
+                    deviceIcon.style.color = 'darkgray';
+                }
             });
     }
 
@@ -32,7 +38,7 @@
     }
 
     function executeCommand() {
-        if (switchValue == 'on') {
+        if (isOn) {
             fetch(`/shelly/relay/on?name=${shellyDeviceName}&relay=0`, {
                 headers: {
                     "Accept": "application/json"
@@ -56,7 +62,7 @@
 
     }
 
-    onMount( async() => {
+    onMount(async () => {
         getRelayStatus();
     });
 
@@ -66,8 +72,17 @@
         statusInterval = setInterval(getRelayStatus, 2000);
     }
 
-    $:switchValue && executeCommand();
-
     onDestroy(() => clearInterval(statusInterval));
 </script>
-<Switch bind:value={switchValue} label={shellyDeviceName} cycleButton=true cycleButtonAction={powerCycle} fontSize={24} design="slider" />
+<div class="card"
+     style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;">
+    <span style="font-size: 6vw">{shellyDeviceName}</span>
+    <div style="display: flex; flex-flow: row; justify-content: space-between; font-size: 6vw;width: 100%;">
+        <div bind:this={deviceIcon} on:click={executeCommand} style="font-size: 6vw; color: darkgray;">
+            <Fa icon="{faLightbulb}" style="font-size: 6vw;"/>
+        </div>
+        <div on:click={powerCycle}>
+            <Fa icon="{faRefresh}" style="font-size: 6vw; color: darkgray;"/>
+        </div>
+    </div>
+</div>

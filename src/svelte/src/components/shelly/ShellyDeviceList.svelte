@@ -28,8 +28,8 @@
 
     onDestroy(() => { clearInterval(deviceInterval)})
 </script>
+<div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 15px; gap: 15px;">
 {#each shellyDevices as device}
-    <div style="display:flex; flex-flow: column; gap:10px">
         <ShellyRelayDevice shellyDeviceName={device.name} />
-    </div>
 {/each}
+</div>

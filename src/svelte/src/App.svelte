@@ -18,6 +18,8 @@
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
     import MainNavigation from "./components/navigation/MainNavigation.svelte";
+    import StarlinkOutagesChart from "./components/starlink/StarlinkOutagesChart.svelte";
+    import StarlinkOutageDurationChart from "./components/starlink/StarlinkOutageDurationChart.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -117,6 +119,11 @@
     {/if}
     {#if $currentView === 'starlinkStatus'}
         <StarlinkStatus />
+    {/if}
+    {#if $currentView === 'starlinkOutages'}
+        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+            <StarlinkOutageDurationChart chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={outerHeight - (outerHeight * 0.1)}/>
+        </div>
     {/if}
     {#if $currentView === 'starlinkSpeedGraphs'}
         <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
