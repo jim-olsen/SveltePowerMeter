@@ -198,7 +198,7 @@ def update_sql_tables():
                       weather_data.get("rain_total", None),
                       weather_data.get("windSpeed_mph", None),
                       weather_data.get("wind_average", None),
-                      weather_data.get("windchill_F)", None)))
+                      weather_data.get("windchill_F", None)))
 
 
 #
