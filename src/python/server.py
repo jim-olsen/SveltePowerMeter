@@ -98,7 +98,10 @@ async def update_ble_values(ble_address, loop):
 
 
 def update_sql_tables():
-    print("Updating SQL Tables")
+    global current_data
+    global weather_data
+    global stats_data
+
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
         cursor = sql_connection.execute("SELECT record_date FROM daily_power_data where record_date = ?",
@@ -150,6 +153,52 @@ def update_sql_tables():
                                    current_data.get('seconds_in_float_daily', None),
                                    current_data.get('seconds_in_equalization_daily', None)
                                ))
+
+    wx_sql_connection = sqlite3.connect("wxdata.db")
+    with wx_sql_connection:
+        wx_sql_connection.execute('''INSERT OR REPLACE INTO wx_data (record_time,
+                altimeter_inHg,
+                barometer_inHg,
+                cloudbase_foot,
+                daily_rain,
+                dayRain_in,
+                dewpoint_F,
+                heatindex_F,
+                hourRain_in,
+                humidex_F,
+                inTemp_F,
+                outHumidity,
+                outTemp_F,
+                pressure_inHg,
+                rain24_in,
+                rainRate_inch_per_hour,
+                rain_in,
+                rain_total,
+                windSpeed_mph,
+                wind_average,
+                windchill_F
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (int(time.time()),
+                      weather_data.get("altimeter_inHg", None),
+                      weather_data.get("barometer_inHg", None),
+                      weather_data.get("cloudbase_foot", None),
+                      weather_data.get("daily_rain", None),
+                      weather_data.get("dayRain_in", None),
+                      weather_data.get("dewpoint_F", None),
+                      weather_data.get("heatindex_F", None),
+                      weather_data.get("hourRain_in", None),
+                      weather_data.get("humidex_F", None),
+                      weather_data.get("inTemp_F", None),
+                      weather_data.get("outHumidity", None),
+                      weather_data.get("outTemp_F", None),
+                      weather_data.get("pressure_inHg", None),
+                      weather_data.get("rain24_in", None),
+                      weather_data.get("rainRate_inch_per_hour", None),
+                      weather_data.get("rain_in", None),
+                      weather_data.get("rain_total", None),
+                      weather_data.get("windSpeed_mph", None),
+                      weather_data.get("wind_average", None),
+                      weather_data.get("windchill_F)", None)))
 
 
 #
@@ -372,6 +421,33 @@ def get_weather_data():
     global weather_data
 
     return weather_data
+
+@app.route("/weatherDailyMinMax")
+def get_weather_max_min():
+    wx_sql_connection = sqlite3.connect("wxdata.db")
+    with wx_sql_connection:
+        cursor = wx_sql_connection.execute('''
+            SELECT min(dewpoint_F) AS dewpoint_F_min, max(dewpoint_F) AS dewpoint_F_max,
+            min(heatindex_F) AS heatindex_F_min, max(heatindex_F) AS heatindex_F_max,
+            min(inTemp_F) AS inTemp_F_min, max(inTemp_F) AS inTemp_F_max,
+            min(outHumidity) AS outHumidity_min, max(outHumidity) AS outHumidity_max,
+            min(outTemp_F) AS outTemp_F_min, max(outTemp_F) AS outTemp_F_max,
+            min(pressure_inHg) AS pressure_inHg_min, max(pressure_inHg) AS pressure_inHg_max,
+            min(rainRate_inch_per_hour) AS rainRate_inch_per_hour_min, max(rainRate_inch_per_hour) AS rainRate_inder_per_hour_max,
+            min(windSpeed_mph) AS windSpeed_mph_min, max(windSpeed_mph) AS windSpeed_mph_max,
+            min(wind_average) AS wind_average_min, max(wind_average) AS wind_average_max,
+            min(windchill_F) AS windchill_F_min, max(windchill_F) AS windchill_F_max
+            FROM wx_data WHERE record_time >= ? 
+            ''',
+                                        [int(time.mktime(
+                                            (datetime.today() -
+                                             timedelta(minutes=5)).timetuple()))
+                                        ])
+        min_max_data = cursor.fetchone()
+        if min_max_data is None:
+            min_max_data = []
+
+    return min_max_data
 
 
 @app.route("/blueIrisAlert")
@@ -701,6 +777,30 @@ def main(proxy=None):
                 day_solar_wh REAL,
                 day_batt_wh REAL,
                 last_charge_state TEXT
+                )
+                ''')
+    wx_sql_connection = sqlite3.connect("wxdata.db")
+    wx_sql_connection.execute('''CREATE TABLE IF NOT EXISTS wx_data (record_time INTEGER PRIMARY KEY,
+                altimeter_inHg REAL,
+                barometer_inHg REAL,
+                cloudbase_foot REAL,
+                daily_rain REAL,
+                dayRain_in REAL,
+                dewpoint_F REAL,
+                heatindex_F REAL,
+                hourRain_in REAL,
+                humidex_F REAL,
+                inTemp_F REAL,
+                outHumidity REAL,
+                outTemp_F REAL,
+                pressure_inHg REAL,
+                rain24_in REAL,
+                rainRate_inch_per_hour REAL,
+                rain_in REAL,
+                rain_total REAL,
+                windSpeed_mph REAL,
+                wind_average REAL,
+                windchill_F REAL
                 )
                 ''')
     refresh_daily_data()
