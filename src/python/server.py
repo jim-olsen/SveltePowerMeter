@@ -439,13 +439,12 @@ def get_weather_max_min():
             min(windchill_F) AS windchill_F_min, max(windchill_F) AS windchill_F_max
             FROM wx_data WHERE record_time >= ? 
             ''',
-                                        [int(time.mktime(
-                                            (datetime.today() -
-                                             timedelta(minutes=5)).timetuple()))
-                                        ])
+                        [int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0))))
+                        ])
         min_max_data = cursor.fetchone()
         if min_max_data is None:
-            min_max_data = []
+            min_max_data = {}
 
     return dict(min_max_data)
 
