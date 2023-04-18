@@ -440,7 +440,7 @@ def get_weather_max_min():
             FROM wx_data WHERE record_time >= ? 
             ''',
                         [int(time.mktime(
-                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0))))
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
                         ])
         min_max_data = cursor.fetchone()
         if min_max_data is None:
