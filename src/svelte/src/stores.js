@@ -230,7 +230,7 @@ function getWeatherData() {
 }
 
 /**
- * A subscribable that contains the latest historical data from the dishy component of starlink
+ * A subscribable that contains the latest weather data
  * @type {Writable<{}>}
  */
 export const weatherData = writable({}, () => {
@@ -241,3 +241,29 @@ export const weatherData = writable({}, () => {
     }
 })
 
+/**
+ * Retrieve the current daily min/max weather data
+ */
+function getWeatherDailyMinMax() {
+    fetch("/weatherDailyMinMax", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            weatherDailyMinMax.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest weather data
+ * @type {Writable<{}>}
+ */
+export const weatherDailyMinMax = writable({}, () => {
+    getWeatherDailyMinMax()
+    let weatherMinMaxInterval = setInterval(getWeatherDailyMinMax, 5000);
+    return () => {
+        clearInterval(weatherMinMaxInterval);
+    }
+})
