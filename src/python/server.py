@@ -447,7 +447,7 @@ def get_weather_max_min():
         if min_max_data is None:
             min_max_data = []
 
-    return min_max_data
+    return dict(min_max_data)
 
 
 @app.route("/blueIrisAlert")

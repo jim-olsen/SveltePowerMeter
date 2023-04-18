@@ -82,6 +82,10 @@ export default {
                 {
                     from: '/weatherData',
                     to: 'http://10.0.10.32:8050/weatherData'
+                },
+                {
+                    from: '/weatherDailyMinMax',
+                    to: 'http://10.0.10.32:8050/weatherDailyMinMax'
                 }
                 ]
         })
