@@ -422,9 +422,11 @@ def get_weather_data():
 
     return weather_data
 
+
 @app.route("/weatherDailyMinMax")
 def get_weather_max_min():
     wx_sql_connection = sqlite3.connect("wxdata.db")
+    wx_sql_connection.row_factory = sqlite3.Row
     with wx_sql_connection:
         cursor = wx_sql_connection.execute('''
             SELECT min(dewpoint_F) AS dewpoint_F_min, max(dewpoint_F) AS dewpoint_F_max,
