@@ -408,7 +408,7 @@ def get_graph_data():
     days = int(request.args.get('days', 4))
     data_fields = request.args.getlist('dataField')
     graph_data = {'time': []}
-    if data_fields and all(field in data_fields for field in VALID_POWER_FIELDS):
+    if data_fields and all( field in VALID_POWER_FIELDS for field in data_fields):
         for field in data_fields:
             graph_data[field] = []
         sql_connection = sqlite3.connect("powerdata.db")
@@ -491,7 +491,7 @@ def graph_wx_data():
     days = int(request.args.get('days', 1))
     data_fields = request.args.getlist('dataField')
     graph_data = {'time': []}
-    if data_fields and all(field in data_fields for field in VALID_WX_FIELDS):
+    if data_fields and all(field in VALID_WX_FIELDS for field in data_fields):
         for field in data_fields:
             graph_data[field] = []
         sql_connection = sqlite3.connect("wxdata.db")
