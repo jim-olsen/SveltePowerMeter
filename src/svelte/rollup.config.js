@@ -86,6 +86,10 @@ export default {
                 {
                     from: '/weatherDailyMinMax',
                     to: 'http://10.0.10.32:8050/weatherDailyMinMax'
+                },
+                {
+                    from: '/graphWxData',
+                    to: 'http://10.0.10.32:8050/graphWxData'
                 }
                 ]
         })

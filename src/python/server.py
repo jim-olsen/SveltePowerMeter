@@ -460,10 +460,9 @@ def graph_wx_data():
     sql_connection = sqlite3.connect("wxdata.db")
     sql_connection.row_factory = sqlite3.Row
     with sql_connection:
-        cursor = sql_connection.execute('''
-            SELECT record_time, ? AS data FROM wx_data WHERE record_time >= ?
-        ''', (data_field,
-              int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))))
+        cursor = sql_connection.execute("SELECT record_time, " + data_field +
+                                        " AS data FROM wx_data WHERE record_time >= ?",
+                [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
 
         for row in cursor.fetchall():
             rowdict = dict(row)
