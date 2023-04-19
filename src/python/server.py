@@ -414,7 +414,7 @@ def get_graph_data():
         sql_connection = sqlite3.connect("powerdata.db")
         sql_connection.row_factory = sqlite3.Row
         with sql_connection:
-            sql_statement = "SELECT record_time, "
+            sql_statement = "SELECT record_time"
             for field in data_fields:
                 sql_statement += ", " + field
             sql_statement += " FROM power_data WHERE record_time >= ? ORDER BY record_time ASC"
@@ -497,7 +497,7 @@ def graph_wx_data():
         sql_connection = sqlite3.connect("wxdata.db")
         sql_connection.row_factory = sqlite3.Row
         with sql_connection:
-            sql_statement = "SELECT record_time, "
+            sql_statement = "SELECT record_time"
             for field in data_fields:
                 sql_statement += ", " + field
             sql_statement += " FROM wx_data WHERE record_time >= ? ORDER BY record_time ASC"
