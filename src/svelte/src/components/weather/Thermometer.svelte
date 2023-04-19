@@ -161,9 +161,9 @@
 <div class="thermometerWrapper">
     <span class="mediumSmallText">{title}</span>
     <div class="thermometer" style="height: {height}px; width: {height / 10}px;">
-        <div class="temperature" bind:this={temperatureDiv} style="height:0" data-value="---"></div>
         <div class="temperatureMin" bind:this={temperatureMinDiv} style="height:0" data-value="---"></div>
         <div class="temperatureMax" bind:this={temperatureMaxDiv} style="height:0" data-value="---"></div>
+        <div class="temperature" bind:this={temperatureDiv} style="height:0" data-value="---"></div>
         <div class="graduations"></div>
     </div>
     <span class="mediumSmallText">{temperature ? Number(temperature).toFixed(1) : "---"}°F</span>

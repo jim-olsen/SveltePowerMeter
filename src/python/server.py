@@ -451,6 +451,28 @@ def get_weather_max_min():
     return dict(min_max_data)
 
 
+@app.route("/graphWxData")
+def graph_wx_data():
+    days = int(request.args.get('days', 1))
+    data_field = request.args.get('dataField', 'outTemp_F')
+
+    graph_data = {'time': [], 'data': []}
+    sql_connection = sqlite3.connect("wxdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute('''
+            SELECT record_time, ? AS data FROM wx_data WHERE record_time >= ?
+        ''', (data_field,
+              int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))))
+
+        for row in cursor.fetchall():
+            rowdict = dict(row)
+            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+            graph_data['data'].append(rowdict.get(data_field, 0))
+
+    return graph_data
+
+
 @app.route("/blueIrisAlert")
 def get_blueiris_alert():
     global blueiris_alert
