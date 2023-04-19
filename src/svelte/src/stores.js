@@ -1,6 +1,7 @@
 import {writable, get} from 'svelte/store';
 
 export const powerGraphDuration = writable(2)
+export const weatherGraphDuration = writable(1)
 
 let lastBlueIrisAlert = {};
 
@@ -331,6 +332,64 @@ export const weatherData = writable({}, () => {
     let weatherInterval = setInterval(getWeatherData, 5000);
     return () => {
         clearInterval(weatherInterval);
+    }
+})
+
+/**
+ * Retrieve the current temperature graph data
+ */
+function getTemperatureGraphData() {
+    fetch(`/graphWxData?days=${get(weatherGraphDuration)}&dataField=outTemp_F&dataField=inTemp_F&dataField=windchill_F`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            temperatureGraphData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest temperature graph data
+ * @type {Writable<{}>}
+ */
+export const temperatureGraphData = writable({}, () => {
+    let unsubscribe = weatherGraphDuration.subscribe(getTemperatureGraphData)
+    getTemperatureGraphData()
+    let temperatureGraphInterval = setInterval(getTemperatureGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(temperatureGraphInterval);
+    }
+})
+
+/**
+ * Retrieve the current wind graph data
+ */
+function getWindGraphData() {
+    fetch(`/graphWxData?days=${get(weatherGraphDuration)}&dataField=windSpeed_mph&dataField=wind_average`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            windGraphData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest wind graph data
+ * @type {Writable<{}>}
+ */
+export const windGraphData = writable({}, () => {
+    let unsubscribe = weatherGraphDuration.subscribe(getWindGraphData)
+    getWindGraphData()
+    let windGraphInterval = setInterval(getWindGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(windGraphInterval);
     }
 })
 

@@ -20,13 +20,17 @@
     import MainNavigation from "./components/navigation/MainNavigation.svelte";
     import StarlinkOutagesChart from "./components/starlink/StarlinkOutagesChart.svelte";
     import StarlinkOutageDurationChart from "./components/starlink/StarlinkOutageDurationChart.svelte";
+    import OutdoorTemperatureGraph from "./components/weather/OutdoorTemperatureGraph.svelte";
+    import IndoorTemperatureGraph from "./components/weather/IndoorTemperatureGraph.svelte";
+    import WindGraph from "./components/weather/WindGraph.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
     let outerHeight = 0
     let stats = true;
     let graphWidth, graphHeight;
-    let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics'];
+    let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
+                        'inTempGraph', 'windGraph'];
     let powerView = 'stats';
     let touchStarlinkView = 'status';
     let lastBlueIrisAlert = {};
@@ -113,6 +117,15 @@
                 {/if}
                 {#if $currentView === 'statistics'}
                     <Statistics />
+                {/if}
+                {#if $currentView === 'outTempGraph'}
+                    <OutdoorTemperatureGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if $currentView === 'inTempGraph'}
+                    <IndoorTemperatureGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if $currentView === 'windGraph'}
+                    <WindGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>

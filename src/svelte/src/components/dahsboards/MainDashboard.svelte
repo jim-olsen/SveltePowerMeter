@@ -125,21 +125,21 @@
              on:click={()=> $currentView = 'weather'}>
             <Fa icon="{faSnowflake}" style="font-size: 6vw;"/>
         </div>
-        <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
+        <div  on:click={()=> $currentView = 'outTempGraph'} style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
             <span class="largeText">{$weatherData?.outTemp_F ? Number($weatherData?.outTemp_F)?.toFixed(1) + ' F' : '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
                 <span class="smallText">Out</span>
                 <span class="smallText">Temp</span>
             </div>
         </div>
-        <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
+        <div on:click={()=> $currentView = 'inTempGraph'} style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
             <span class="largeText">{$weatherData?.inTemp_F ? Number($weatherData?.inTemp_F)?.toFixed(1) + ' F' : '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
                 <span class="smallText">In</span>
                 <span class="smallText">Temp</span>
             </div>
         </div>
-        <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
+        <div on:click={()=> $currentView = 'windGraph'} style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
             <span class="largeText">{$weatherData?.wind_average ? Number($weatherData?.wind_average)?.toFixed(1) : '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
                 <span class="smallText">Wind</span>
