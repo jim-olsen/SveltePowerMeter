@@ -11,7 +11,7 @@ export const currentView = writable('dashboard');
  * days over which to fetch the data.
  */
 function getBatteryVoltageGraphData() {
-    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=battery_voltage`, {
+    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=battery_voltage&dataField=target_regulation_voltage`, {
         headers: {
             "Accept": "application/json"
         }
@@ -28,7 +28,7 @@ function getBatteryVoltageGraphData() {
  * @type {Writable<{}>}
  */
 export const batteryVoltageGraphData = writable({}, () => {
-    let unsubscribe = powerGraphDuration.subscribe(getPowerGraphData)
+    let unsubscribe = powerGraphDuration.subscribe(getBatteryVoltageGraphData)
     getBatteryVoltageGraphData();
     let batteryVoltageGraphInterval = setInterval(getBatteryVoltageGraphData, 15000);
     return () => {
@@ -37,35 +37,96 @@ export const batteryVoltageGraphData = writable({}, () => {
     };
 });
 
-
 /**
- * Retrieve the graph data for values over time.  The powerGraphDuration writeable provides the number of days over
- * which to fetch the data.
+ * Retrieve the graph data for battery wattage over time.  The powerGraphDuration writeable provides the number of
+ * days over which to fetch the data.
  */
-function getPowerGraphData() {
-    fetch(`/graphData?days=${get(powerGraphDuration)}`, {
+function getBatteryWattsGraphData() {
+    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=battery_watts`, {
         headers: {
             "Accept": "application/json"
         }
     })
         .then(d => d.json())
         .then(d => {
-            powerGraphData.set(d);
+            batteryWattsGraphData.set(d);
         });
 }
 
 /**
- * Subscribable that contains the latest graph data representing values over time, based on powerGraphDuration
+ * Subscribable that contains the latest graph data representing battery watts over time, based on powerGraphDuration
  * subscribable.
  * @type {Writable<{}>}
  */
-export const powerGraphData = writable({}, () => {
-    let unsubscribe = powerGraphDuration.subscribe(getPowerGraphData)
-    getPowerGraphData()
-    let powerGraphInterval = setInterval(getPowerGraphData, 15000);
+export const batteryWattsGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getBatteryWattsGraphData)
+    getBatteryWattsGraphData();
+    let batteryWattsGraphInterval = setInterval(getBatteryWattsGraphData, 15000);
     return () => {
         unsubscribe();
-        clearInterval(powerGraphInterval);
+        clearInterval(batteryWattsGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the graph data for load over time.  The powerGraphDuration writeable provides the number of
+ * days over which to fetch the data.
+ */
+function getLoadWattsGraphData() {
+    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=load_watts`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            loadWattsGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing load over time, based on powerGraphDuration
+ * subscribable.
+ * @type {Writable<{}>}
+ */
+export const loadWattsGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getLoadWattsGraphData)
+    getLoadWattsGraphData();
+    let loadWattsGraphInterval = setInterval(getLoadWattsGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(loadWattsGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the graph data for solar watts over time.  The powerGraphDuration writeable provides the number of
+ * days over which to fetch the data.
+ */
+function getSolarWattsGraphData() {
+    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=solar_watts`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            solarWattsGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing battery voltage over time, based on powerGraphDuration
+ * subscribable.
+ * @type {Writable<{}>}
+ */
+export const solarWattsGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getSolarWattsGraphData)
+    getSolarWattsGraphData();
+    let solarWattsGraphInterval = setInterval(getSolarWattsGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(solarWattsGraphInterval);
     };
 });
 

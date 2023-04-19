@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {powerGraphData} from "../../stores";
+    import {solarWattsGraphData} from "../../stores";
     import {powerGraphDuration} from "../../stores";
     import LineChart from "../d3/LineChart.svelte";
 
@@ -9,11 +9,11 @@
 
     let graphData = [];
 
-    const unsubscribeGraph = powerGraphData.subscribe(data => {
+    const unsubscribeGraph = solarWattsGraphData.subscribe(data => {
         graphData = [];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
-                let value = data?.solarwatts?.[i] ? data?.solarwatts?.[i] : 0;
+                let value = data?.solar_watts?.[i] ? data?.solar_watts?.[i] : 0;
                 if ( value != 0 ) {
                     graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
                 }

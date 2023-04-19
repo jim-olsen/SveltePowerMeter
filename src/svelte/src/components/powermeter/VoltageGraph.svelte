@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {powerGraphData} from "../../stores";
+    import {batteryVoltageGraphData} from "../../stores";
     import {powerGraphDuration} from "../../stores";
     import LineChart from "../d3/LineChart.svelte";
 
@@ -10,20 +10,20 @@
     let graphData = [];
     let secondGraphData = [];
 
-    const unsubscribeGraph = powerGraphData.subscribe(data => {
+    const unsubscribeGraph = batteryVoltageGraphData.subscribe(data => {
         graphData = [];
         secondGraphData = [];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
-                let value = data?.battvoltage?.[i] ? data?.battvoltage?.[i] : 0;
+                let value = data?.battery_voltage?.[i] ? data?.battery_voltage?.[i] : 0;
                 if ( value != 0 ) {
                     graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
                 }
-                if (data.hasOwnProperty("targetbattvoltage")) {
-                    if (data.targetbattvoltage?.[i] == 0) {
-                        value = data?.battvoltage?.[i] ? data?.battvoltage?.[i] : 0;
+                if (data.hasOwnProperty("target_regulation_voltage")) {
+                    if (data.target_regulation_voltage?.[i] == 0) {
+                        value = data?.battery_voltage?.[i] ? data?.battery_voltage?.[i] : 0;
                     } else {
-                        value = data?.targetbattvoltage?.[i] ? data?.targetbattvoltage?.[i] : 0;
+                        value = data?.target_regulation_voltage?.[i] ? data?.target_regulation_voltage?.[i] : 0;
                     }
                 }
                 if (value != 0) {
