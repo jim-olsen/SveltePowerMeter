@@ -398,28 +398,33 @@ def home(path):
 #               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
 #               back empty results
 # RETURN VALUE
-#   An object containing two lists.  One list will be the time the value was recorded, and the second list will be the
-#   corresponding value at the recorded time.  This can be easily utilized to graph the values over time
+#   An object containing multiple lists.  One list will be the time the value was recorded, and the other lists will be
+#   the corresponding values at the recorded time.  This can be easily utilized to graph the values over time
 #
 @app.route("/graphData")
 def get_graph_data():
     global VALID_POWER_FIELDS
 
     days = int(request.args.get('days', 4))
-    data_field = request.args.get('dataField', 'battery_voltage')
-    graph_data = {'time': [], 'data': []}
-    if data_field in VALID_POWER_FIELDS:
+    data_fields = request.args.getlist('dataField')
+    graph_data = {'time': []}
+    if data_fields and all(field in data_fields for field in VALID_POWER_FIELDS):
+        for field in data_fields:
+            graph_data[field] = []
         sql_connection = sqlite3.connect("powerdata.db")
         sql_connection.row_factory = sqlite3.Row
         with sql_connection:
-            cursor = sql_connection.execute("SELECT record_time, " + data_field +
-                                            " AS data FROM power_data WHERE record_time >= ? ORDER BY record_time ASC",
+            sql_statement = "SELECT record_time, "
+            for field in data_fields:
+                sql_statement += ", " + field
+            sql_statement += " FROM power_data WHERE record_time >= ? ORDER BY record_time ASC"
+            cursor = sql_connection.execute(sql_statement,
                                         [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
-
             for row in cursor.fetchall():
                 rowdict = dict(row)
                 graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
-                graph_data['data'].append(rowdict.get('data', 0))
+                for field in data_fields:
+                    graph_data[field].append(rowdict.get(field, 0))
 
     return graph_data
 
@@ -484,23 +489,27 @@ def graph_wx_data():
     global VALID_WX_FIELDS
 
     days = int(request.args.get('days', 1))
-    data_field = request.args.get('dataField', 'outTemp_F')
-
-    graph_data = {'time': [], 'data': []}
-    if data_field in VALID_WX_FIELDS:
+    data_fields = request.args.getlist('dataField')
+    graph_data = {'time': []}
+    if data_fields and all(field in data_fields for field in VALID_WX_FIELDS):
+        for field in data_fields:
+            graph_data[field] = []
         sql_connection = sqlite3.connect("wxdata.db")
         sql_connection.row_factory = sqlite3.Row
         with sql_connection:
-            cursor = sql_connection.execute("SELECT record_time, " + data_field +
-                                            " AS data FROM wx_data WHERE record_time >= ? ORDER BY record_time ASC",
-                [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
-
+            sql_statement = "SELECT record_time, "
+            for field in data_fields:
+                sql_statement += ", " + field
+            sql_statement += " FROM wx_data WHERE record_time >= ? ORDER BY record_time ASC"
+            cursor = sql_connection.execute(sql_statement,
+                                            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
             for row in cursor.fetchall():
                 rowdict = dict(row)
                 graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
-                graph_data['data'].append(rowdict.get('data', 0))
+                for field in data_fields:
+                    graph_data[field].append(rowdict.get(field, 0))
 
-        return graph_data
+    return graph_data
 
 
 @app.route("/blueIrisAlert")

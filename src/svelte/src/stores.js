@@ -7,6 +7,38 @@ let lastBlueIrisAlert = {};
 export const currentView = writable('dashboard');
 
 /**
+ * Retrieve the graph data for battery voltage over time.  The powerGraphDuration writeable provides the number of
+ * days over which to fetch the data.
+ */
+function getBatteryVoltageGraphData() {
+    fetch(`/graphData?days=${get(powerGraphDuration)}&dataField=battery_voltage`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryVoltageGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing battery voltage over time, based on powerGraphDuration
+ * subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryVoltageGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getPowerGraphData)
+    getBatteryVoltageGraphData();
+    let batteryVoltageGraphInterval = setInterval(getBatteryVoltageGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryVoltageGraphInterval);
+    };
+});
+
+
+/**
  * Retrieve the graph data for values over time.  The powerGraphDuration writeable provides the number of days over
  * which to fetch the data.
  */
