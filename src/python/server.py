@@ -467,7 +467,7 @@ def graph_wx_data():
         for row in cursor.fetchall():
             rowdict = dict(row)
             graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
-            graph_data['data'].append(rowdict.get(data_field, 0))
+            graph_data['data'].append(rowdict.get('data', 0))
 
     return graph_data
 
