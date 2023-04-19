@@ -42,9 +42,23 @@ blueiris_alert = {}
 
 UART_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for TX
 UART_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for RX
+# List of valid fields for querying for weather graph data.  This protects against sql injection using a dynamic field
+# based request
+VALID_WX_FIELDS = ["altimeter_inHg", "appTemp_F", "barometer_inHg", "cloudbase_foot", "daily_rain", "dateTime",
+                   "dayRain_in", "day_of_year", "dewpoint_F", "heatindex_F", "hourRain_in", "humidex_F", "inTemp_F",
+                   "minute_of_day", "outHumidity", "outTemp_F", "pressure_inHg", "rain24_in", "rainRate_inch_per_hour",
+                   "rain_in", "rain_total", "usUnits", "windDir", "windSpeed_mph", "wind_average", "windchill_F"]
+# List of valid fields for queryiing power graph data.  This protected against sql injection using a dynamic field
+# based request
+VALID_POWER_FIELDS = ["battery_load", "load_amps", "load_watts", "battery_voltage", "battery_watts", "net_production",
+                      "battery_sense_voltage", "battery_voltage_slow", "battery_daily_minimum_voltage",
+                      "battery_daily_maximum_voltage", "target_regulation_voltage", "array_voltage",
+                      "array_charge_current", "battery_charge_current", "battery_charge_current_slow", "input_power",
+                      "solar_watts", "heatsink_temperature", "battery_temperature", "charge_state",
+                      "seconds_in_absorption_daily", "seconds_in_float_daily", "seconds_in_equalization_daily"]
 
 # Set this value to the ip of your tristar charge controller
-tristar_addr = '10.0.10.10'
+TRISTAR_ADDR = '10.0.10.10'
 
 available_shellys = []
 
@@ -233,7 +247,7 @@ def update_tristar_values():
     while True:
         # Connect directly to the modbus interface on the tristar charge controller to get the current information about
         # the state of the solar array and battery charging
-        modbus_client = ModbusTcpClient(tristar_addr, port=502)
+        modbus_client = ModbusTcpClient(TRISTAR_ADDR, port=502)
         try:
             modbus_client.connect()
             rr = modbus_client.read_holding_registers(0, 91, unit=1)
@@ -375,36 +389,37 @@ def home(path):
 
 
 #
-# Handle a request for the graph data
+# Take the requested field and requested number of days, and create graph data for that fields values over the specified
+# time period.
+#
+# PARAMETERS
+#   days - The number of days to fetch all of the data for
+#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
+#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
+#               back empty results
+# RETURN VALUE
+#   An object containing two lists.  One list will be the time the value was recorded, and the second list will be the
+#   corresponding value at the recorded time.  This can be easily utilized to graph the values over time
 #
 @app.route("/graphData")
 def get_graph_data():
+    global VALID_POWER_FIELDS
+
     days = int(request.args.get('days', 4))
-    sql_connection = sqlite3.connect("powerdata.db")
-    sql_connection.row_factory = sqlite3.Row
-    with sql_connection:
-        cursor = sql_connection.execute("SELECT * FROM power_data WHERE record_time >= ? ORDER BY record_time ASC",
+    data_field = request.args.get('dataField', 'battery_voltage')
+    graph_data = {'time': [], 'data': []}
+    if data_field in VALID_POWER_FIELDS:
+        sql_connection = sqlite3.connect("powerdata.db")
+        sql_connection.row_factory = sqlite3.Row
+        with sql_connection:
+            cursor = sql_connection.execute("SELECT record_time, " + data_field +
+                                            " AS data FROM power_data WHERE record_time >= ? ORDER BY record_time ASC",
                                         [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
-    graph_data = {
-        'battload': [],
-        'time': [],
-        'battvoltage': [],
-        'battwatts': [],
-        'solarwatts': [],
-        'targetbattvoltage': [],
-        'net_production': [],
-        'load_watts': []
-    }
-    for row in cursor.fetchall():
-        rowdict = dict(row)
-        graph_data['battload'].append(rowdict.get('battery_load', 0))
-        graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
-        graph_data['battvoltage'].append(rowdict.get('battery_voltage', 0))
-        graph_data['battwatts'].append(rowdict.get('battery_watts', 0))
-        graph_data['solarwatts'].append(rowdict.get('solar_watts', 0))
-        graph_data['targetbattvoltage'].append(rowdict.get('target_regulation_voltage', 0))
-        graph_data['net_production'].append(rowdict.get('net_production', 0))
-        graph_data['load_watts'].append(rowdict.get('load_watts', 0))
+
+            for row in cursor.fetchall():
+                rowdict = dict(row)
+                graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+                graph_data['data'].append(rowdict.get('data', 0))
 
     return graph_data
 
@@ -451,25 +466,41 @@ def get_weather_max_min():
     return dict(min_max_data)
 
 
+#
+# Take the requested field and requested number of days, and create graph data for that fields values over the specified
+# time period.
+#
+# PARAMETERS
+#   days - The number of days to fetch all of the data for
+#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
+#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
+#               back empty results
+# RETURN VALUE
+#   An object containing two lists.  One list will be the time the value was recorded, and the second list will be the
+#   corresponding value at the recorded time.  This can be easily utilized to graph the values over time
+#
 @app.route("/graphWxData")
 def graph_wx_data():
+    global VALID_WX_FIELDS
+
     days = int(request.args.get('days', 1))
     data_field = request.args.get('dataField', 'outTemp_F')
 
     graph_data = {'time': [], 'data': []}
-    sql_connection = sqlite3.connect("wxdata.db")
-    sql_connection.row_factory = sqlite3.Row
-    with sql_connection:
-        cursor = sql_connection.execute("SELECT record_time, " + data_field +
-                                        " AS data FROM wx_data WHERE record_time >= ?",
+    if data_field in VALID_WX_FIELDS:
+        sql_connection = sqlite3.connect("wxdata.db")
+        sql_connection.row_factory = sqlite3.Row
+        with sql_connection:
+            cursor = sql_connection.execute("SELECT record_time, " + data_field +
+                                            " AS data FROM wx_data WHERE record_time >= ? ORDER BY record_time ASC",
                 [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
 
-        for row in cursor.fetchall():
-            rowdict = dict(row)
-            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
-            graph_data['data'].append(rowdict.get('data', 0))
+            for row in cursor.fetchall():
+                rowdict = dict(row)
+                graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+                graph_data['data'].append(rowdict.get('data', 0))
 
-    return graph_data
+        return graph_data
 
 
 @app.route("/blueIrisAlert")
