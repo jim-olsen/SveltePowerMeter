@@ -59,6 +59,11 @@ VALID_POWER_FIELDS = ["battery_load", "load_amps", "load_watts", "battery_voltag
 
 # Set this value to the ip of your tristar charge controller
 TRISTAR_ADDR = '10.0.10.10'
+# Set the address of the MQTT server to connect to for weather data and blue iris alerts
+MQTT_SERVER_ADDR = '10.0.10.31'
+# For now I have shelly devices manually listed.  There is not a great discovery mechanism built in but am exploring
+# options
+SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41']
 
 available_shellys = []
 
@@ -783,6 +788,9 @@ def refresh_daily_data():
             stats_data['last_charge_state'] = rowdict['last_charge_state']
 
 
+#
+# Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
+#
 def start_mqtt_client():
     def on_connect(client, userdata, flags, rc):
         logger.info("MQTT Client Connected, subscribing...")
@@ -803,7 +811,7 @@ def start_mqtt_client():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
-    client.connect("10.0.10.31", 1883, 60)
+    client.connect(MQTT_SERVER_ADDR, 1883, 60)
     client.loop_forever()
 
 
@@ -894,31 +902,19 @@ def main(proxy=None):
         proxy_thread.daemon = True
         proxy_thread.start()
 
-    retry_count = 0
-    while True:
-        try:
-            available_shellys.append(Shelly("http://10.0.10.41"))
-            logger.info("Shelly device 10.0.10.41 successfully added")
-            break
-        except Exception as e:
-            retry_count += 1
-            logger.error("Failed to add shelly device 10.0.10.41: " + str(e))
-            if retry_count > 5:
+    for shelley_addr in SHELLY_DEVICE_ADDRESSES:
+        retry_count = 0
+        while True:
+            try:
+                available_shellys.append(Shelly(shelley_addr))
+                logger.info("Shelly device" +  shelley_addr + " successfully added")
                 break
-            time.sleep(15)
-
-    retry_count = 0
-    while True:
-        try:
-            available_shellys.append(Shelly("http://10.0.10.40"))
-            logger.info("Shelly device 10.0.10.40 successfully added")
-            break
-        except Exception as e:
-            retry_count += 1
-            logger.error("Failed to add shelly device 10.0.10.40: " + str(e))
-            if retry_count > 5:
-                break
-            time.sleep(15)
+            except Exception as e:
+                retry_count += 1
+                logger.error("Failed to add shelly device" + shelley_addr + ": " + str(e))
+                if retry_count > 5:
+                    break
+                time.sleep(15)
 
     stats_thread = threading.Thread(target=update_running_stats, args=())
     stats_thread.daemon = True
