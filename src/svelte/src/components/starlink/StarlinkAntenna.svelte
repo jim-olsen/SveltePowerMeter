@@ -19,6 +19,8 @@
     onDestroy(unsubscribeStatus)
 </script>
 <div style="display: flex; flex-flow: row; justify-content: flex-start">
-    <Guage size={chartHeight} value="{azimuth}" />
-    <Guage size={chartHeight * 2} minValue="0" maxValue="90" minAngle="-90" maxAngle="0" majorTicks="10" clipWidth={chartHeight} clipHeight={chartHeight} value="{elevation}" transitionMs="0"/>
+    <Guage size={chartHeight ? chartHeight : 20} value="{azimuth}" />
+    <Guage size={chartHeight ? chartHeight * 2 : 20} minValue="0" maxValue="90" minAngle="-90" maxAngle="0"
+           majorTicks="10" clipWidth={chartHeight ? chartHeight : 20} clipHeight={chartHeight ? chartHeight : 20}
+           value="{elevation}" transitionMs="0"/>
 </div>
