@@ -413,7 +413,7 @@ function getPressureGraphData() {
  * @type {Writable<{}>}
  */
 export const pressureGraphData = writable({}, () => {
-    let unsubscribe = weatherGraphDuration.subscribe(getWindGraphData)
+    let unsubscribe = weatherGraphDuration.subscribe(getPressureGraphData)
     getPressureGraphData()
     let pressureGraphInterval = setInterval(getPressureGraphData, 15000);
     return () => {
@@ -442,7 +442,7 @@ function getHumidityGraphData() {
  * @type {Writable<{}>}
  */
 export const humidityGraphData = writable({}, () => {
-    let unsubscribe = weatherGraphDuration.subscribe(getWindGraphData)
+    let unsubscribe = weatherGraphDuration.subscribe(getHumidityGraphData)
     getHumidityGraphData()
     let humidityGraphInterval = setInterval(getHumidityGraphData, 15000);
     return () => {

@@ -21,23 +21,36 @@
         if (!event.repeat) {
             switch(event.key) {
                 case "a":
-                    $duration > 1 ? $duration-= 1 : $duration = 1;
+                    decreaseDuration();
                     break;
                 case "s":
-                    $duration+= 1;
+                    increaseDuration();
                     break;
             }
         }
     }
+
+    function decreaseDuration() {
+        graphData = [];
+        additionalGraphData = [];
+        $duration > 1 ? $duration-= 1 : $duration = 1;
+    }
+
+    function increaseDuration() {
+        graphData = [];
+        additionalGraphData = [];
+        $duration+= 1;
+    }
+
 </script>
 <div style="display:flex; flex-flow:row">
     <LineChart XAxisTitle="Time" YAxisTitle={yAxisLabel} dataset={graphData} additionalDataSet={additionalGraphData}
                height={chartHeight} width={chartWidth - buttonWidth} XAxisTickFormat={formatTime} />
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
-        <button on:click={()=> {$duration+= 1;}} style="width:8vw; height: 8vw;">
+        <button on:click={increaseDuration} style="width:8vw; height: 8vw;">
             <Fa icon={faChevronUp} style="font-size: 4vw;" />
         </button>
-        <button on:click={()=> {$duration > 1 ? $duration-= 1 : $duration = 1;}}
+        <button on:click={decreaseDuration}
                 style="width:8vw; height: 8vw;">
             <Fa icon={faChevronDown} style="font-size: 4vw;"/>
         </button>
