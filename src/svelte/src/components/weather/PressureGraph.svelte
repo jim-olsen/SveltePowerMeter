@@ -21,6 +21,6 @@
 
 </script>
 <div style="display:flex; flex-flow:row">
-    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="in Hg"
                          graphData={graphData} duration={weatherGraphDuration} />
 </div>

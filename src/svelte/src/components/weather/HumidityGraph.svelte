@@ -21,5 +21,6 @@
 
 </script>
 <div style="display:flex; flex-flow:row">
-    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} graphData={graphData} duration={weatherGraphDuration} />
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Humidity %"
+                         graphData={graphData} duration={weatherGraphDuration} />
 </div>

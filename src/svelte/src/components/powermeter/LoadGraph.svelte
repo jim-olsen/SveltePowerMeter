@@ -23,5 +23,5 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
-                         graphData={graphData} duration={powerGraphDuration} />
+                         graphData={graphData} duration={powerGraphDuration} yAxisLabel="Watts"/>
 </div>

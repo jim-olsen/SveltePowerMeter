@@ -8,6 +8,7 @@
     export let duration = 1;
     export let graphData = [];
     export let additionalGraphData = [];
+    export let yAxisLabel = '';
 
     let buttonWidth = 0;
 
@@ -30,7 +31,7 @@
     }
 </script>
 <div style="display:flex; flex-flow:row">
-    <LineChart XAxisTitle="Time" YAxisTitle="Humidity %" dataset={graphData} additionalDataSet={additionalGraphData}
+    <LineChart XAxisTitle="Time" YAxisTitle={yAxisLabel} dataset={graphData} additionalDataSet={additionalGraphData}
                height={chartHeight} width={chartWidth - buttonWidth} XAxisTickFormat={formatTime} />
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
         <button on:click={()=> {$duration+= 1;}} style="width:8vw; height: 8vw;">

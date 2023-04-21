@@ -26,6 +26,6 @@
 
 </script>
 <div style="display:flex; flex-flow:row">
-    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Wind MPH"
                          graphData={graphData} additionalGraphData={secondGraphData} duration={weatherGraphDuration} />
 </div>

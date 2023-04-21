@@ -25,7 +25,7 @@
     onDestroy(unsubscribeGraph);
 </script>
 <div style="display:flex; flex-flow:row">
-    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Degrees F"
                          graphData={graphData} additionalGraphData={secondGraphData}
                          duration={weatherGraphDuration} />
 </div>

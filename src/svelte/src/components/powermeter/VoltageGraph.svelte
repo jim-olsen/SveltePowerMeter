@@ -34,6 +34,6 @@
     onDestroy(unsubscribeGraph);
 </script>
 <div style="display:flex; flex-flow:row">
-    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
-                         graphData={graphData} additionalGraphData={secondGraphData} duration={powerGraphDuration} />
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Volts"
+                         graphData={graphData} additionalGraphData={secondGraphData} duration={powerGraphDuration}/>
 </div>

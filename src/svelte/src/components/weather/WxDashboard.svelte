@@ -58,30 +58,37 @@
     </div>
 {/if}
 {#if display === 'outtemp'}
-    <div on:click={() => display='dashboard'}>
-        <OutdoorTemperatureGraph chartWidth={outerWidth - (outerWidth * 0.05)} chartHeight={outerHeight - (outerHeight * 0.03)} />
+    <div style="display:flex; flex-flow:column; align-items: stretch;">
+        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} style="display:flex; flex-flow: row; justify-content: center;" >
+            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white; flex: 1.5;" />
+            <span class="mediumSmallText" style="flex: 3;">Outdoor Temperature</span>
+        </div>
+        <OutdoorTemperatureGraph chartWidth={wxWidth} chartHeight={wxHeight - headerHeight} />
     </div>
 {/if}
 {#if display === 'intemp'}
     <div style="display:flex; flex-flow:column; align-items: stretch;">
-        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} >
-            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white;"/>
+        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} style="display:flex; flex-flow: row; justify-content: center;">
+            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white; flex: 1.5;"/>
+            <span class="mediumSmallText" style="flex: 3;">Indoor Temperature</span>
         </div>
         <IndoorTemperatureGraph chartWidth={wxWidth} chartHeight={wxHeight - headerHeight} />
     </div>
 {/if}
 {#if display === 'pressure'}
     <div style="display:flex; flex-flow:column; align-items: stretch;">
-        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} >
-            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white;"/>
+        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} style="display:flex; flex-flow: row; justify-content: center;">
+            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white; flex: 1.5;"/>
+            <span class="mediumSmallText" style="flex: 3;">Barometric Pressure</span>
         </div>
         <PressureGraph chartWidth={wxWidth} chartHeight={wxHeight - headerHeight} />
     </div>
 {/if}
 {#if display === 'humidity'}
     <div style="display:flex; flex-flow:column; align-items: stretch;">
-        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} >
-            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white;"/>
+        <div on:click={() => display='dashboard'} bind:clientHeight={headerHeight} style="display:flex; flex-flow: row; justify-content: center;">
+            <Fa icon="{faArrowLeftLong}" style="font-size: 4vw; color: white; flex: 1.5;"/>
+            <span class="mediumSmallText" style="flex: 3;">Outdoor Humidity</span>
         </div>
         <HumidityGraph chartWidth={wxWidth} chartHeight={wxHeight - headerHeight} />
     </div>
