@@ -1,3 +1,6 @@
+import os
+import pickle
+
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
@@ -807,6 +810,7 @@ def start_mqtt_client():
             blueiris_alert = json.loads(msg.payload)
             blueiris_alert['time'] = int(time.time() * 1000)
             blueiris_alert['id'] = str(uuid.uuid4())
+            pickle.dump(blueiris_alert, open("last_blue_iris_alert.pkl", "w"))
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -816,6 +820,8 @@ def start_mqtt_client():
 
 
 def main(proxy=None):
+    global blueiris_alert
+
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
                 battery_load REAL,
@@ -873,6 +879,10 @@ def main(proxy=None):
                 windchill_F REAL
                 )
                 ''')
+
+    if os.path.exists("last_blue_iris_alert.pkl"):
+        blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "r"))
+
     refresh_daily_data()
 
     starlink_thread = threading.Thread(target=manage_starlink, args=())
