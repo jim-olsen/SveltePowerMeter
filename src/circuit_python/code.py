@@ -21,7 +21,9 @@ while True:
         pass
 
     while radio.connected:
-        # The 3.273 comes from the fact that the voltage divider circuit maxes out at 3.273 at 36v
+        # The 3.273 comes from the fact that the voltage divider circuit maxes out at 3.273 at 36v.  This is due to using
+        # a 100k/10k resistor combo as a voltage divider to measure the voltage.  This combo should be place on input
+        # A0
 
         # throw the first reading away
         current_battery_voltage = (adc_battery_voltage.value / ((3.273 / 3.3) * 65535)) * 36
@@ -32,6 +34,9 @@ while True:
         current_battery_voltage /= 3
         print("Battery Voltage:", current_battery_voltage)
         current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
+
+        # I am using an ACS758 current sensor that has a range of +/- 100 amps.  It outputs 5v, so I step it down with
+        # a standard voltage divider circuit utilizing a 10/20k voltage divider circuit with a capacitor to reduce noise
 
         current_battery_load = (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
         current_battery_load += (((adc_battery_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor

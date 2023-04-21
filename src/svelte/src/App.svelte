@@ -18,7 +18,6 @@
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
     import MainNavigation from "./components/navigation/MainNavigation.svelte";
-    import StarlinkOutagesChart from "./components/starlink/StarlinkOutagesChart.svelte";
     import StarlinkOutageDurationChart from "./components/starlink/StarlinkOutageDurationChart.svelte";
     import OutdoorTemperatureGraph from "./components/weather/OutdoorTemperatureGraph.svelte";
     import IndoorTemperatureGraph from "./components/weather/IndoorTemperatureGraph.svelte";
@@ -104,28 +103,28 @@
             <CurrentValues/>
             <div bind:clientWidth={graphWidth} bind:clientHeight={graphHeight} style="height: 100%; width:100%;">
                 {#if $currentView === 'voltageGraph'}
-                    <VoltageGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <VoltageGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'loadGraph'}
-                    <LoadGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <LoadGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'solarWattsGraph'}
-                    <SolarWattsGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <SolarWattsGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'batteryWattsGraph'}
-                    <BatteryWattsGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <BatteryWattsGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'statistics'}
                     <Statistics />
                 {/if}
                 {#if $currentView === 'outTempGraph'}
-                    <OutdoorTemperatureGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <OutdoorTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'inTempGraph'}
-                    <IndoorTemperatureGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <IndoorTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
                 {#if $currentView === 'windGraph'}
-                    <WindGraph chartWidth={graphWidth - (outerWidth * 0.05)} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                    <WindGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>

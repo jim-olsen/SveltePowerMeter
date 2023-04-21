@@ -391,6 +391,64 @@ export const windGraphData = writable({}, () => {
         unsubscribe();
         clearInterval(windGraphInterval);
     }
+});
+
+/**
+ * Retrieve the current pressure graph data
+ */
+function getPressureGraphData() {
+    fetch(`/graphWxData?days=${get(weatherGraphDuration)}&dataField=pressure_inHg`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            pressureGraphData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest pressure graph data
+ * @type {Writable<{}>}
+ */
+export const pressureGraphData = writable({}, () => {
+    let unsubscribe = weatherGraphDuration.subscribe(getWindGraphData)
+    getPressureGraphData()
+    let pressureGraphInterval = setInterval(getPressureGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(pressureGraphInterval);
+    }
+})
+
+/**
+ * Retrieve the current pressure graph data
+ */
+function getHumidityGraphData() {
+    fetch(`/graphWxData?days=${get(weatherGraphDuration)}&dataField=outHumidity`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            humidityGraphData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest pressure graph data
+ * @type {Writable<{}>}
+ */
+export const humidityGraphData = writable({}, () => {
+    let unsubscribe = weatherGraphDuration.subscribe(getWindGraphData)
+    getHumidityGraphData()
+    let humidityGraphInterval = setInterval(getHumidityGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(humidityGraphInterval);
+    }
 })
 
 /**

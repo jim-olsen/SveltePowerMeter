@@ -1,14 +1,12 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {batteryWattsGraphData} from "../../stores";
-    import {powerGraphDuration} from "../../stores";
-    import LineChart from "../d3/LineChart.svelte";
+    import {batteryWattsGraphData, powerGraphDuration} from "../../stores";
+    import DurationalLineChart from "../d3/DurationalLineChart.svelte";
 
     export let chartWidth=800
     export let chartHeight=300
 
     let graphData = [];
-
     const unsubscribeGraph = batteryWattsGraphData.subscribe(data => {
         graphData = [];
         if (data.hasOwnProperty("time")) {
@@ -22,31 +20,8 @@
     });
 
     onDestroy(unsubscribeGraph);
-
-    function formatTime(timeVal, index) {
-        return new Intl.DateTimeFormat( 'en-US', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric'})
-            .format(new Date(timeVal));
-    }
-
-    function handleKeyDown(event) {
-        if (!event.repeat) {
-            switch(event.key) {
-                case "a":
-                    $powerGraphDuration > 1 ? $powerGraphDuration-= 1 : $powerGraphDuration = 1;
-                    break;
-                case "s":
-                    $powerGraphDuration+= 1;
-                    break;
-            }
-        }
-    }
 </script>
-<svelte:window on:keydown={handleKeyDown}/>
 <div style="display:flex; flex-flow:row">
-    <LineChart XAxisTitle="Time" YAxisTitle="Battery Watts" dataset={graphData}
-           height={chartHeight} width={chartWidth} XAxisTickFormat={formatTime} />
-    <div style="display:flex; flex-flow:column">
-        <button on:click={()=> {$powerGraphDuration+= 1;}}>&nbsp;&nbsp;+&nbsp;&nbsp;</button>
-        <button on:click={()=> {$powerGraphDuration > 1 ? $powerGraphDuration-= 1 : $powerGraphDuration = 1;}}>&nbsp;&nbsp;-&nbsp;&nbsp;</button>
-    </div>
+    <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} graphData={graphData}
+                         duration={powerGraphDuration} />
 </div>

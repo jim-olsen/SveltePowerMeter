@@ -6,6 +6,8 @@
         curveBasis
     } from "d3";
 
+    import {onMount} from "svelte";
+
     import Axis from "./Axis.svelte";
 
     export let XAxisTitle = "";
