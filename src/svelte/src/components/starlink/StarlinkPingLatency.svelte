@@ -33,10 +33,10 @@
         <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Latency (ms)" dataset={pingLatencyChartData} width={chartWidth}
                height={chartHeight}/>
         <div style="display:flex; flex-flow:column; justify-content: flex-start">
-            <span class="mediumSmallText">Cur: {pingLatency}</span>
-            <span class="mediumSmallText">Avg: {pingLatencyAvg}</span>
-            <span class="mediumSmallText">Min: {pingLatencyMin}</span>
-            <span class="mediumSmallText">Max: {pingLatencyMax}</span>
+            <span class="mediumSmallerText">Cur: {pingLatency}</span>
+            <span class="mediumSmallerText">Avg: {pingLatencyAvg}</span>
+            <span class="mediumSmallerText">Min: {pingLatencyMin}</span>
+            <span class="mediumSmallerText">Max: {pingLatencyMax}</span>
         </div>
     </div>
 </div>

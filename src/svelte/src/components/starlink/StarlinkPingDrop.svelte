@@ -31,9 +31,9 @@
         <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Success %" dataset={pingDropChartData} height={chartHeight}
                width={chartWidth}/>
         <div style="display:flex; flex-flow: column; justify-content: flex-start;">
-            <span class="mediumSmallText">Cur: {pingDrop}%</span>
-            <span class="mediumSmallText">Avg: {pingDropAvg}%</span>
-            <span class="mediumSmallText">Max: {pingDropMax}%</span>
+            <span class="mediumSmallerText">Cur: {pingDrop}%</span>
+            <span class="mediumSmallerText">Avg: {pingDropAvg}%</span>
+            <span class="mediumSmallerText">Max: {pingDropMax}%</span>
         </div>
     </div>
 </div>

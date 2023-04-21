@@ -164,6 +164,11 @@ body tbody {
     color: #fca503;
 }
 
+.mediumSmallerText {
+    font-size: 2.5vw;
+    color: #fca503;
+}
+
 .smallText {
     font-size: 1.5vw;
     color: #fca503;
