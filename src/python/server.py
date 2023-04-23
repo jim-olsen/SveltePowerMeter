@@ -882,8 +882,11 @@ def main(proxy=None):
                 )
                 ''')
 
-    if os.path.exists("last_blue_iris_alert.pkl"):
-        blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
+    try:
+        if os.path.exists("last_blue_iris_alert.pkl"):
+            blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
+    except Exception as e:
+        print("Failed to load last blue iris alert: " + str(e))
 
     refresh_daily_data()
 
