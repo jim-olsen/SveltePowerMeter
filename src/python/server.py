@@ -810,7 +810,9 @@ def start_mqtt_client():
             blueiris_alert = json.loads(msg.payload)
             blueiris_alert['time'] = int(time.time() * 1000)
             blueiris_alert['id'] = str(uuid.uuid4())
-            pickle.dump(blueiris_alert, open("last_blue_iris_alert.pkl", "w"))
+            file = open(b"last_blue_iris_alert.pkl", "wb")
+            pickle.dump(blueiris_alert, file)
+            file.close()
 
     client = mqtt.Client()
     client.on_connect = on_connect
@@ -881,7 +883,7 @@ def main(proxy=None):
                 ''')
 
     if os.path.exists("last_blue_iris_alert.pkl"):
-        blueiris_alert = pickle.load(open(b"last_blue_iris_alert.pkl", "r"))
+        blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
 
     refresh_daily_data()
 
