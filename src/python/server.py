@@ -881,7 +881,7 @@ def main(proxy=None):
                 ''')
 
     if os.path.exists("last_blue_iris_alert.pkl"):
-        blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "r"))
+        blueiris_alert = pickle.load(open(b"last_blue_iris_alert.pkl", "r"))
 
     refresh_daily_data()
 
