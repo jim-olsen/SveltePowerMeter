@@ -2,25 +2,17 @@
 import board
 import analogio
 import time
-from adafruit_ble import BLERadio
-from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
-from adafruit_ble.services.nordic import UARTService
+from _bleio import adapter
+from LoadAdvertisement import LoadAdvertisement
 
-radio = BLERadio()
-radio.name = "CabinSensor"
-print(''.join('{:02x}'.format(x) for x in radio.address_bytes))
-adc_battery_voltage = analogio.AnalogIn(board.A0)
-adc_battery_load = analogio.AnalogIn(board.A1)
-adc_load = analogio.AnalogIn(board.A2)
-current_sensor_factor = 74
-uart_server = UARTService()
-advertisement = ProvideServicesAdvertisement(uart_server)
-while True:
-    radio.start_advertising(advertisement)
-    while not radio.connected:
-        pass
 
-    while radio.connected:
+def main():
+    advertisement = LoadAdvertisement("load")
+    adc_battery_voltage = analogio.AnalogIn(board.A0)
+    adc_battery_load = analogio.AnalogIn(board.A1)
+    adc_load = analogio.AnalogIn(board.A2)
+    current_sensor_factor = 74
+    while True:
         # The 3.273 comes from the fact that the voltage divider circuit maxes out at 3.273 at 36v.  This is due to using
         # a 100k/10k resistor combo as a voltage divider to measure the voltage.  This combo should be place on input
         # A0
@@ -50,5 +42,8 @@ while True:
         current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
         current_load /= 3
         print("Current Load:", current_load, "A")
-        uart_server.write(bytes("{:.2f}".format(current_battery_voltage) + ":" + "{:.2f}".format(current_battery_load) + ":" + "{:.2f}*".format(current_load), 'UTF-8'))
+        adapter.start_advertising(advertisement.advertise_data("{:.1f}".format(current_battery_voltage) +
+                                                               ":" + "{:.1f}".format(current_battery_load) + ":" +
+                                                               "{:.1f}*".format(current_load)),
+                                  scan_respone=None, connectable=False, interval=0.5)
         time.sleep(10)
