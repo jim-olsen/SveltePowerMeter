@@ -44,7 +44,7 @@ def main():
         print("Current Load:", current_load, "A")
         adapter.start_advertising(advertisement.advertise_data("{:.1f}".format(current_battery_voltage) +
                                                                "{:.1f}".format(current_battery_load) +
-                                                               "{:.1f}*".format(current_load)),
+                                                               "{:.1f}".format(current_load)),
                                   scan_respone=None, connectable=False, interval=0.5)
         time.sleep(10)
 
