@@ -6,7 +6,7 @@ import time
 import threading
 from datetime import datetime, timedelta
 import asyncio
-from pymodbus.client import ModbusTcpClient
+from pymodbus.client.sync import ModbusTcpClient
 from asyncio.exceptions import CancelledError, TimeoutError
 from bleak import BleakClient, BleakScanner
 from bleak.exc import BleakDeviceNotFoundError, BleakDBusError
