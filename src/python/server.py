@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 
 from flask import Flask, send_from_directory, send_file, request
 import time
@@ -7,9 +8,7 @@ import threading
 from datetime import datetime, timedelta
 import asyncio
 from pymodbus.client.sync import ModbusTcpClient
-from asyncio.exceptions import CancelledError, TimeoutError
-from bleak import BleakClient, BleakScanner
-from bleak.exc import BleakDeviceNotFoundError, BleakDBusError
+from bleak import BleakScanner, BLEDevice, AdvertisementData
 from PIL import Image
 from Starlink import Starlink
 from Shelly import Shelly
@@ -43,8 +42,6 @@ stats_data = {
 weather_data = {}
 blueiris_alert = {}
 
-UART_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for TX
-UART_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"  # Nordic NUS characteristic for RX
 # List of valid fields for querying for weather graph data.  This protects against sql injection using a dynamic field
 # based request
 VALID_WX_FIELDS = ["altimeter_inHg", "appTemp_F", "barometer_inHg", "cloudbase_foot", "daily_rain", "dateTime",
@@ -78,46 +75,16 @@ dishy = Starlink()
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
 # code for how this is implemented
 #
-async def update_ble_values(ble_address, loop):
-    data_received = asyncio.Event()
-
-    def notification_handler(sender, data):
-        """Simple notification handler which prints the data received."""
-        logger.debug("{0}: {1}".format(sender, data))
-        sensor_values = data.decode("utf-8").split(':')
+async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData):
+    if advertisement and advertisement.local_name == 'load':
+        logger.debug("Received load data: " + str(advertisement.service_data))
+        load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
+        sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
         current_data["battery_voltage"] = float(sensor_values[0])
         current_data["battery_load"] = float(sensor_values[1])
         current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
         logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
                      f"Load: {current_data['load_amps']}")
-        data_received.set()
-
-    while True:
-        try:
-            logger.info(f"Trying to connect to sensor at {str(ble_address)}")
-            async with BleakClient(ble_address, loop=loop) as client:
-
-                # wait for BLE client to be connected
-                while not client.is_connected():
-                    await asyncio.sleep(1)
-                logger.info("Connected to BLE Sensor")
-
-                data_received.clear()
-                # wait for data to be sent from client
-                await client.start_notify(UART_RX_UUID, notification_handler)
-
-                while client.is_connected():
-                    await asyncio.wait_for(data_received.wait(), 20)
-                    data_received.clear()
-
-                logger.info("Client has disconnected from BLE Sensor")
-                client.stop_notify()
-        except (OSError, CancelledError, TimeoutError, BleakDeviceNotFoundError, BleakDBusError):
-            logger.error("Client is disconnected by OS")
-            pass
-
-        logger.info("Disconnected, retrying connection....")
-
 
 def update_sql_tables():
     global current_data
@@ -746,32 +713,6 @@ def run_ble_thread(address, loop):
 
 
 #
-# Look through all available bluetooth devices and fine one with the name CabinSensor and get its address
-#
-# RETURNS:
-#  Either None if no sensor was found, or the address of the bluetooth device representing the sensor
-#
-async def async_find_cabin_sensor():
-    logger.info("Finding cabin sensor")
-    devices = await BleakScanner.discover(timeout=10, return_adv=False)
-    for d in devices:
-        logger.info(f"{d.name} {d.address} {d.metadata} {d.rssi}")
-        if d.name == 'CabinSensor':
-            return d.address
-    return None
-
-
-#
-# The synchronous version for async_find_cabin_sensor()
-#
-# RETURNS:
-#  Either None if no sensor was found, or the address of the bluetooth device representing the sensor
-#
-def find_cabin_sensor():
-    return asyncio.run(async_find_cabin_sensor())
-
-
-#
 # Update the day accumulated data from the daily table for today.  If none is present for today, just skip updating
 #
 def refresh_daily_data():
@@ -819,6 +760,19 @@ def start_mqtt_client():
     client.on_message = on_message
     client.connect(MQTT_SERVER_ADDR, 1883, 60)
     client.loop_forever()
+
+
+async def find_advertisements():
+    stop_event = asyncio.Event()
+
+    async with BleakScanner(detection_callback=update_ble_values) as scanner:
+        await stop_event.wait()
+
+
+def advertisement_monitor_thread():
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(find_advertisements())
+    logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
 
 
 def main(proxy=None):
@@ -894,24 +848,15 @@ def main(proxy=None):
     starlink_thread.daemon = True
     starlink_thread.start()
 
+
     if proxy is None:
         tristar_thread = threading.Thread(target=update_tristar_values, args=())
         tristar_thread.daemon = True
         tristar_thread.start()
 
-        loop = asyncio.get_event_loop()
-        retry_count = 0
-        while True:
-            ble_address = loop.run_until_complete(async_find_cabin_sensor())
-            retry_count += 1
-            if ble_address is not None or retry_count > 5:
-                break
-        if ble_address is not None:
-            ble_thread = threading.Thread(target=run_ble_thread, args=(ble_address, loop))
-            ble_thread.daemon = True
-            ble_thread.start()
-
-        logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
+        advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
+        advertisement_thread.daemon = True
+        advertisement_thread.start()
     else:
         proxy_thread = threading.Thread(target=update_through_proxy, args=(proxy,))
         proxy_thread.daemon = True
