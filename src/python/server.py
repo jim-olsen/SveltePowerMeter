@@ -299,7 +299,7 @@ def update_tristar_values():
                 current_data["seconds_in_equalization_daily"] = rr.registers[78]
                 modbus_client.close()
         except Exception as e:
-            logger.error("Failed to connect to tristar modbus")
+            logger.error("Failed to connect to tristar modbus", e)
             modbus_client.close()
         time.sleep(5)
 
