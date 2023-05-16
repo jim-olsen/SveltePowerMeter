@@ -774,16 +774,17 @@ async def find_advertisements():
     global LAST_BEACON_RECEIVED
 
     LAST_BEACON_RECEIVED = time.time()
-    try:
-        while True:
+    while True:
+        try:
             async with BleakScanner(detection_callback=update_ble_values) as scanner:
                 while True:
                     await asyncio.sleep(10)
                     if time.time() - LAST_BEACON_RECEIVED > 10:
                         break
             logger.error(f"Failed to hear from any beacons in {time.time() - LAST_BEACON_RECEIVED} seconds, restarting scanner")
-    except Exception as e:
-        print("Failure in Bleak Scanner: ", e)
+        except Exception as e:
+            print("Failure in Bleak Scanner: ", e, " retrying.....")
+            await asyncio.sleep(10)
 
 
 def advertisement_monitor_thread():
