@@ -1,18 +1,24 @@
 import grpc
 import math
 import json
+import time
 import statistics
 import logging
 from PIL import Image
 import yagrc.reflector
 import numpy as np
 
-try:
-    from yagrc import importer
+while True:
+    try:
+        from yagrc import importer
 
-    importer.add_lazy_packages(["spacex.api.device"])
-except (ImportError, AttributeError):
-    print("Error importing lazy packages")
+        importer.add_lazy_packages(["spacex.api.device"])
+        print("Lazy packages successfully added")
+        break
+    except (ImportError, AttributeError):
+        print("Error importing lazy packages")
+        time.sleep(5)
+
 
 from spacex.api.device import device_pb2
 from spacex.api.device import device_pb2_grpc
