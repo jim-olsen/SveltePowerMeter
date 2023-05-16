@@ -46,7 +46,7 @@ def main():
                                                                "{:.1f}".format(current_battery_load) +
                                                                "{:.1f}".format(current_load)),
                                   scan_respone=None, connectable=False, interval=0.5)
-        time.sleep(10)
+        time.sleep(3)
 
 
 if __name__ == "__main__":
