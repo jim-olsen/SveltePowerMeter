@@ -7,10 +7,13 @@ from PIL import Image
 import yagrc.reflector
 import numpy as np
 
+LAZY_PACKAGES_IMPORTED = False
+
 try:
     from yagrc import importer
 
     importer.add_lazy_packages(["spacex.api.device"])
+    LAZY_PACKAGES_IMPORTED = True
 except (ImportError, AttributeError):
     print("Error importing lazy packages")
 
@@ -43,7 +46,12 @@ class Starlink:
             self.initialize_grpc()
 
     def initialize_grpc(self):
+        global LAZY_PACKAGES_IMPORTED
+
         try:
+            if not LAZY_PACKAGES_IMPORTED:
+                importer.add_lazy_packages(["spacex.api.device"])
+                LAZY_PACKAGES_IMPORTED = True
             with grpc.insecure_channel(self.starlinkurl) as channel:
                 importer.resolve_lazy_imports(channel)
                 self.initialized = True
