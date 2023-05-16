@@ -2,6 +2,7 @@ import grpc
 import math
 import json
 import time
+import sys
 import statistics
 import logging
 from PIL import Image
@@ -23,6 +24,8 @@ while True:
 from spacex.api.device import device_pb2
 from spacex.api.device import device_pb2_grpc
 from spacex.api.device import dish_pb2
+
+RETRY_COUNT = 50
 
 logging.basicConfig()
 logging.getLogger('starlink').setLevel(logging.WARNING)
@@ -49,12 +52,18 @@ class Starlink:
             self.initialize_grpc()
 
     def initialize_grpc(self):
+        global RETRY_COUNT
+
         try:
             with grpc.insecure_channel(self.starlinkurl) as channel:
                 importer.resolve_lazy_imports(channel)
                 self.initialized = True
         except Exception as e:
             logger.warning("Failed to initialize Starlink, delaying...")
+            RETRY_COUNT -= 1
+            if RETRY_COUNT <= 0:
+                logger.error("Exceeded maximum retry count on starlink, exit process for service restart")
+                sys.exit(1)
 
     #
     # return a status structure containing the values from a get_status request to the gRPC service.  This data has
