@@ -41,6 +41,7 @@ stats_data = {
 }
 weather_data = {}
 blueiris_alert = {}
+LAST_BEACON_RECEIVED = time.time()
 
 # List of valid fields for querying for weather graph data.  This protects against sql injection using a dynamic field
 # based request
@@ -76,15 +77,22 @@ dishy = Starlink()
 # code for how this is implemented
 #
 async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData):
-    if advertisement and advertisement.local_name == 'load':
-        logger.debug("Received load data: " + str(advertisement.service_data))
-        load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
-        sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
-        current_data["battery_voltage"] = float(sensor_values[0])
-        current_data["battery_load"] = float(sensor_values[1])
-        current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
-        logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
+    global LAST_BEACON_RECEIVED
+
+    try:
+        if advertisement and advertisement.local_name == 'load':
+            LAST_BEACON_RECEIVED = time.time()
+            logger.debug("Received load data: " + str(advertisement.service_data))
+            load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
+            sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
+            current_data["battery_voltage"] = float(sensor_values[0])
+            current_data["battery_load"] = float(sensor_values[1])
+            current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
+            logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
                      f"Load: {current_data['load_amps']}")
+    except Exception as e:
+        logger.error(f"Failure inside of BLE beacon parsing: {e}")
+
 
 def update_sql_tables():
     global current_data
@@ -763,16 +771,22 @@ def start_mqtt_client():
 
 
 async def find_advertisements():
-    stop_event = asyncio.Event()
+    global LAST_BEACON_RECEIVED
 
-    async with BleakScanner(detection_callback=update_ble_values) as scanner:
-        await stop_event.wait()
+    LAST_BEACON_RECEIVED = time.time()
+    try:
+        while True:
+            async with BleakScanner(detection_callback=update_ble_values) as scanner:
+                while time.time() - LAST_BEACON_RECEIVED < 10:
+                    await asyncio.sleep(10)
+            logger.error(f"Failed to hear from any beacons in {time.time() - LAST_BEACON_RECEIVED} seconds, restarting scanner")
+    except Exception as e:
+        print("Failure in Bleak Scanner: ", e)
 
 
 def advertisement_monitor_thread():
     loop = asyncio.new_event_loop()
     loop.run_until_complete(find_advertisements())
-    logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
 
 
 def main(proxy=None):
@@ -857,6 +871,8 @@ def main(proxy=None):
         advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
         advertisement_thread.daemon = True
         advertisement_thread.start()
+
+        logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
     else:
         proxy_thread = threading.Thread(target=update_through_proxy, args=(proxy,))
         proxy_thread.daemon = True
