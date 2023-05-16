@@ -42,11 +42,12 @@ def main():
         current_load += (((adc_load.value / 65535) * 3.3) - 1.65) * current_sensor_factor
         current_load /= 3
         print("Current Load:", current_load, "A")
+        adapter.stop_advertising()
         adapter.start_advertising(advertisement.advertise_data("{:.1f}".format(current_battery_voltage) +
                                                                "{:.1f}".format(current_battery_load) +
                                                                "{:.1f}".format(current_load)),
-                                  scan_respone=None, connectable=False, interval=0.5)
-        time.sleep(3)
+                                  connectable=False, interval=0.5)
+        time.sleep(5)
 
 
 if __name__ == "__main__":
