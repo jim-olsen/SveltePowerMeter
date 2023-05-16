@@ -776,7 +776,7 @@ async def find_advertisements():
     LAST_BEACON_RECEIVED = time.time()
     try:
         while True:
-            async with BleakScanner(detection_callback=update_ble_values) as scanner:
+            async with BleakScanner(detection_callback=update_ble_values, scanning_mode='passive') as scanner:
                 while True:
                     await asyncio.sleep(10)
                     if time.time() - LAST_BEACON_RECEIVED > 10:
