@@ -1,8 +1,10 @@
+import signal
+
 import grpc
 import math
 import json
 import time
-import sys
+import os
 import statistics
 import logging
 from PIL import Image
@@ -63,7 +65,7 @@ class Starlink:
             RETRY_COUNT -= 1
             if RETRY_COUNT <= 0:
                 logger.error("Exceeded maximum retry count on starlink, exit process for service restart")
-                sys.exit(1)
+                os.kill(os.getpid(), signal.SIGTERM)
 
     #
     # return a status structure containing the values from a get_status request to the gRPC service.  This data has
