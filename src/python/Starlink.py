@@ -1,5 +1,4 @@
 import signal
-
 import grpc
 import math
 import json
@@ -61,7 +60,7 @@ class Starlink:
                 importer.resolve_lazy_imports(channel)
                 self.initialized = True
         except Exception as e:
-            logger.warning("Failed to initialize Starlink, delaying... Retries remaining: " + RETRY_COUNT)
+            logger.warning(f"Failed to initialize Starlink, delaying... Retries remaining: {RETRY_COUNT}")
             RETRY_COUNT -= 1
             if RETRY_COUNT <= 0:
                 logger.error("Exceeded maximum retry count on starlink, exit process for service restart")
