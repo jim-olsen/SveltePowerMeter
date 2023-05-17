@@ -777,10 +777,9 @@ async def find_advertisements():
     while True:
         try:
             async with BleakScanner(detection_callback=update_ble_values):
-                await BleakScanner.start()
                 while True:
                     await asyncio.sleep(10)
-                    if time.time() - LAST_BEACON_RECEIVED > 10:
+                    if time.time() - LAST_BEACON_RECEIVED > 15:
                         await BleakScanner.stop()
                         break
             logger.error(f"Failed to hear from any beacons in {time.time() - LAST_BEACON_RECEIVED} seconds, restarting scanner")
