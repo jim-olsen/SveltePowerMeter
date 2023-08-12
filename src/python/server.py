@@ -2,6 +2,10 @@ import os
 import pickle
 import re
 
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
+from Crypto.Util.Padding import pad
+from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
@@ -66,18 +70,80 @@ MQTT_SERVER_ADDR = '10.0.10.31'
 # options
 SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41']
 
+VICTRON_ADDRESS = 'FA:66:AD:B2:8C:E4'
+VICTRON_BLE_KEY = '932d4be6e50cb7f03148f8529b05f58b'
+
 available_shellys = []
 
 app = Flask(__name__)
 dishy = Starlink()
 
+def process_victron_data(advertisement: AdvertisementData):
+    global VICTRON_BLE_KEY
+
+    parser = Struct(
+        "prefix" / FixedSized(2, GreedyBytes),
+        # Model ID
+        "model_id" / Int16ul,
+        # Packet type
+        "readout_type" / Int8sl,
+        # IV for encryption
+        "iv" / Int16ul,
+        "encrypted_data" / GreedyBytes,
+        )
+    container = parser.parse(advertisement.manufacturer_data[737])
+
+    advertisement_key = bytes.fromhex(VICTRON_BLE_KEY)
+
+    # The first data byte is a key check byte
+    if container.encrypted_data[0] != advertisement_key[0]:
+        raise Exception("Incorrect advertisement key")
+
+    ctr = Counter.new(128, initial_value=container.iv, little_endian=True)
+
+    cipher = AES.new(
+            advertisement_key,
+            AES.MODE_CTR,
+            counter=ctr,
+    )
+
+    decrypted_packet = cipher.decrypt(pad(container.encrypted_data[1:], 16))
+    charger_parser = Struct(
+        # Charge State:   0 - Off
+        #                 3 - Bulk
+        #                 4 - Absorption
+        #                 5 - Float
+        "charge_state" / Int8ul,
+        "charger_error" / Int8ul,
+        # Battery voltage reading in 0.01V increments
+        "battery_voltage" / Int16sl,
+        # Battery charging Current reading in 0.1A increments
+        "battery_charging_current" / Int16sl,
+        # Todays solar power yield in 10Wh increments
+        "yield_today" / Int16ul,
+        # Current power from solar in 1W increments
+        "solar_power" / Int16ul,
+        # External device load in 0.1A increments
+        "external_device_load" / Int16ul,
+        )
+
+    charger_data = charger_parser.parse(decrypted_packet)
+    print(charger_data)
+    current_data["solar_watts"] = charger_data.solar_power
+    current_data["battery_charge_current"] = float(charger_data.battery_charging_current) / 10
+    charge_states = ["NIGHT", "LOW_POWER", "FAULT", "MPPT", "ABSORB", "FLOAT", "STORAGE", "EQUALIZE_MANUAL"]
+    if charger_data.charge_state <= 7:
+        current_data["charge_state"] = charge_states[charger_data.charge_state]
+    else:
+        current_data["charge_state"] = "OTHER"
+    current_data["battery_voltage"] = float(charger_data.battery_voltage) / 100
 
 #
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
 # code for how this is implemented
 #
 async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData):
-    global LAST_BEACON_RECEIVED
+    global LAST_BEACON_RECEIVED, VICTRON_ADDRESS, VICTRON_BLE_KEY
 
     try:
         if advertisement and advertisement.local_name == 'load':
@@ -85,11 +151,15 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
             logger.debug("Received load data: " + str(advertisement.service_data))
             load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
             sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
-            current_data["battery_voltage"] = float(sensor_values[0])
+            # current_data["battery_voltage"] = float(sensor_values[0])
             current_data["battery_load"] = float(sensor_values[1])
             current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
             logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
                      f"Load: {current_data['load_amps']}")
+        elif advertisement and device.address == VICTRON_ADDRESS:
+            logger.debug("Received victron update")
+            process_victron_data(advertisement)
+
     except Exception as e:
         logger.error(f"Failure inside of BLE beacon parsing: {e}")
 
@@ -870,7 +940,7 @@ def main(proxy=None):
     if proxy is None:
         tristar_thread = threading.Thread(target=update_tristar_values, args=())
         tristar_thread.daemon = True
-        tristar_thread.start()
+#        tristar_thread.start()
 
         advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
         advertisement_thread.daemon = True
