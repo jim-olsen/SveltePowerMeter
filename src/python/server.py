@@ -137,6 +137,7 @@ def process_victron_data(advertisement: AdvertisementData):
     else:
         current_data["charge_state"] = "OTHER"
     current_data["battery_voltage"] = float(charger_data.battery_voltage) / 100
+    stats_data['day_solar_wh'] = charger_data.yield_today * 10
 
 #
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
@@ -279,7 +280,7 @@ def update_running_stats():
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
                 stats_data['day_load_wh'] += 0.00139 * (
                         current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
-                stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
+                # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
                 stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
                                              current_data.get('battery_voltage', 0)
                 stats_data['last_charge_state'] = current_data.get('charge_state', 'NIGHT')
