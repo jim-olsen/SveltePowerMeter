@@ -68,7 +68,7 @@ TRISTAR_ADDR = '10.0.10.10'
 MQTT_SERVER_ADDR = '10.0.10.31'
 # For now I have shelly devices manually listed.  There is not a great discovery mechanism built in but am exploring
 # options
-SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41']
+SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43']
 
 VICTRON_ADDRESS = 'FA:66:AD:B2:8C:E4'
 VICTRON_BLE_KEY = '932d4be6e50cb7f03148f8529b05f58b'
@@ -128,7 +128,7 @@ def process_victron_data(advertisement: AdvertisementData):
         )
 
     charger_data = charger_parser.parse(decrypted_packet)
-    print(charger_data)
+    logger.debug(charger_data)
     current_data["solar_watts"] = charger_data.solar_power
     current_data["battery_charge_current"] = float(charger_data.battery_charging_current) / 10
     charge_states = ["NIGHT", "LOW_POWER", "FAULT", "MPPT", "ABSORB", "FLOAT", "STORAGE", "EQUALIZE_MANUAL"]
