@@ -4,6 +4,7 @@ import time
 import asyncio
 import paho.mqtt.client as mqtt
 import re
+import json
 
 from bleak import BleakScanner, BLEDevice, AdvertisementData
 from Crypto.Cipher import AES
@@ -73,13 +74,13 @@ def process_victron_data(advertisement: AdvertisementData):
     charge_states = ["NIGHT", "LOW_POWER", "FAULT", "MPPT", "ABSORB", "FLOAT", "STORAGE", "EQUALIZE_MANUAL"]
 
     if MQTT_CLIENT:
-        MQTT_CLIENT.publish('solar_charger_data', {
+        MQTT_CLIENT.publish('solar_charger_data', json.dumps({
             'solar_watts': charger_data.solar_power,
             'battery_charge_current': float(charger_data.battery_charging_current) / 10,
             'charge_state': charge_states[charger_data.charge_state] if charger_data.charge_state <= 7 else "OTHER",
             'battery_voltage': float(charger_data.battery_voltage) / 100,
             'day_solar_wh': charger_data.yield_today * 10
-        })
+        }))
     else:
         logger.error('Received solar charger data, but MQTT not connected')
 
@@ -93,11 +94,11 @@ def process_circuit_python_ble(advertisement: AdvertisementData):
     sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
 
     if MQTT_CLIENT:
-        MQTT_CLIENT.publish('load_sensor_data', {
+        MQTT_CLIENT.publish('load_sensor_data', json.dumps({
             'battery_voltage': float(sensor_values[0]),
             'battery_load': float(sensor_values[1]),
             'load_amps':  float(sensor_values[2].replace("*", ""))
-        })
+        }))
 
 #
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
@@ -171,12 +172,12 @@ def monitor_batteries(batteries: List[SmartBattery]):
         for battery in batteries:
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2'):
                 try:
-                    logger.debug(f'Connecting to battery {battery.name()}')
-                    logger.debug(f'Battery {battery.name()} percent charged {battery.capacity_percent()}%')
+                    logger.info(f"Connecting to battery {battery.name()}")
+                    logger.info(f'Battery {battery.name()} percent charged {battery.capacity_percent()}%')
                     cell_balance_status = []
                     for i in range(battery.num_cells()):
                         cell_balance_status.append(battery.balance_status(i + 1))
-                    MQTT_CLIENT.publish('battery_status', {
+                    MQTT_CLIENT.publish('battery_status', json.dumps({
                         'name': battery.name(),
                         'voltage': battery.voltage(),
                         'current': battery.current(),
@@ -191,16 +192,16 @@ def monitor_batteries(batteries: List[SmartBattery]):
                         'num_cells': battery.num_cells(),
                         'battery_temps_f': battery.battery_temps_f(),
                         'cell_block_voltages': battery.cell_block_voltages()
-                    })
+                    }))
                 except Exception as e:
-                    print(e)
+                    logger.error(f"Failed to read from battery {battery.name()}: {e}")
                 time.sleep(5)
         time.sleep(30)
 
 
 def main():
     logging.basicConfig()
-    logging.getLogger('energy_monitor').setLevel(logging.DEBUG)
+    logging.getLogger('energy_monitor').setLevel(logging.INFO)
 
     logger.info("Finding all batteries in range")
     batteries = find_all_batteries()
