@@ -201,7 +201,7 @@ def monitor_batteries(batteries: List[SmartBattery]):
 
 def main():
     logging.basicConfig()
-    logging.getLogger('energy_monitor').setLevel(logging.INFO)
+    logging.getLogger('energy_monitor').setLevel(logging.WARN)
 
     logger.info("Finding all batteries in range")
     batteries = find_all_batteries()
