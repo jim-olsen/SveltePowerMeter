@@ -212,9 +212,9 @@ def main():
     mqtt_thread.daemon = True
     mqtt_thread.start()
 
-    advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
-    advertisement_thread.daemon = True
-    advertisement_thread.start()
+#    advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
+#    advertisement_thread.daemon = True
+#    advertisement_thread.start()
 
     monitor_batteries(batteries)
 
