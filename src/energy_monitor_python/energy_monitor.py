@@ -171,6 +171,7 @@ def monitor_batteries(batteries: List[SmartBattery]):
         for battery in batteries:
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2'):
                 try:
+                    logger.debug(f'Connecting to battery {battery.name()}')
                     logger.debug(f'Battery {battery.name()} percent charged {battery.capacity_percent()}%')
                     cell_balance_status = []
                     for i in range(battery.num_cells()):

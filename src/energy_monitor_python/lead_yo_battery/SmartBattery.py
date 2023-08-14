@@ -111,9 +111,9 @@ class SmartBattery:
                 await client.disconnect()
 
             except Exception as e:
-                logger.error("Failed to connect to battery: %s", str(e))
+                logger.error(f"Failed to connect to battery: {e}")
             except asyncio.exceptions.CancelledError as ce:
-                logger.error("Failed to connect to battery: %s", str(ce))
+                logger.error(f"Failed to connect to battery: {ce}")
         self.last_basic_info_update = time.time()
 
     def get_basic_info_and_status(self):
