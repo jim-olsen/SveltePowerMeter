@@ -54,7 +54,8 @@ VALID_WX_FIELDS = ["altimeter_inHg", "appTemp_F", "barometer_inHg", "cloudbase_f
                    "dayRain_in", "day_of_year", "dewpoint_F", "heatindex_F", "hourRain_in", "humidex_F", "inTemp_F",
                    "minute_of_day", "outHumidity", "outTemp_F", "pressure_inHg", "rain24_in", "rainRate_inch_per_hour",
                    "rain_in", "rain_total", "usUnits", "windDir", "windSpeed_mph", "wind_average", "windchill_F"]
-# List of valid fields for queryiing power graph data.  This protected against sql injection using a dynamic field
+
+# List of valid fields for querying power graph data.  This protects against sql injection using a dynamic field
 # based request
 VALID_POWER_FIELDS = ["battery_load", "load_amps", "load_watts", "battery_voltage", "battery_watts", "net_production",
                       "battery_sense_voltage", "battery_voltage_slow", "battery_daily_minimum_voltage",
@@ -62,6 +63,13 @@ VALID_POWER_FIELDS = ["battery_load", "load_amps", "load_watts", "battery_voltag
                       "array_charge_current", "battery_charge_current", "battery_charge_current_slow", "input_power",
                       "solar_watts", "heatsink_temperature", "battery_temperature", "charge_state",
                       "seconds_in_absorption_daily", "seconds_in_float_daily", "seconds_in_equalization_daily"]
+
+# List of valid fields for querying battery graph data.  This protects against sql injection using a dynamic field.
+VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nominal_capacity", "cycles",
+                        "balance_status_cell_one", "balance_status_cell_two", "balance_status_cell_three",
+                        "balance_status_cell_four", "protection_status", "version", "capacity_percent", "control_status",
+                        "num_cells", "battery_temp_one", "battery_temp_two", "battery_temp_three", "cell_voltage_one",
+                        "cell_voltage_two", "cell_voltage_three", "cell_voltage_four"]
 
 # Set this value to the ip of your tristar charge controller
 TRISTAR_ADDR = '10.0.10.10'
@@ -335,6 +343,7 @@ def update_running_stats():
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
                 stats_data['day_load_wh'] += 0.00139 * (
                         current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
+                # Now comes from the victron....
                 # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
                 stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
                                              current_data.get('battery_voltage', 0)
@@ -544,6 +553,54 @@ def get_current_data():
 
     return current_data
 
+
+@app.route("/batteryData")
+def get_battery_data():
+    global BATTERIES
+
+    return BATTERIES
+
+#
+# Take the requested field and requested number of days, and create graph data for that fields values over the specified
+# time period.
+#
+# PARAMETERS
+#   days - The number of days to fetch all of the data for
+#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
+#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
+#               back empty results
+#   batteryName - The name of the battery to fetch the data for
+# RETURN VALUE
+#   An object containing multiple lists.  One list will be the time the value was recorded, and the other lists will be
+#   the corresponding values at the recorded time.  This can be easily utilized to graph the values over time
+#
+@app.route("/graphBatteryData")
+def get_battery_graph_data():
+    global VALID_BATTERY_FIELDS
+
+    days = int(request.args.get('days', 4))
+    data_fields = request.args.getlist('dataField')
+    battery_name = request.args.get('batteryName', '')
+    graph_data = {'time': []}
+    if data_fields and all( field in VALID_BATTERY_FIELDS for field in data_fields):
+        for field in data_fields:
+            graph_data[field] = []
+        sql_connection = sqlite3.connect("battery.db")
+        sql_connection.row_factory = sqlite3.Row
+        with sql_connection:
+            sql_statement = "SELECT record_time"
+            for field in data_fields:
+                sql_statement += ", " + field
+            sql_statement += " FROM battery_data WHERE record_time >= ? AND name == ? ORDER BY record_time ASC"
+            cursor = sql_connection.execute(sql_statement,
+                                            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple())), battery_name])
+            for row in cursor.fetchall():
+                rowdict = dict(row)
+                graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+                for field in data_fields:
+                    graph_data[field].append(rowdict.get(field, 0))
+
+    return graph_data
 
 @app.route("/weatherData")
 def get_weather_data():
