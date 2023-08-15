@@ -203,6 +203,7 @@ def monitor_batteries(batteries: List[SmartBattery]):
         time.sleep(30)
 
     logger.error("Too many failures in a row, exiting to allow restart of bluetooth....")
+    raise SystemExit('Too many failures in a row, existing to allow restart of bluetooth')
 
 
 def main():
