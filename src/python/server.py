@@ -43,8 +43,9 @@ stats_data = {
     'avg_net': 0.0,
     'avg_solar': 0.0,
 }
-weather_data = {}
-blueiris_alert = {}
+WEATHER_DATA = {}
+BLUEIRIS_ALERT = {}
+BATTERIES = {}
 LAST_BEACON_RECEIVED = time.time()
 
 # List of valid fields for querying for weather graph data.  This protects against sql injection using a dynamic field
@@ -167,7 +168,7 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
 
 def update_sql_tables():
     global current_data
-    global weather_data
+    global WEATHER_DATA
     global stats_data
 
     sql_connection = sqlite3.connect("powerdata.db")
@@ -247,26 +248,80 @@ def update_sql_tables():
                 windchill_F
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (int(time.time()),
-                      weather_data.get("altimeter_inHg", None),
-                      weather_data.get("barometer_inHg", None),
-                      weather_data.get("cloudbase_foot", None),
-                      weather_data.get("daily_rain", None),
-                      weather_data.get("dayRain_in", None),
-                      weather_data.get("dewpoint_F", None),
-                      weather_data.get("heatindex_F", None),
-                      weather_data.get("hourRain_in", None),
-                      weather_data.get("humidex_F", None),
-                      weather_data.get("inTemp_F", None),
-                      weather_data.get("outHumidity", None),
-                      weather_data.get("outTemp_F", None),
-                      weather_data.get("pressure_inHg", None),
-                      weather_data.get("rain24_in", None),
-                      weather_data.get("rainRate_inch_per_hour", None),
-                      weather_data.get("rain_in", None),
-                      weather_data.get("rain_total", None),
-                      weather_data.get("windSpeed_mph", None),
-                      weather_data.get("wind_average", None),
-                      weather_data.get("windchill_F", None)))
+                      WEATHER_DATA.get("altimeter_inHg", None),
+                      WEATHER_DATA.get("barometer_inHg", None),
+                      WEATHER_DATA.get("cloudbase_foot", None),
+                      WEATHER_DATA.get("daily_rain", None),
+                      WEATHER_DATA.get("dayRain_in", None),
+                      WEATHER_DATA.get("dewpoint_F", None),
+                      WEATHER_DATA.get("heatindex_F", None),
+                      WEATHER_DATA.get("hourRain_in", None),
+                      WEATHER_DATA.get("humidex_F", None),
+                      WEATHER_DATA.get("inTemp_F", None),
+                      WEATHER_DATA.get("outHumidity", None),
+                      WEATHER_DATA.get("outTemp_F", None),
+                      WEATHER_DATA.get("pressure_inHg", None),
+                      WEATHER_DATA.get("rain24_in", None),
+                      WEATHER_DATA.get("rainRate_inch_per_hour", None),
+                      WEATHER_DATA.get("rain_in", None),
+                      WEATHER_DATA.get("rain_total", None),
+                      WEATHER_DATA.get("windSpeed_mph", None),
+                      WEATHER_DATA.get("wind_average", None),
+                      WEATHER_DATA.get("windchill_F", None)))
+
+        battery_sql_connection = sqlite3.connect("battery.db")
+        for battery_name, battery in BATTERIES.items():
+            with battery_sql_connection:
+                battery_sql_connection.execute('''INSERT OR REPLACE INTO battery_data (
+                    record_time,
+                    name,
+                    voltage,
+                    current,
+                    residual_capacity,
+                    nominal_capacity,
+                    cycles,
+                    balance_status_cell_one,
+                    balance_status_cell_two,
+                    balance_status_cell_three,
+                    balance_status_cell_four,
+                    protection_status,
+                    version,
+                    capacity_percent,
+                    control_status,
+                    num_cells,
+                    battery_temp_one,
+                    battery_temp_two,
+                    battery_temp_three,
+                    cell_voltage_one,
+                    cell_voltage_two,
+                    cell_voltage_three,
+                    cell_voltage_four
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (int(time.time()),
+                      battery.get("name", None),
+                      battery.get("voltage", None),
+                      battery.get("current", None),
+                      battery.get("residual_capacity", None),
+                      battery.get("nominal_capacity", None),
+                      battery.get("cycles", None),
+                      1 if battery.get("balance_status", [False, False, False, False])[0] else 0,
+                      1 if battery.get("balance_status", [False, False, False, False])[1] else 0,
+                      1 if battery.get("balance_status", [False, False, False, False])[2] else 0,
+                      1 if battery.get("balance_status", [False, False, False, False])[3] else 0,
+                      ','.join(battery.get("protection_status", [])),
+                      battery.get("version", None),
+                      battery.get("capacity_percent", None),
+                      battery.get("control_status", None),
+                      battery.get("num_cells", None),
+                      battery.get("battery_temps_f", [None, None, None])[0],
+                      battery.get("battery_temps_f", [None, None, None])[1],
+                      battery.get("battery_temps_f", [None, None, None])[2],
+                      battery.get("cell_block_voltages", [None, None, None, None])[0],
+                      battery.get("cell_block_voltages", [None, None, None, None])[1],
+                      battery.get("cell_block_voltages", [None, None, None, None])[2],
+                      battery.get("cell_block_voltages", [None, None, None, None])[3]
+                      ))
+
 
 
 #
@@ -492,9 +547,9 @@ def get_current_data():
 
 @app.route("/weatherData")
 def get_weather_data():
-    global weather_data
+    global WEATHER_DATA
 
-    return weather_data
+    return WEATHER_DATA
 
 
 @app.route("/weatherDailyMinMax")
@@ -568,11 +623,11 @@ def graph_wx_data():
 
 @app.route("/blueIrisAlert")
 def get_blueiris_alert():
-    global blueiris_alert
+    global BLUEIRIS_ALERT
 
     no_image = request.args.get('noImage', 'False').lower() == 'true'
 
-    return_value = blueiris_alert.copy()
+    return_value = BLUEIRIS_ALERT.copy()
 
     if no_image:
         return_value.pop('alertImage', None)
@@ -815,28 +870,44 @@ def refresh_daily_data():
 # Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
 #
 def start_mqtt_client():
-    def on_connect(client, userdata, flags, rc):
+    def on_connect(c, userdata, flags, rc):
         logger.info("MQTT Client Connected, subscribing...")
-        client.subscribe("weather/loop")
-        client.subscribe("blueiris")
+        c.subscribe("weather/loop")
+        c.subscribe("blueiris")
+        c.subscribe("battery_status")
 
-    def on_message(client, userdata, msg):
-        global weather_data, blueiris_alert
+    def on_message(c, userdata, msg):
+        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES
 
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
         if msg.topic == "weather/loop":
-            weather_data = json.loads(msg.payload)
+            WEATHER_DATA = json.loads(msg.payload)
         elif msg.topic == "blueiris":
-            blueiris_alert = json.loads(msg.payload)
-            blueiris_alert['time'] = int(time.time() * 1000)
-            blueiris_alert['id'] = str(uuid.uuid4())
+            BLUEIRIS_ALERT = json.loads(msg.payload)
+            BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
+            BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
             file = open(b"last_blue_iris_alert.pkl", "wb")
-            pickle.dump(blueiris_alert, file)
+            pickle.dump(BLUEIRIS_ALERT, file)
             file.close()
+        elif msg.topic == "battery_status":
+            logger.debug("Received Battery Status")
+            battery_info = json.loads(msg.payload)
+            BATTERIES[battery_info["name"]] = battery_info
+
+    def on_disconnect(c, userdata, rc):
+        logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
+        while True:
+            try:
+                c.reconnect()
+                break
+            except Exception as e:
+                logger.error(f"Failed to reconnect: {e}, will retry....")
+            time.sleep(30)
 
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_message = on_message
+    client.on_disconnect = on_disconnect
     client.connect(MQTT_SERVER_ADDR, 1883, 60)
     client.loop_forever()
 
@@ -865,7 +936,7 @@ def advertisement_monitor_thread():
 
 
 def main(proxy=None):
-    global blueiris_alert
+    global BLUEIRIS_ALERT
 
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
@@ -925,9 +996,36 @@ def main(proxy=None):
                 )
                 ''')
 
+    battery_sql_connection = sqlite3.connect("battery.db")
+    battery_sql_connection.execute('''CREATE TABLE IF NOT EXISTS battery_data(record_time INTEGER,
+                name TEXT,
+                voltage REAL,
+                current REAL,
+                residual_capacity REAL,
+                nominal_capacity READ,
+                cycles INTEGER,
+                balance_status_cell_one INTEGER,
+                balance_status_cell_two INTEGER,
+                balance_status_cell_three INTEGER,
+                balance_status_cell_four INTEGER,
+                protection_status TEXT,
+                version TEXT,
+                capacity_percent INTEGER,
+                control_status TEXT,
+                num_cells INTEGER,
+                battery_temp_one REAL,
+                battery_temp_two REAL,
+                battery_temp_three REAL,
+                cell_voltage_one REAL,
+                cell_voltage_two REAL,
+                cell_voltage_three REAL,
+                cell_voltage_four REAL,
+                PRIMARY KEY (record_time, name)
+                )
+    ''')
     try:
         if os.path.exists("last_blue_iris_alert.pkl"):
-            blueiris_alert = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
+            BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
     except Exception as e:
         print("Failed to load last blue iris alert: " + str(e))
 

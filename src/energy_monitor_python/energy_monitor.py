@@ -154,6 +154,7 @@ def start_mqtt_client():
         while True:
             try:
                 c.reconnect()
+                break
             except Exception as e:
                 logger.error(f"Failed to reconnect: {e}, will retry....")
             time.sleep(30)
@@ -167,8 +168,9 @@ def start_mqtt_client():
 
 def monitor_batteries(batteries: List[SmartBattery]):
     global MQTT_CLIENT
+    failure_count = 0
 
-    while True:
+    while failure_count < 10:
         for battery in batteries:
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2'):
                 try:
@@ -193,10 +195,14 @@ def monitor_batteries(batteries: List[SmartBattery]):
                         'battery_temps_f': battery.battery_temps_f(),
                         'cell_block_voltages': battery.cell_block_voltages()
                     }))
+                    failure_count = 0
                 except Exception as e:
                     logger.error(f"Failed to read from battery {battery.name()}: {e}")
+                    failure_count+= 1
                 time.sleep(5)
         time.sleep(30)
+
+    logger.error("Too many failures in a row, exiting to allow restart of bluetooth....")
 
 
 def main():

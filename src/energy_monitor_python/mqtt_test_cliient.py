@@ -19,6 +19,7 @@ def start_mqtt_client():
         while True:
             try:
                 c.reconnect()
+                break
             except Exception as e:
                 logger.error(f"Failed to reconnect: {e}, will retry....")
             time.sleep(30)
