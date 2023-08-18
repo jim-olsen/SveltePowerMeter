@@ -159,6 +159,33 @@ export const powerCurrentData = writable({}, () => {
 });
 
 /**
+ * Retrieve the current live data values related to the batteries.
+ */
+function getBatteryCurrentData() {
+    fetch("/batteryData", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryCurrentData.set(d.sort((a, b) => a.name.localeCompare(b.name)));
+        });
+}
+
+/**
+ * A subscribable that contains the latest live values for battery related values
+ * @type {Writable<{}>}
+ */
+export const batteryCurrentData = writable([], () => {
+    getBatteryCurrentData();
+    let batteryCurrentInterval = setInterval(getBatteryCurrentData, 30000);
+    return () => {
+        clearInterval(batteryCurrentInterval);
+    };
+});
+
+/**
  * Retrieve statistical data for power related values showing cumulative and average values
  */
 function getPowerStatsData() {

@@ -22,6 +22,7 @@
     import OutdoorTemperatureGraph from "./components/weather/OutdoorTemperatureGraph.svelte";
     import IndoorTemperatureGraph from "./components/weather/IndoorTemperatureGraph.svelte";
     import WindGraph from "./components/weather/WindGraph.svelte";
+    import BatteryDashboard from "./components/battery/BatteryDashboard.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -163,5 +164,8 @@
     {/if}
     {#if $currentView === 'navigation'}
         <MainNavigation />
+    {/if}
+    {#if $currentView === 'battery_dashboard'}
+        <BatteryDashboard />
     {/if}
 </div>

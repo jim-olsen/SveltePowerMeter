@@ -90,6 +90,10 @@ export default {
                 {
                     from: '/graphWxData',
                     to: 'http://10.0.10.32:8050/graphWxData'
+                },
+                {
+                    from: '/batteryData',
+                    to: 'http://10.0.10.32:8050/batteryData'
                 }
                 ]
         })

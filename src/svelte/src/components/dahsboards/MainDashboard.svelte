@@ -93,7 +93,7 @@
     </div>
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card">
         <div bind:this={batteryIcon} style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; font-size: 6vh;"
-                on:click={()=> $currentView = 'statistics'}>
+                on:click={()=> $currentView = 'battery_dashboard'}>
             <Fa icon="{faCarBattery}" style="font-size: 6vw;" />
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
