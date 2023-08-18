@@ -6,47 +6,39 @@
 </script>
 <style>
     .battery {
-        border: 4px solid #ffffff;
-        border-radius: 20px;
         position: relative;
-        margin: 15px 0 20%;
+        display: block;
+        margin: 35px 0 0 5px;
+        background: #059669;
+        width: 50px;
+        height: 28px;
+        float: left;
     }
 
-    .battery :before {
-        content: '';
-        height: 5%;
-        width: 70%;
-        background: #ffffff;
+    .battery:before {
+        content: "";
         display: block;
-        position: relative;
-        top: -35px;
-        border-radius: 4px 4px 0 0;
-        margin-left: 15%;
-    }
-
-    .battery :after {
-        content: '';
-        display: block;
+        background: transparent;
+        border: 6px solid #ffffff;
+        margin: -12px;
+        width: 85px;
+        height: 40px;
         position: absolute;
-        top: -1px;
-        left: -1px;
-        right: -1px;
-        bottom: -1px;
-        border: 1px solid #ffffff;
         border-radius: 2px;
     }
 
-    .battery-level {
-        background: #30b455;
+    .battery:after {
+        content: "";
+        display: block;
+        background: transparent;
+        border: 6px solid #ffffff;
+        margin: 0px 80px;
+        width: 6px;
+        height: 16px;
         position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-    }
-</style>
-<div style="display:flex; flex-direction: column; justify-content: space-between; align-items: center; gap:10px;"
-     on:click={() => currentView.set('dashboard')}>
-    <div class="battery" style="height: {height / 3}px; width: {height}px;">
-        <div class="battery-level" style="width:{battery.capacity_percent}%"></div>
+        border-radius: 2px;
+    }</style>
+<div on:click={() => currentView.set('dashboard')}>
+    <div class="battery" style="width: {battery.capacity_percent * 15}%">
     </div>
 </div>

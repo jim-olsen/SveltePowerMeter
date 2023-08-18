@@ -21,7 +21,7 @@
             <div style="display:flex; flex-grow: 1; width: 100%;"><span>{battery.capacity_percent}%</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span>{battery.current}A</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;">
-                <Battery battery="{battery}" height=50 />
+                <Battery battery="{battery}"/>
             </div>
         </div>
     {/each}
