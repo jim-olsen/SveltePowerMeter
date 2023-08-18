@@ -558,7 +558,7 @@ def get_current_data():
 def get_battery_data():
     global BATTERIES
 
-    return BATTERIES
+    return BATTERIES.values()
 
 #
 # Take the requested field and requested number of days, and create graph data for that fields values over the specified
