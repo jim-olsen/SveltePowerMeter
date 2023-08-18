@@ -172,7 +172,7 @@ def monitor_batteries(batteries: List[SmartBattery]):
 
     while failure_count < 10:
         for battery in batteries:
-            if battery.name().startswith('BANK1') or battery.name().startswith('BANK2'):
+            if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
                 try:
                     logger.info(f"Connecting to battery {battery.name()}")
                     logger.info(f'Battery {battery.name()} percent charged {battery.capacity_percent()}%')
