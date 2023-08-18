@@ -1,7 +1,25 @@
 <script xmlns="http://www.w3.org/1999/html">
-    import {currentView} from "../../stores";
+    import {batteryCurrentData, currentView} from "../../stores";
 
     export let battery = {};
+    let batteryFill;
+
+
+
+    function updateCellStatus() {
+        if (batteryFill && battery.protection_status.indexOf('Cell Block Over-Vol') > -1) {
+            batteryFill.style.background = 'orangered';
+        } else if (batteryFill && battery.control_status === 'Discharging') {
+            batteryFill.style.background = 'blue';
+        }  else if (batteryFill && battery.control_status == 'Charging') {
+            batteryFill.style.background = 'yellow';
+        }  else if (batteryFill) {
+            batteryFill.style.background = 'lightgreen';
+        }
+    }
+
+    $: $batteryCurrentData, updateCellStatus();
+
 </script>
 <style>
     .battery {
@@ -48,6 +66,6 @@
 </style>
 <div on:click={() => currentView.set('dashboard')} style="height: 60px;">
     <div class="battery">
-        <div class="battery_level" style="width: {battery.capacity_percent * 1.45}%;"></div>
+        <div bind:this={batteryFill} class="battery_level" style="width: {battery.capacity_percent * 1.45}%;"></div>
     </div>
 </div>
