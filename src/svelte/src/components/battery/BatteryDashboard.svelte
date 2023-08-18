@@ -13,10 +13,10 @@
 
     $: $batteryCurrentData, getOverallAveragePercent();
 </script>
-<div style="display:flex; flex-flow:column; justify-content: space-evenly; align-items: center; width: 100%;" on:click={() => currentView.set('dashboard')}>
-    <h1>Total Percent {battery_overall_percent}%</h1>
+<div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center; width: 100%;" on:click={() => currentView.set('dashboard')}>
+    <h3>Total Percent {battery_overall_percent}%</h3>
     {#each $batteryCurrentData as battery}
-        <div style="display:flex; flex-flow: row; justify-content: space-around; width: 100%">
+        <div style="display:flex; flex-flow: row; justify-content: space-around; align-items: center; width: 100%">
             <div style="display:flex; flex-grow: 1; width: 100%;"><span>{battery.name}</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span>{battery.capacity_percent}%</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span>{battery.current}A</span></div>
