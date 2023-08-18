@@ -2,14 +2,12 @@
     import {currentView} from "../../stores";
 
     export let battery = {};
-    export let height = 200;
 </script>
 <style>
     .battery {
         position: relative;
         display: block;
-        margin: 35px 0 0 5px;
-        background: #059669;
+        margin: 0 0 0 5px;
         width: 50px;
         height: 28px;
         float: left;
@@ -20,7 +18,7 @@
         display: block;
         background: transparent;
         border: 6px solid #ffffff;
-        margin: -12px;
+        margin: 0px;
         width: 85px;
         height: 40px;
         position: absolute;
@@ -32,13 +30,24 @@
         display: block;
         background: transparent;
         border: 6px solid #ffffff;
-        margin: 0px 80px;
+        margin: 12px 93px;
         width: 6px;
         height: 16px;
         position: absolute;
         border-radius: 2px;
-    }</style>
-<div on:click={() => currentView.set('dashboard')}>
-    <div class="battery" style="width: {battery.capacity_percent * 15}%">
+    }
+
+    .battery_level {
+        margin: 12px;
+        background: #059669;
+        content: "";
+        display: block;
+        position: absolute;
+        height: 100%;
+    }
+</style>
+<div on:click={() => currentView.set('dashboard')} style="height: 60px;">
+    <div class="battery">
+        <div class="battery_level" style="width: {battery.capacity_percent * 1.45}%;"></div>
     </div>
 </div>
