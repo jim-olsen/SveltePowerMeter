@@ -16,8 +16,9 @@
             battery = batt;
             cells = battery.cell_block_voltages;
             temps = battery.battery_temps_f;
-            status = battery.control_status
-            cycles = battery.cycles
+            status = battery.control_status;
+            cycles = battery.cycles;
+            protection_status = battery.protection_status;
         }});
     });
 
