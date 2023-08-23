@@ -7,16 +7,14 @@
     export let chartHeight=300
 
     let graphData = [];
-    let secondGraphData = [];
     const unsubscribeGraph = temperatureGraphData.subscribe(data => {
-        graphData = [];
-        secondGraphData = [];
+        graphData = [[],[]];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
                 let value = data?.outTemp_F?.[i] ? data?.outTemp_F?.[i] : 0;
-                graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                graphData[0].unshift({x: Date.parse(d.slice(0, -4)), y: value})
                 value = data?.windchill_F?.[i] ? data?.windchill_F?.[i] : 0;
-                secondGraphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                graphData[1].unshift({x: Date.parse(d.slice(0, -4)), y: value})
             })
         }
     });
@@ -26,6 +24,5 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Degrees F"
-                         graphData={graphData} additionalGraphData={secondGraphData}
-                         duration={weatherGraphDuration} />
+                         graphDataSets={graphData} duration={weatherGraphDuration} />
 </div>

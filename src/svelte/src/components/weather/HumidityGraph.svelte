@@ -8,11 +8,11 @@
 
     let graphData = [];
     const unsubscribeGraph = humidityGraphData.subscribe(data => {
-        graphData = [];
+        graphData = [[]];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
                 let value = data?.outHumidity?.[i] ? data?.outHumidity?.[i] : 0;
-                graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                graphData[0].unshift({x: Date.parse(d.slice(0, -4)), y: value})
             })
         }
     });
@@ -22,5 +22,5 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Humidity %"
-                         graphData={graphData} duration={weatherGraphDuration} />
+                         graphDataSets={graphData} duration={weatherGraphDuration} />
 </div>

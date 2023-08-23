@@ -18,7 +18,7 @@
     {#each $batteryCurrentData as battery}
         <div style="display:flex; flex-flow: row; justify-content: space-around; align-items: center; width: 100%" on:click={() => currentView.set('battery_details_' + battery.name)}>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span class="mediumSmallText">{battery.name}</span></div>
-            <div style="display:flex; flex-grow: 1; width: 100%;"><span class="normalText">{battery.capacity_percent}%</span></div>
+            <div style="display:flex; flex-grow: 1; width: 100%;" on:click={() => currentView.set('batteryBankVoltageGraph')}><span class="normalText">{battery.capacity_percent}%</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span class="normalText">{battery.current}A</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;">
                 <Battery battery="{battery}"/>

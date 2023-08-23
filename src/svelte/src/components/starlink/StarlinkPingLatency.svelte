@@ -14,9 +14,9 @@
 
     const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("uplink_bps")) {
-            pingLatencyChartData = [];
+            pingLatencyChartData = [[]];
             history.ping_latency.forEach((value, i) => {
-                pingLatencyChartData.unshift({"x": history.uplink_bps.length - i, "y": value});
+                pingLatencyChartData[0].unshift({"x": history.uplink_bps.length - i, "y": value});
             });
             pingLatencyMin = history.minimum_ping_latency.toFixed(2);
             pingLatencyMax = history.maximum_ping_latency.toFixed(2);
@@ -30,7 +30,7 @@
 <div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center;">
     <span class="mediumSmallText">Ping Latency (ms)</span>
     <div style="display:flex; flex-flow:row;gap: 10px;">
-        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Latency (ms)" dataset={pingLatencyChartData} width={chartWidth}
+        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Latency (ms)" datasets={pingLatencyChartData} width={chartWidth}
                height={chartHeight}/>
         <div style="display:flex; flex-flow:column; justify-content: flex-start">
             <span class="mediumSmallerText">Cur: {pingLatency}</span>

@@ -7,17 +7,15 @@
     export let chartHeight=300
 
     let graphData = [];
-    let secondGraphData = [];
 
     const unsubscribeGraph = windGraphData.subscribe(data => {
-        graphData = [];
-        secondGraphData = [];
+        graphData = [[],[]];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
                 let value = data?.wind_average?.[i] ? data?.wind_average?.[i] : 0;
-                graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                graphData[0].unshift({x: Date.parse(d.slice(0, -4)), y: value})
                 value = data?.windSpeed_mph?.[i] ? data?.windSpeed_mph?.[i] : 0;
-                secondGraphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                graphData[1].unshift({x: Date.parse(d.slice(0, -4)), y: value})
             })
         }
     });
@@ -27,5 +25,5 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Wind MPH"
-                         graphData={graphData} additionalGraphData={secondGraphData} duration={weatherGraphDuration} />
+                         graphDataSets={graphData} duration={weatherGraphDuration} />
 </div>

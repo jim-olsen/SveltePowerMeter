@@ -8,6 +8,7 @@
 
     let graphData = [];
     let secondGraphData = [];
+    let graphDataSets = [];
     const unsubscribeGraph = batteryVoltageGraphData.subscribe(data => {
         graphData = [];
         secondGraphData = [];
@@ -29,11 +30,13 @@
                 }
             })
         }
+
+        graphDataSets = [graphData, secondGraphData];
     });
 
     onDestroy(unsubscribeGraph);
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Volts"
-                         graphData={graphData} additionalGraphData={secondGraphData} duration={powerGraphDuration}/>
+                         graphDataSets={graphDataSets} duration={powerGraphDuration}/>
 </div>

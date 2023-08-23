@@ -504,3 +504,34 @@ export const weatherDailyMinMax = writable({}, () => {
         clearInterval(weatherMinMaxInterval);
     }
 })
+
+/**
+ * Retrieve the graph data for battery voltages in the bank over time.  The powerGraphDuration writeable provides the
+ * number of days over which to fetch the data.
+ */
+function getBatteryBankVoltageGraphData() {
+    fetch(`/graphBatteryData?days=${get(powerGraphDuration)}&dataField=voltage&dataField=name`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryBankVoltageGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing battery bank voltages over time, based on
+ * powerGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryBankVoltageGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getBatteryBankVoltageGraphData)
+    getBatteryBankVoltageGraphData();
+    let batteryBankVoltageGraphInterval = setInterval(getBatteryBankVoltageGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryBankVoltageGraphInterval);
+    };
+});

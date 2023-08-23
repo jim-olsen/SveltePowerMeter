@@ -19,9 +19,9 @@
 
     const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("downlink_bps")) {
-            downloadChartData = []
+            downloadChartData = [[]]
             history.downlink_bps.forEach((value, i) => {
-                downloadChartData.unshift({"x": history.uplink_bps.length - i, "y": value / 1000000})
+                downloadChartData[0].unshift({"x": history.uplink_bps.length - i, "y": value / 1000000})
             });
             downloadMaxMbps = (history.maximum_downlink_bps / 1000000).toFixed(2)
             downloadAvgMbps = (history.average_downlink_bps / 1000000).toFixed(2)
@@ -34,7 +34,7 @@
 <div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center;">
     <span class="mediumSmallText">Download Speeds</span>
     <div style="display: flex; flex-flow: row; gap:10px;">
-        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Download (MBps)" dataset={downloadChartData} width={chartWidth}
+        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Download (MBps)" datasets={downloadChartData} width={chartWidth}
                height={chartHeight}/>
         <div style="display: flex; flex-flow: column; justify-content: flex-start;">
             <span class="mediumSmallText">Cur: {downloadMbps}</span>

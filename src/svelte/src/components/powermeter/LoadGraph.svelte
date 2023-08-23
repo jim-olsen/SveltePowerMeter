@@ -8,12 +8,12 @@
 
     let graphData = [];
     const unsubscribeGraph = loadWattsGraphData.subscribe(data => {
-        graphData = [];
+        graphData = [[]];
         if (data.hasOwnProperty("time")) {
             data?.time?.forEach((d, i) => {
                 let value = data?.load_watts?.[i] ? data?.load_watts?.[i] : 0;
                 if ( value != 0 ) {
-                    graphData.unshift({x: Date.parse(d.slice(0, -4)), y: value})
+                    graphData[0].unshift({x: Date.parse(d.slice(0, -4)), y: value})
                 }
             })
         }
@@ -23,5 +23,5 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth}
-                         graphData={graphData} duration={powerGraphDuration} yAxisLabel="Watts"/>
+                         graphDataSets={graphData} duration={powerGraphDuration} yAxisLabel="Watts"/>
 </div>

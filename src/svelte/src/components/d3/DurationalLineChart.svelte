@@ -6,8 +6,7 @@
     export let chartWidth = 800;
     export let chartHeight = 300;
     export let duration = 1;
-    export let graphData = [];
-    export let additionalGraphData = [];
+    export let graphDataSets = [];
     export let yAxisLabel = '';
 
     let buttonWidth = 0;
@@ -31,20 +30,18 @@
     }
 
     function decreaseDuration() {
-        graphData = [];
-        additionalGraphData = [];
+        graphDataSets = [];
         $duration > 1 ? $duration-= 1 : $duration = 1;
     }
 
     function increaseDuration() {
-        graphData = [];
-        additionalGraphData = [];
+        graphDataSets = [];
         $duration+= 1;
     }
 
 </script>
 <div style="display:flex; flex-flow:row">
-    <LineChart XAxisTitle="Time" YAxisTitle={yAxisLabel} dataset={graphData} additionalDataSet={additionalGraphData}
+    <LineChart XAxisTitle="Time" YAxisTitle={yAxisLabel} datasets={graphDataSets}
                height={chartHeight} width={chartWidth - buttonWidth} XAxisTickFormat={formatTime} />
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
         <button on:click={increaseDuration} style="width:8vw; height: 8vw;">

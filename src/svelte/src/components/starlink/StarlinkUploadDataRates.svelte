@@ -20,9 +20,9 @@
 
     const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
         if (history.hasOwnProperty("uplink_bps")) {
-            uploadChartData = []
+            uploadChartData = [[]]
             history.uplink_bps.forEach((value, i) => {
-                uploadChartData.unshift({"x": history.uplink_bps.length - i, "y": value / 1000000})
+                uploadChartData[0].unshift({"x": history.uplink_bps.length - i, "y": value / 1000000})
             });
             uploadMaxMbps = (history.maximum_uplink_bps / 1000000).toFixed(2)
             uploadAvgMbps = (history.average_uplink_bps / 1000000).toFixed(2)
@@ -35,7 +35,7 @@
 <div style="display:flex; flex-flow:column; justify-content: flex-start; align-items: center;">
     <span class="mediumSmallText">Upload Speeds</span>
     <div style="display:flex; flex-flow: row; gap:10px">
-        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Upload (MBps)" dataset={uploadChartData} width={chartWidth}
+        <LineChart XAxisTitle="Elapsed Seconds" YAxisTitle="Upload (MBps)" datasets={uploadChartData} width={chartWidth}
                height={chartHeight}/>
         <div style="display:flex; flex-flow: column;justify-content: flex-start;">
             <span class="mediumSmallText">Cur: {uploadMbps}</span>
