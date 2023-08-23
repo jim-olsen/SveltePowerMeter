@@ -82,7 +82,7 @@
         height: 100%;
     }
 </style>
-<div on:click={() => currentView.set('dashboard')} style="height: 60px;">
+<div style="height: 60px;">
     <div class="battery">
         <div bind:this={batteryFill} class="battery_level" style="width: {percentage}%;"></div>
     </div>
