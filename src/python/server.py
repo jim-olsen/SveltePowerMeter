@@ -591,9 +591,14 @@ def get_battery_graph_data():
             sql_statement = "SELECT record_time"
             for field in data_fields:
                 sql_statement += ", " + field
-            sql_statement += " FROM battery_data WHERE record_time >= ? AND name == ? ORDER BY record_time ASC"
-            cursor = sql_connection.execute(sql_statement,
-                                            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple())), battery_name])
+            sql_statement += " FROM battery_data WHERE record_time >= ?"
+            if battery_name:
+                sql_statement += " AND name == ?"
+            sql_statement += " ORDER BY record_time ASC"
+            parameters = [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))]
+            if battery_name:
+                parameters.append(battery_name)
+            cursor = sql_connection.execute(sql_statement, parameters)
             for row in cursor.fetchall():
                 rowdict = dict(row)
                 graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
