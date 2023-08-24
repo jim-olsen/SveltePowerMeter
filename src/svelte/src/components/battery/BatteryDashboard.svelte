@@ -20,7 +20,7 @@
             <div style="display:flex; flex-grow: 1; width: 100%;"><span class="mediumSmallText">{battery.name}</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;" on:click={() => currentView.set('batteryBankVoltageGraph')}><span class="normalText">{battery.capacity_percent}%</span></div>
             <div style="display:flex; flex-grow: 1; width: 100%;"><span class="normalText">{battery.current}A</span></div>
-            <div style="display:flex; flex-grow: 1; width: 100%;">
+            <div style="display:flex; flex-grow: 1; width: 100%;" on:click={() => currentView.set('battery_cell_graph_' + battery.name)}>
                 <Battery battery="{battery}"/>
             </div>
         </div>

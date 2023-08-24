@@ -8,6 +8,7 @@
     export let duration = 1;
     export let graphDataSets = [];
     export let yAxisLabel = '';
+    export let curveType = "curveBasis";
 
     let buttonWidth = 0;
 
@@ -42,7 +43,8 @@
 </script>
 <div style="display:flex; flex-flow:row">
     <LineChart XAxisTitle="Time" YAxisTitle={yAxisLabel} datasets={graphDataSets}
-               height={chartHeight} width={chartWidth - buttonWidth} XAxisTickFormat={formatTime} />
+               height={chartHeight} width={chartWidth - buttonWidth}
+               XAxisTickFormat={formatTime} curveType={curveType}/>
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
         <button on:click={increaseDuration} style="width:8vw; height: 8vw;">
             <Fa icon={faChevronUp} style="font-size: 4vw;" />

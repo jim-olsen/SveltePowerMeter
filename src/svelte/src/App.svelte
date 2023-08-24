@@ -25,6 +25,7 @@
     import BatteryDashboard from "./components/battery/BatteryDashboard.svelte";
     import BatteryDetails from "./components/battery/BatteryDetails.svelte";
     import BatteryBankVoltageGraph from "./components/battery/BatteryBankVoltageGraph.svelte";
+    import BatteryCellVoltageGraph from "./components/battery/BatteryCellVoltageGraph.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -175,5 +176,8 @@
     {/if}
     {#if $currentView.startsWith('battery_details_')}
         <BatteryDetails />
+    {/if}
+    {#if $currentView.startsWith('battery_cell_graph_')}
+        <BatteryCellVoltageGraph />
     {/if}
 </div>

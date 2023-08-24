@@ -3,7 +3,10 @@
         extent,
         scaleLinear,
         line,
-        curveBasis
+        curveBasis,
+        curveStep,
+        curveLinear,
+        curveBundle
     } from "d3";
 
     import Axis from "./Axis.svelte";
@@ -14,6 +17,7 @@
     export let datasets = [];
     export let width = 900,
         height = 600;
+    export let curveType="curveBasis"
 
     const margin = { top: 15, bottom: 50, left: 50, right: 20 };
     const color = [
@@ -54,7 +58,11 @@
         .nice();
 
     $: line_gen =  values => line()
-        .curve(curveBasis)
+        .curve(curveType == "curveBasis" ? curveBasis :
+            curveType == "curveBundle" ? curveBundle :
+                curveType == "curveStep" ? curveStep :
+                    curveType == "curveLinear" ? curveLinear:
+                        curveBasis)
         .x((d) => xScale(d.x))
         .y((d) => yScale(d.y))(getDataSet(values, datasets));
 
