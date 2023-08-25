@@ -26,6 +26,7 @@
     import BatteryDetails from "./components/battery/BatteryDetails.svelte";
     import BatteryBankVoltageGraph from "./components/battery/BatteryBankVoltageGraph.svelte";
     import BatteryCellVoltageGraph from "./components/battery/BatteryCellVoltageGraph.svelte";
+    import BatteryBankCellPressureDiffGraph from "./components/battery/BatteryBankCellPressureDiffGraph.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -33,7 +34,7 @@
     let stats = true;
     let graphWidth, graphHeight;
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
-                        'inTempGraph', 'windGraph', 'batteryBankVoltageGraph'];
+                        'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph'];
     let powerView = 'stats';
     let touchStarlinkView = 'status';
     let lastBlueIrisAlert = {};
@@ -132,6 +133,9 @@
                 {/if}
                 {#if $currentView === 'batteryBankVoltageGraph'}
                     <BatteryBankVoltageGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if $currentView === 'batteryCellPressureGraph'}
+                    <BatteryBankCellPressureDiffGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>

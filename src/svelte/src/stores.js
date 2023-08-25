@@ -529,9 +529,40 @@ function getBatteryBankVoltageGraphData() {
 export const batteryBankVoltageGraphData = writable({}, () => {
     let unsubscribe = powerGraphDuration.subscribe(getBatteryBankVoltageGraphData)
     getBatteryBankVoltageGraphData();
-    let batteryBankVoltageGraphInterval = setInterval(getBatteryBankVoltageGraphData, 15000);
+    let batteryBankVoltageGraphInterval = setInterval(getBatteryBankVoltageGraphData, 30000);
     return () => {
         unsubscribe();
         clearInterval(batteryBankVoltageGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the graph data for battery voltages in the bank over time.  The powerGraphDuration writeable provides the
+ * number of days over which to fetch the data.
+ */
+function getBatteryBankCellVoltageGraphData() {
+    fetch(`/graphBatteryData?days=${get(powerGraphDuration)}&dataField=cell_voltage_one&dataField=cell_voltage_two&dataField=cell_voltage_three&dataField=cell_voltage_four&dataField=name`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryBankCellVoltageGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing battery bank cell voltages over time, based on
+ * powerGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryBankCellVoltageGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getBatteryBankCellVoltageGraphData)
+    getBatteryBankCellVoltageGraphData();
+    let batteryBankCellVoltageGraphInterval = setInterval(getBatteryBankCellVoltageGraphData, 30000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryBankCellVoltageGraphInterval);
     };
 });
