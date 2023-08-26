@@ -210,8 +210,8 @@ def main():
     logging.basicConfig()
     logging.getLogger('energy_monitor').setLevel(logging.DEBUG)
 
-#    logger.info("Finding all batteries in range")
-#    batteries = find_all_batteries()
+    logger.info("Finding all batteries in range")
+    batteries = find_all_batteries()
 
 #    logger.info(f"Found batteries {batteries}")
 
@@ -222,9 +222,8 @@ def main():
 #    advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
 #    advertisement_thread.daemon = True
 #    advertisement_thread.start()
-    advertisement_monitor_thread()
 
-#    monitor_batteries(batteries)
+    monitor_batteries(batteries)
 
 
 if __name__ == "__main__":
