@@ -184,7 +184,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
                 except Exception as e:
                     logger.error(f"Failed to read from battery {battery.name()}: {e}")
                     failure_count += 1
-                await asyncio.sleep(2)
+                await asyncio.sleep(1)
 
         await scanner.start()
         await asyncio.sleep(30)

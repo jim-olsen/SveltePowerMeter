@@ -13,6 +13,7 @@ def start_mqtt_client():
         logger.info("MQTT Client Connected")
         MQTT_CLIENT = c
         c.subscribe('battery_status')
+        c.subscribe('solar_charger_data')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
