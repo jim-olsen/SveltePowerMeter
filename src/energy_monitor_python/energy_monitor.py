@@ -160,25 +160,25 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
                 try:
                     logger.info(f"Connecting to battery {battery.name()}")
-                    logger.info(f'Battery {battery.name()} percent charged {battery.capacity_percent()}%')
+                    logger.info(f'Battery {battery.name()} percent charged {await battery.capacity_percent()}%')
                     cell_balance_status = []
-                    for i in range(battery.num_cells()):
-                        cell_balance_status.append(battery.balance_status(i + 1))
+                    for i in range(await battery.num_cells()):
+                        cell_balance_status.append(await battery.balance_status(i + 1))
                     MQTT_CLIENT.publish('battery_status', json.dumps({
                         'name': battery.name(),
-                        'voltage': battery.voltage(),
-                        'current': battery.current(),
-                        'residual_capacity': battery.residual_capacity(),
-                        'nominal_capacity': battery.nominal_capacity(),
-                        'cycles': battery.cycles(),
+                        'voltage': await battery.voltage(),
+                        'current': await battery.current(),
+                        'residual_capacity': await battery.residual_capacity(),
+                        'nominal_capacity': await battery.nominal_capacity(),
+                        'cycles': await battery.cycles(),
                         'balance_status': cell_balance_status,
-                        'protection_status': battery.protection_status(),
-                        'version': battery.version(),
-                        'capacity_percent': battery.capacity_percent(),
-                        'control_status': battery.control_status(),
-                        'num_cells': battery.num_cells(),
-                        'battery_temps_f': battery.battery_temps_f(),
-                        'cell_block_voltages': battery.cell_block_voltages()
+                        'protection_status': await battery.protection_status(),
+                        'version': await battery.version(),
+                        'capacity_percent': await battery.capacity_percent(),
+                        'control_status': await battery.control_status(),
+                        'num_cells': await battery.num_cells(),
+                        'battery_temps_f': await battery.battery_temps_f(),
+                        'cell_block_voltages': await battery.cell_block_voltages()
                     }))
                     failure_count = 0
                 except Exception as e:

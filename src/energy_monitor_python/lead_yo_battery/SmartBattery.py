@@ -116,46 +116,46 @@ class SmartBattery:
                 logger.error(f"Failed to connect to battery: {ce}")
         self.last_basic_info_update = time.time()
 
-    def get_basic_info_and_status(self):
-        asyncio.run(self.async_get_basic_info_and_status())
+    async def get_basic_info_and_status(self):
+        await self.async_get_basic_info_and_status()
 
     def name(self) -> str:
         return self.battery_name
 
-    def refresh_data(self):
+    async def refresh_data(self):
         if self.basic_information_and_status is None or self.last_basic_info_update is None or \
                 time.time() - self.last_basic_info_update >= 5:
-            self.get_basic_info_and_status()
+            await self.get_basic_info_and_status()
 
-    def voltage(self) -> float:
-        self.refresh_data()
+    async def voltage(self) -> float:
+        await self.refresh_data()
         return float(int.from_bytes(self.basic_information_and_status[0:2], byteorder='big')) / 100
 
-    def current(self) -> float:
-        self.refresh_data()
+    async def current(self) -> float:
+        await self.refresh_data()
         return float(int.from_bytes(self.basic_information_and_status[2:4], byteorder='big', signed=True)) / 100
 
-    def residual_capacity(self) -> float:
-        self.refresh_data()
+    async def residual_capacity(self) -> float:
+        await self.refresh_data()
         return float(int.from_bytes(self.basic_information_and_status[4:6], byteorder='big', signed=True)) / 100
 
-    def nominal_capacity(self) -> float:
-        self.refresh_data()
+    async def nominal_capacity(self) -> float:
+        await self.refresh_data()
         return float(int.from_bytes(self.basic_information_and_status[6:8], byteorder='big', signed=True)) / 100
 
-    def cycles(self) -> int:
-        self.refresh_data()
+    async def cycles(self) -> int:
+        await self.refresh_data()
         return int.from_bytes(self.basic_information_and_status[8:10], byteorder='big', signed=True)
 
-    def balance_status(self, cell_number=0) -> bool:
-        self.refresh_data()
+    async def balance_status(self, cell_number=0) -> bool:
+        await self.refresh_data()
         if cell_number <= 16:
             return int.from_bytes(self.basic_information_and_status[12:14], byteorder='big') & (1 << cell_number) == 1
 
         return int.from_bytes(self.basic_information_and_status[14:16], byteorder='big') & (1 << (cell_number - 16)) == 1
 
-    def protection_status(self) -> [str]:
-        self.refresh_data()
+    async def protection_status(self) -> [str]:
+        await self.refresh_data()
         status = []
         protect = int.from_bytes(self.basic_information_and_status[16:18], byteorder='big');
         if protect & 0x1:
@@ -187,17 +187,17 @@ class SmartBattery:
 
         return status
 
-    def version(self) -> str:
-        self.refresh_data()
+    async def version(self) -> str:
+        await self.refresh_data()
         return str((self.basic_information_and_status[18] & 0xF0) >> 4) + '.' + \
                str(self.basic_information_and_status[18] & 0x0F)
 
-    def capacity_percent(self) -> int:
-        self.refresh_data()
+    async def capacity_percent(self) -> int:
+        await self.refresh_data()
         return self.basic_information_and_status[19]
 
-    def control_status(self) -> str:
-        self.refresh_data()
+    async def control_status(self) -> str:
+        await self.refresh_data()
         status = 'MOS OFF'
 
         if self.basic_information_and_status[20] & 1:
@@ -207,12 +207,12 @@ class SmartBattery:
 
         return status
 
-    def num_cells(self) -> int:
-        self.refresh_data()
+    async def num_cells(self) -> int:
+        await self.refresh_data()
         return self.basic_information_and_status[21]
 
-    def battery_temps_f(self) -> [float]:
-        self.refresh_data()
+    async def battery_temps_f(self) -> [float]:
+        await self.refresh_data()
         temps = []
 
         for i in range(self.basic_information_and_status[22]):
@@ -222,8 +222,8 @@ class SmartBattery:
 
         return temps
 
-    def cell_block_voltages(self) -> [float]:
-        self.refresh_data()
+    async def cell_block_voltages(self) -> [float]:
+        await self.refresh_data()
         voltages = []
         for i in range(0, self.num_cells() * 2, 2):
             voltages.append(float(int.from_bytes(self.cell_block_voltage[i:i + 2], byteorder='big')) / 1000)
