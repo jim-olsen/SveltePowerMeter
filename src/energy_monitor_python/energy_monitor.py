@@ -196,7 +196,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
 
 def main():
     logging.basicConfig()
-    logging.getLogger('energy_monitor').setLevel(logging.DEBUG)
+    logging.getLogger('energy_monitor').setLevel(logging.WARNING)
 
     logger.info("Finding all batteries in range")
     batteries = find_all_batteries()
