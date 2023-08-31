@@ -225,7 +225,7 @@ class SmartBattery:
     async def cell_block_voltages(self) -> [float]:
         await self.refresh_data()
         voltages = []
-        for i in range(0, self.num_cells() * 2, 2):
+        for i in range(0, await self.num_cells() * 2, 2):
             voltages.append(float(int.from_bytes(self.cell_block_voltage[i:i + 2], byteorder='big')) / 1000)
 
         return voltages
