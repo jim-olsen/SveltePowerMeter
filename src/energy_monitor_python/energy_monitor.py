@@ -1,4 +1,5 @@
 import logging
+import signal
 import threading
 import time
 import asyncio
@@ -118,30 +119,6 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
         logger.error(f"Failure inside of BLE beacon parsing: {e}")
 
 
-async def find_advertisements():
-    global LAST_BEACON_RECEIVED
-
-    LAST_BEACON_RECEIVED = time.time()
-    while True:
-        try:
-            scanner = BleakScanner(detection_callback=update_ble_values)
-            await scanner.start()
-            while True:
-                await asyncio.sleep(10)
-                if time.time() - LAST_BEACON_RECEIVED > 15:
-                    await scanner.stop()
-                    break
-            logger.error(f"Failed to hear from any beacons in {time.time() - LAST_BEACON_RECEIVED} seconds, restarting scanner")
-        except Exception as e:
-            print("Failure in Bleak Scanner: ", e, " retrying.....")
-            await asyncio.sleep(10)
-
-
-def advertisement_monitor_thread():
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(find_advertisements())
-
-
 def start_mqtt_client():
     def on_connect(c, userdata, flags, rc):
         global MQTT_CLIENT
@@ -167,9 +144,17 @@ def start_mqtt_client():
 
 
 def monitor_batteries(batteries: List[SmartBattery]):
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(async_monitor_batteries(batteries))
+
+
+async def async_monitor_batteries(batteries: List[SmartBattery]):
+    global LAST_BEACON_RECEIVED
     global MQTT_CLIENT
     failure_count = 0
 
+    LAST_BEACON_RECEIVED = time.time()
+    scanner = BleakScanner(detection_callback=update_ble_values)
     while failure_count < 10:
         for battery in batteries:
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
@@ -198,9 +183,14 @@ def monitor_batteries(batteries: List[SmartBattery]):
                     failure_count = 0
                 except Exception as e:
                     logger.error(f"Failed to read from battery {battery.name()}: {e}")
-                    failure_count+= 1
-                time.sleep(5)
-        time.sleep(30)
+                    failure_count += 1
+                await scanner.start()
+                await asyncio.sleep(5)
+                await scanner.stop()
+
+        await scanner.start()
+        await asyncio.sleep(30)
+        await scanner.stop()
 
     logger.error("Too many failures in a row, exiting to allow restart of bluetooth....")
     raise SystemExit('Too many failures in a row, existing to allow restart of bluetooth')
@@ -213,15 +203,11 @@ def main():
     logger.info("Finding all batteries in range")
     batteries = find_all_batteries()
 
-#    logger.info(f"Found batteries {batteries}")
+    logger.info(f"Found batteries {batteries}")
 
     mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
     mqtt_thread.daemon = True
     mqtt_thread.start()
-
-#    advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
-#    advertisement_thread.daemon = True
-#    advertisement_thread.start()
 
     monitor_batteries(batteries)
 
