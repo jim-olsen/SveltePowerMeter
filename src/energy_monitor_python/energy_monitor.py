@@ -155,7 +155,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
 
     LAST_BEACON_RECEIVED = time.time()
     scanner = BleakScanner(detection_callback=update_ble_values)
-    while failure_count < 10:
+    while failure_count < 10 and time.time() - LAST_BEACON_RECEIVED < 60:
         for battery in batteries:
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
                 try:
@@ -184,7 +184,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
                 except Exception as e:
                     logger.error(f"Failed to read from battery {battery.name()}: {e}")
                     failure_count += 1
-                await asyncio.sleep(5)
+                await asyncio.sleep(2)
 
         await scanner.start()
         await asyncio.sleep(30)
