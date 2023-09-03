@@ -937,6 +937,7 @@ def start_mqtt_client():
         c.subscribe("weather/loop")
         c.subscribe("blueiris")
         c.subscribe("battery_status")
+        c.subscribe("load_data")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES
@@ -955,6 +956,12 @@ def start_mqtt_client():
             logger.debug("Received Battery Status")
             battery_info = json.loads(msg.payload)
             BATTERIES[battery_info["name"]] = battery_info
+        elif msg.topic == "load_Data":
+            logger.debug("Received load data")
+            load_info = json.loads(msg.payload)
+            current_data["battery_load"] = load_info["battery_load"]
+            current_data["load_amps"] = load_info["load_amps"]
+
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
