@@ -29,8 +29,9 @@ MQTT_CLIENT: mqtt.Client = None
 
 
 def process_victron_data(advertisement: AdvertisementData):
-    global VICTRON_BLE_KEY, MQTT_CLIENT
+    global VICTRON_BLE_KEY, MQTT_CLIENT, LAST_BEACON_RECEIVED
 
+    LAST_BEACON_RECEIVED = time.time()
     parser = Struct(
         "prefix" / FixedSized(2, GreedyBytes),
         # Model ID
