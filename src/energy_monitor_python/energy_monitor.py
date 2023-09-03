@@ -1,11 +1,13 @@
 import logging
-import signal
 import threading
 import time
 import asyncio
 import paho.mqtt.client as mqtt
 import re
 import json
+import board
+import busio
+import adafruit_ads1x15.ads1115 as ADS
 
 from bleak import BleakScanner, BLEDevice, AdvertisementData
 from Crypto.Cipher import AES
@@ -14,6 +16,7 @@ from Crypto.Util.Padding import pad
 from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl
 from lead_yo_battery import find_all_batteries, SmartBattery
 from typing import List
+from adafruit_ads1x15.analog_in import AnalogIn
 
 logger = logging.getLogger('energy_monitor')
 # The bluetooth address and encryption key of the victron solar charger
@@ -194,6 +197,27 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
     raise SystemExit('Too many failures in a row, existing to allow restart of bluetooth')
 
 
+def read_analog_values_thread():
+    i2c = busio.I2C(board.SCL, board.SDA)
+    ads = ADS.ADS1115(i2c)
+    ads.gain = 2/3
+
+    while True:
+        # reference from an empty pin tells us about how much it is off
+        reference = AnalogIn(ads, ADS.P2).voltage
+        # 2.5 is zero amps, -0.5 is -100, 4.5 is +100
+        load_amps = (AnalogIn(ads, ADS.P0).voltage + reference - 2.5) * 50
+        battery_amps = (AnalogIn(ads, ADS.P1).voltage + reference - 2.5) * 50
+        logger.debug(f"Load: {load_amps}A, battery_load: {battery_amps}A")
+        if MQTT_CLIENT:
+            MQTT_CLIENT.publish('load_data', json.dumps({
+                'battery_load': battery_amps,
+                'load_amps':  load_amps
+            }))
+        time.sleep(5)
+    logger.error("Fell out of analog reader loop that should never end, allow restart of service")
+    raise SystemExit("Fell out of analog reader loop that should never end, allow restart of service")
+
 def main():
     logging.basicConfig()
     logging.getLogger('energy_monitor').setLevel(logging.WARNING)
@@ -206,6 +230,10 @@ def main():
     mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
     mqtt_thread.daemon = True
     mqtt_thread.start()
+
+    analog_thread = threading.Thread(target=read_analog_values_thread, args=())
+    analog_thread.daemon = True
+    analog_thread.start()
 
     monitor_batteries(batteries)
 
