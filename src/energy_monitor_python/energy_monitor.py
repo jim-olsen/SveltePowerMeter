@@ -207,8 +207,8 @@ def read_analog_values_thread():
         # reference from an empty pin tells us about how much it is off
         reference = AnalogIn(ads, ADS.P2).voltage
         # 2.5 is zero amps, -0.5 is -100, 4.5 is +100
-        load_amps = ((AnalogIn(ads, ADS.P0).voltage + (reference / 2) - 2.5) / 2) * 100
-        battery_amps = ((AnalogIn(ads, ADS.P1).voltage + (reference / 2) - 2.5) / 2) * 100
+        load_amps = ((AnalogIn(ads, ADS.P0).voltage + (reference / 1.5) - 2.5) / 2) * 100
+        battery_amps = ((AnalogIn(ads, ADS.P1).voltage + (reference / 1.5) - 2.5) / 2) * 100
         logger.debug(f"Load: {load_amps}A, battery_load: {battery_amps}A")
         if MQTT_CLIENT:
             MQTT_CLIENT.publish('load_data', json.dumps({
