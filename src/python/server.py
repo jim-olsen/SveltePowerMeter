@@ -338,6 +338,7 @@ def update_sql_tables():
 def update_running_stats():
     global stats_data
     last_update = datetime.today()
+    current_day_of_year = datetime.today().timetuple().tm_yday
     while True:
         try:
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
@@ -352,6 +353,11 @@ def update_running_stats():
             if datetime.today() > last_update + timedelta(minutes=1):
                 update_sql_tables()
                 last_update = datetime.today()
+
+            if datetime.today().timetuple().tm_yday != current_day_of_year:
+                current_day_of_year = datetime.today().timetuple().tm_yday
+                stats_data['day_load_wh'] = 0
+                stats_data['day_batt_wh'] = 0
 
             time.sleep(5)
         except Exception as e:
