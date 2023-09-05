@@ -98,6 +98,14 @@ export default {
                 {
                     from: '/graphBatteryData',
                     to: 'http://10.0.10.32:8050/graphBatteryData'
+                },
+                {
+                    from: '/shelly/relay/on',
+                    to: 'http://10.0.10.32:8050/shelly/relay/on'
+                },
+                {
+                    from: '/shelly/relay/off',
+                    to: 'http://10.0.10.32:8050/shelly/relay/off'
                 }
                 ]
         })

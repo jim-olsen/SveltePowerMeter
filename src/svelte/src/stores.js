@@ -566,3 +566,34 @@ export const batteryBankCellVoltageGraphData = writable({}, () => {
         clearInterval(batteryBankCellVoltageGraphInterval);
     };
 });
+
+/**
+ * Retrieve the graph data for battery temperatures in the bank over time.  The powerGraphDuration writeable provides the
+ * number of days over which to fetch the data.
+ */
+function getBatteryBankTemperatureGraphData() {
+    fetch(`/graphBatteryData?days=${get(powerGraphDuration)}&dataField=battery_temp_two&dataField=name`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryBankTemperatureGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest graph data representing battery bank temperature over time, based on
+ * powerGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryBankTemperatureGraphData = writable({}, () => {
+    let unsubscribe = powerGraphDuration.subscribe(getBatteryBankTemperatureGraphData)
+    getBatteryBankTemperatureGraphData();
+    let batteryBankVoltageGraphInterval = setInterval(getBatteryBankTemperatureGraphData, 30000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryBankVoltageGraphInterval);
+    };
+});
