@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 MQTT_SERVER_ADDR = '10.0.10.31'
 logger = logging.getLogger('test_mqtt')
 
+
 def start_mqtt_client():
     def on_connect(c, userdata, flags, rc):
         global MQTT_CLIENT

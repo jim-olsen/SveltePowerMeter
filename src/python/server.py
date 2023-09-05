@@ -11,7 +11,6 @@ import time
 import threading
 from datetime import datetime, timedelta
 import asyncio
-from pymodbus.client.sync import ModbusTcpClient
 from bleak import BleakScanner, BLEDevice, AdvertisementData
 from PIL import Image
 from Starlink import Starlink
@@ -71,18 +70,18 @@ VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nomi
                         "num_cells", "battery_temp_one", "battery_temp_two", "battery_temp_three", "cell_voltage_one",
                         "cell_voltage_two", "cell_voltage_three", "cell_voltage_four"]
 
-# Set this value to the ip of your tristar charge controller
-TRISTAR_ADDR = '10.0.10.10'
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
+
 # For now I have shelly devices manually listed.  There is not a great discovery mechanism built in but am exploring
 # options
-SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43']
+SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43',
+                           'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46']
 
 VICTRON_ADDRESS = 'FA:66:AD:B2:8C:E4'
 VICTRON_BLE_KEY = '932d4be6e50cb7f03148f8529b05f58b'
 
-available_shellys = []
+AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
 dishy = Starlink()
@@ -174,6 +173,9 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
         logger.error(f"Failure inside of BLE beacon parsing: {e}")
 
 
+#
+# Update all the sql tables with the latest current data into the database for future processing and analysis
+#
 def update_sql_tables():
     global current_data
     global WEATHER_DATA
@@ -331,9 +333,8 @@ def update_sql_tables():
                       ))
 
 
-
 #
-# Update the running stats with the latest data
+# Update the running stats with the latest data by looping blu
 #
 def update_running_stats():
     global stats_data
@@ -365,62 +366,6 @@ def update_running_stats():
 
 
 #
-# Update the values from the tristar modbus protocol in the values dictionary
-#
-def update_tristar_values():
-    while True:
-        # Connect directly to the modbus interface on the tristar charge controller to get the current information about
-        # the state of the solar array and battery charging
-        modbus_client = ModbusTcpClient(TRISTAR_ADDR, port=502)
-        try:
-            modbus_client.connect()
-            rr = modbus_client.read_holding_registers(0, 91, unit=1)
-            if rr is None:
-                modbus_client.close()
-                logger.error("Failed to connect and read from tristar modbus")
-            else:
-                voltage_scaling_factor = (float(rr.registers[0]) + (float(rr.registers[1]) / 100))
-                amperage_scaling_factor = (float(rr.registers[2]) + (float(rr.registers[3]) / 100))
-
-                # Voltage Related Statistics
-                # current_data["battery_voltage"] = float(rr.registers[24]) * voltage_scaling_factor * 2 ** (-15)
-                current_data["battery_sense_voltage"] = float(rr.registers[26]) * voltage_scaling_factor * 2 ** (-15)
-                current_data["battery_voltage_slow"] = float(rr.registers[38]) * voltage_scaling_factor * 2 ** (-15)
-                current_data["battery_daily_minimum_voltage"] = float(
-                    rr.registers[64]) * voltage_scaling_factor * 2 ** (-15)
-                current_data["battery_daily_maximum_voltage"] = float(
-                    rr.registers[65]) * voltage_scaling_factor * 2 ** (-15)
-                current_data["target_regulation_voltage"] = float(rr.registers[51]) * voltage_scaling_factor * 2 ** (
-                    -15)
-                current_data["array_voltage"] = float(rr.registers[27]) * voltage_scaling_factor * 2 ** (-15)
-                # Current Related Statistics
-                current_data["array_charge_current"] = float(rr.registers[29]) * amperage_scaling_factor * 2 ** (-15)
-                current_data["battery_charge_current"] = float(rr.registers[28]) * amperage_scaling_factor * 2 ** (-15)
-                current_data["battery_charge_current_slow"] = float(rr.registers[39]) * amperage_scaling_factor * 2 ** (
-                    -15)
-                # Wattage Related Statistics
-                current_data["input_power"] = float(
-                    rr.registers[59]) * voltage_scaling_factor * amperage_scaling_factor * 2 ** (-17)
-                current_data["solar_watts"] = float(
-                    rr.registers[58]) * voltage_scaling_factor * amperage_scaling_factor * 2 ** (-17)
-                # Temperature Statistics
-                current_data["heatsink_temperature"] = rr.registers[35]
-                current_data["battery_temperature"] = rr.registers[36]
-                # Misc Statistics
-                charge_states = ["START", "NIGHT_CHECK", "DISCONNECT", "NIGHT", "FAULT", "MPPT", "ABSORB", "FLOAT",
-                                 "EQUALIZE", "SLAVE"]
-                current_data["charge_state"] = charge_states[rr.registers[50]]
-                current_data["seconds_in_absorption_daily"] = rr.registers[77]
-                current_data["seconds_in_float_daily"] = rr.registers[79]
-                current_data["seconds_in_equalization_daily"] = rr.registers[78]
-                modbus_client.close()
-        except Exception as e:
-            logger.error("Failed to connect to tristar modbus", e)
-            modbus_client.close()
-        time.sleep(5)
-
-
-#
 # For development purposes, allow collection of the live power data from an existing instance rather than going live
 # to the bluetooth device.  This allows development to be done from a remote location.
 #
@@ -443,6 +388,8 @@ def update_through_proxy(proxy):
 # if the unit has been stowed.  If it has been stowed for over 10 minutes, then we want to unstow it.
 #
 def manage_starlink():
+    global AVAILABLE_SHELLEYS
+
     start_stow_time = 0
     start_not_connected_time = 0
     start_power_off_time = 0
@@ -455,7 +402,7 @@ def manage_starlink():
                     start_not_connected_time = time.time()
                 elif time.time() - start_not_connected_time > 28800:
                     logger.warning("Dishy not connected for over 8 hours, trying a power cycle")
-                    for shelly in available_shellys:
+                    for shelly in AVAILABLE_SHELLEYS:
                         if shelly.name.casefold() == "dishy".casefold():
                             logger.warning(
                                 "Found shelly dishy device, power cycling dishy due to disconnected state...")
@@ -468,7 +415,7 @@ def manage_starlink():
             else:
                 start_not_connected_time = 0
 
-            for shelly in available_shellys:
+            for shelly in AVAILABLE_SHELLEYS:
                 if shelly.name.casefold() == "dishy".casefold():
                     status = shelly.get_relay_status(0)
                     if status["ison"] is False:
@@ -842,7 +789,9 @@ def reboot_dish():
 # Get the shelly object instance matching the name.  Return none if no matching Shelly
 #
 def get_shelly_by_name(name):
-    for shelly in available_shellys:
+    global AVAILABLE_SHELLEYS
+
+    for shelly in AVAILABLE_SHELLEYS:
         if shelly.get_settings().get("name", None) == name:
             return shelly
     return None
@@ -853,7 +802,9 @@ def get_shelly_by_name(name):
 #
 @app.route("/shelly")
 def get_all_shellys():
-    return json.dumps([shelly.__dict__ for shelly in available_shellys])
+    global AVAILABLE_SHELLEYS
+
+    return json.dumps([shelly.__dict__ for shelly in AVAILABLE_SHELLEYS])
 
 
 #
@@ -1011,7 +962,7 @@ def advertisement_monitor_thread():
 
 
 def main(proxy=None):
-    global BLUEIRIS_ALERT
+    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES
 
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
@@ -1112,10 +1063,6 @@ def main(proxy=None):
 
 
     if proxy is None:
-        tristar_thread = threading.Thread(target=update_tristar_values, args=())
-        tristar_thread.daemon = True
-#        tristar_thread.start()
-
         advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
         advertisement_thread.daemon = True
         advertisement_thread.start()
@@ -1130,7 +1077,7 @@ def main(proxy=None):
         retry_count = 0
         while True:
             try:
-                available_shellys.append(Shelly(shelley_addr))
+                AVAILABLE_SHELLEYS.append(Shelly(shelley_addr))
                 logger.info("Shelly device" +  shelley_addr + " successfully added")
                 break
             except Exception as e:

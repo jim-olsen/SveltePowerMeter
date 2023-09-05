@@ -6,6 +6,10 @@ from bleak import BleakScanner
 logger = logging.getLogger('lead_yo_battery')
 
 
+#
+# Look for all LeadYO battery advertisements by finding any advertisements that include their uuid as a supported
+# protocol.  Return an instance of a smart battery object for each found instance.
+#
 async def async_find_all_batteries() -> [SmartBattery]:
 
     logger.debug("Finding all available batteries within range")
@@ -22,6 +26,9 @@ async def async_find_all_batteries() -> [SmartBattery]:
     return found_batteries
 
 
+#
+# Synchronous version of the above async function
+#
 def find_all_batteries() -> [SmartBattery]:
     return asyncio.run(async_find_all_batteries())
 

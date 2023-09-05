@@ -19,7 +19,9 @@ from typing import List
 from adafruit_ads1x15.analog_in import AnalogIn
 
 logger = logging.getLogger('energy_monitor')
-# The bluetooth address and encryption key of the victron solar charger
+# The bluetooth address and encryption key of the victron solar charger.  These need to be gotten for your specific
+# installation, and are not real easy to get at the moment.  Supposedly support in the app in the future should provide
+# the key, but for now it is very difficult and there are guides online
 VICTRON_ADDRESS = 'FA:66:AD:B2:8C:E4'
 VICTRON_BLE_KEY = '932d4be6e50cb7f03148f8529b05f58b'
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
@@ -28,10 +30,13 @@ LAST_BEACON_RECEIVED = time.time()
 MQTT_CLIENT: mqtt.Client = None
 
 
+# When we receive a bluetooth advertising packet from the victron charger, decode the available data and post to the
+# correct MQTT topic
 def process_victron_data(advertisement: AdvertisementData):
     global VICTRON_BLE_KEY, MQTT_CLIENT, LAST_BEACON_RECEIVED
 
     LAST_BEACON_RECEIVED = time.time()
+    # The structure of a victron packet
     parser = Struct(
         "prefix" / FixedSized(2, GreedyBytes),
         # Model ID
@@ -58,6 +63,7 @@ def process_victron_data(advertisement: AdvertisementData):
         counter=ctr,
     )
 
+    # Victron BLE packets are encrypted with a key specific to your installation, so decrypt the data for processing
     decrypted_packet = cipher.decrypt(pad(container.encrypted_data[1:], 16))
     charger_parser = Struct(
         "charge_state" / Int8ul,
@@ -74,8 +80,10 @@ def process_victron_data(advertisement: AdvertisementData):
         "external_device_load" / Int16ul,
         )
 
+    # Now using the structure, parse the decrypted victron data
     charger_data = charger_parser.parse(decrypted_packet)
     logger.debug(charger_data)
+    # Map the victron charge state number to our common enum style
     charge_states = ["NIGHT", "LOW_POWER", "FAULT", "MPPT", "ABSORB", "FLOAT", "STORAGE", "EQUALIZE_MANUAL"]
 
     if MQTT_CLIENT:
@@ -90,21 +98,6 @@ def process_victron_data(advertisement: AdvertisementData):
         logger.error('Received solar charger data, but MQTT not connected')
 
 
-def process_circuit_python_ble(advertisement: AdvertisementData):
-    global LAST_BEACON_RECEIVED
-
-    LAST_BEACON_RECEIVED = time.time()
-    logger.debug("Received load data: " + str(advertisement.service_data))
-    load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
-    sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
-
-    if MQTT_CLIENT:
-        MQTT_CLIENT.publish('load_sensor_data', json.dumps({
-            'battery_voltage': float(sensor_values[0]),
-            'battery_load': float(sensor_values[1]),
-            'load_amps':  float(sensor_values[2].replace("*", ""))
-        }))
-
 #
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
 # code for how this is implemented
@@ -113,9 +106,7 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
     global VICTRON_ADDRESS
 
     try:
-        if advertisement and advertisement.local_name == 'load':
-            process_circuit_python_ble(advertisement)
-        elif advertisement and device.address == VICTRON_ADDRESS:
+        if advertisement and device.address == VICTRON_ADDRESS:
             logger.debug("Received victron update")
             process_victron_data(advertisement)
 
@@ -123,6 +114,9 @@ async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData)
         logger.error(f"Failure inside of BLE beacon parsing: {e}")
 
 
+#
+# Startup the mqtt client and register callbacks to reconnect on any client disconnections
+#
 def start_mqtt_client():
     def on_connect(c, userdata, flags, rc):
         global MQTT_CLIENT
@@ -147,20 +141,24 @@ def start_mqtt_client():
     client.loop_forever()
 
 
-def monitor_batteries(batteries: List[SmartBattery]):
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(async_monitor_batteries(batteries))
-
-
+#
+# Monitor all connected batteries by connecting one by one and pulling all current info.  Do this in a cycle with a
+# pause in it.  Bluez apparently does not let you both connect and receive advertisements, so we must pause receiving
+# the BLE advertisement packets, connect, then start the advertising receiving again.  So both direct connections and
+# BLE advertisement decodes from the victron are handled by this process.
+#
 async def async_monitor_batteries(batteries: List[SmartBattery]):
     global LAST_BEACON_RECEIVED
     global MQTT_CLIENT
     failure_count = 0
 
+    # Capture the last time we received a packet, as sometimes Bluez hangs and we want to exit and restart to recover
     LAST_BEACON_RECEIVED = time.time()
     scanner = BleakScanner(detection_callback=update_ble_values)
     while failure_count < 10 and time.time() - LAST_BEACON_RECEIVED < 60:
+        # Connect to all of the batteries in turn
         for battery in batteries:
+            # Filter for our bank of batteries
             if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
                 try:
                     logger.info(f"Connecting to battery {battery.name()}")
@@ -190,14 +188,31 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
                     failure_count += 1
                 await asyncio.sleep(1)
 
+        # Now that we have completed our direct connections, open up BLE advertising monitoring
         await scanner.start()
         await asyncio.sleep(30)
+        # Stop advertising monitoring while we do direct connections
         await scanner.stop()
 
+    # Bluez goes out to left field on occasion, so if we aren't getting any valid data out of it, exit to reset
     logger.error("Too many failures in a row, exiting to allow restart of bluetooth....")
     raise SystemExit('Too many failures in a row, existing to allow restart of bluetooth')
 
 
+#
+# Start monitoring the batteries.  This is a synchronous entry point to the async function
+#
+def monitor_batteries(batteries: List[SmartBattery]):
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(async_monitor_batteries(batteries))
+
+
+#
+# This process handles reading values from a directly connected ADS 1115 A/D chip.  This chip is used to read values
+# from connected load sensors that provide +/- 100amp readings to sense load in the system.  In this case the direct
+# consumption load sensor is on pin A0, and the battery monitor (both input and output) is connected to pin A1.  Pin
+# A2 is grounded to provide a zero reference, since it seems to vary slightly and can be used for correction
+#
 def read_analog_values_thread():
     i2c = busio.I2C(board.SCL, board.SDA)
     ads = ADS.ADS1115(i2c)
@@ -216,8 +231,10 @@ def read_analog_values_thread():
                 'load_amps':  load_amps
             }))
         time.sleep(5)
+
     logger.error("Fell out of analog reader loop that should never end, allow restart of service")
     raise SystemExit("Fell out of analog reader loop that should never end, allow restart of service")
+
 
 def main():
     logging.basicConfig()
