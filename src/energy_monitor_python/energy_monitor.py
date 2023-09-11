@@ -31,7 +31,7 @@ LAST_BEACON_RECEIVED = time.time()
 MQTT_CLIENT: mqtt.Client = None
 AS3935_I2C_ADDR = 0x03
 AS3935_CAPACITANCE = 96
-AS3935_IRQ_PIN = 7
+AS3935_IRQ_PIN = 4
 LIGHTNING_SENSOR: DFRobot_AS3935 = None
 
 
@@ -280,7 +280,6 @@ def main():
     logger.info(f"Found batteries {batteries}")
 
     logger.warning("Initializing AS3935")
-    GPIO.setmode(GPIO.BOARD)
     lightning_sensor = DFRobot_AS3935(AS3935_I2C_ADDR, bus=1)
     if lightning_sensor.reset():
         logger.warning("Lightning detector successfully initialized")
