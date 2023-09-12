@@ -1118,7 +1118,7 @@ def main(proxy=None):
     lightning_sql_connection.execute('''CREATE TABLE IF NOT EXISTS lightning_data(record_time INTEGER,
                 event TEXT,
                 distance INTEGER,
-                intensity INTEGER,
+                intensity REAL,
                 PRIMARY KEY (record_time))
     ''')
 
