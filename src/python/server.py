@@ -682,6 +682,15 @@ def get_lightning_data():
         ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
         for row in cursor.fetchall():
             response.get("events", []).append(dict(row))
+
+        cursor = sql_connection.execute('''
+            SELECT * FROM lightning_data WHERE event='lightning' AND record_time >= ? ORDER BY record_time DESC LIMIT 1
+            ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
+        row = cursor.fetchone()
+        if row is None:
+            response.update({"last_strike_24hr": {}})
+        else:
+            response.update({"last_strike_24hr": dict(row)})
     return response
 
 
