@@ -106,6 +106,10 @@ export default {
                 {
                     from: '/shelly/relay/off',
                     to: 'http://10.0.10.32:8050/shelly/relay/off'
+                },
+                {
+                    from: '/lightningData',
+                    to: 'http://10.0.10.32:8050/lightningData'
                 }
                 ]
         })

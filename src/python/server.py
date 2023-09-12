@@ -929,15 +929,23 @@ def update_lightning_data(lightning_event: dict):
     LIGHTNING_DATA = lightning_event
     sql_connection = sqlite3.connect("lightning.db")
     with sql_connection:
-        sql_connection.execute('''
-            INSERT OR REPLACE INTO lightning_data (record_time, event, distance, intensity)
-            VALUES (?, ?. ?, ?);
-        ''',
+        try:
+            result = sql_connection.execute('''INSERT OR REPLACE INTO lightning_data (
+                record_time, 
+                event, 
+                distance,
+                intensity
+                ) VALUES (?, ?, ?, ?)
+            ''',
                                (int(time.time()),
                                 lightning_event.get("event", "unknown"),
                                 lightning_event.get("distance", None),
                                 lightning_event.get("intensity", None)
                                 ))
+        except Exception as e:
+            logger.error(e)
+        print(result)
+        logger.debug(result)
 
 #
 # Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
@@ -1116,6 +1124,7 @@ def main(proxy=None):
                 PRIMARY KEY (record_time))
     ''')
 
+    update_lightning_data({"event": "disturber"})
     try:
         if os.path.exists("last_blue_iris_alert.pkl"):
             BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
