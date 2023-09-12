@@ -694,7 +694,7 @@ def get_lightning_data():
 
         cursor = sql_connection.execute('''
             SELECT * FROM lightning_data ORDER BY record_time DESC LIMIT 1
-            ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
+            ''')
         row = cursor.fetchone()
         if row is None:
             response.update({"last_event": {}})
