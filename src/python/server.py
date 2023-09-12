@@ -1124,7 +1124,6 @@ def main(proxy=None):
                 PRIMARY KEY (record_time))
     ''')
 
-    update_lightning_data({"event": "disturber"})
     try:
         if os.path.exists("last_blue_iris_alert.pkl"):
             BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
