@@ -40,9 +40,10 @@ stats_data = {
     'last_charge_state': 'MPPT',
     'avg_load': 0.0,
     'avg_net': 0.0,
-    'avg_solar': 0.0,
+    'avg_solar': 0.0
 }
 WEATHER_DATA = {}
+LIGHTNING_DATA = {}
 BLUEIRIS_ALERT = {}
 BATTERIES = {}
 LAST_BEACON_RECEIVED = time.time()
@@ -650,6 +651,40 @@ def get_blueiris_alert():
     return return_value
 
 
+#
+# Return both the last lightning event seen, as well as summary data for the day
+#
+@app.route("/lightningData")
+def get_lightning_data():
+    global LIGHTNING_DATA
+    response = {"last_event": LIGHTNING_DATA}
+    sql_connection = sqlite3.connect("lightning.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute('''
+            SELECT COUNT(CASE when event='lightning' THEN 1 END) as total_strikes,
+            COUNT(CASE when event='disturber' THEN 1 END) as total_disturbers,
+            COUNT(CASE when event='noise' THEN 1 END) as total_noise,
+            MIN(distance) as closest_strike,
+            MAX(intensity) as strongest_strike
+            FROM lightning_data
+            WHERE record_time >= ?
+        ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
+        row = cursor.fetchone()
+        if row is None:
+            response.update({"summary": {}})
+        else:
+            response.update({"summary": dict(row)})
+
+        response.update({"events": []})
+        cursor = sql_connection.execute('''
+            SELECT * FROM lightning_data WHERE record_time >= ? ORDER BY record_time ASC
+        ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
+        for row in cursor.fetchall():
+            response.get("events", []).append(dict(row))
+    return response
+
+
 @app.route("/statsData")
 def get_stats_data():
     global stats_data
@@ -886,6 +921,25 @@ def refresh_daily_data():
 
 
 #
+# update lightning information in the in memory object and in the sql database
+#
+def update_lightning_data(lightning_event: dict):
+    global LIGHTNING_DATA
+
+    LIGHTNING_DATA = lightning_event
+    sql_connection = sqlite3.connect("lightning.db")
+    with sql_connection:
+        sql_connection.execute('''
+            INSERT OR REPLACE INTO lightning_data (record_time, event, distance, intensity)
+            VALUES (?, ?. ?, ?);
+        ''',
+                               (int(time.time()),
+                                lightning_event.get("event", "unknown"),
+                                lightning_event.get("distance", None),
+                                lightning_event.get("intensity", None)
+                                ))
+
+#
 # Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
 #
 def start_mqtt_client():
@@ -895,6 +949,7 @@ def start_mqtt_client():
         c.subscribe("blueiris")
         c.subscribe("battery_status")
         c.subscribe("load_data")
+        c.subscribe("lightning_data")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES
@@ -918,6 +973,9 @@ def start_mqtt_client():
             load_info = json.loads(msg.payload)
             current_data["battery_load"] = load_info["battery_load"]
             current_data["load_amps"] = load_info["load_amps"]
+        elif msg.topic == "lightning_data":
+            logger.debug("Received lightning data")
+            update_lightning_data(json.loads(msg.payload))
 
 
     def on_disconnect(c, userdata, rc):
@@ -1049,6 +1107,15 @@ def main(proxy=None):
                 PRIMARY KEY (record_time, name)
                 )
     ''')
+
+    lightning_sql_connection = sqlite3.connect("lightning.db")
+    lightning_sql_connection.execute('''CREATE TABLE IF NOT EXISTS lightning_data(record_time INTEGER,
+                event TEXT,
+                distance INTEGER,
+                intensity INTEGER,
+                PRIMARY KEY (record_time))
+    ''')
+
     try:
         if os.path.exists("last_blue_iris_alert.pkl"):
             BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
