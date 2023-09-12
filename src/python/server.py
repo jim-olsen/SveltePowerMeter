@@ -944,8 +944,6 @@ def update_lightning_data(lightning_event: dict):
                                 ))
         except Exception as e:
             logger.error(e)
-        print(result)
-        logger.debug(result)
 
 #
 # Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
