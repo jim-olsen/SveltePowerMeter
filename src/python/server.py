@@ -657,7 +657,7 @@ def get_blueiris_alert():
 @app.route("/lightningData")
 def get_lightning_data():
     global LIGHTNING_DATA
-    response = {"last_event": LIGHTNING_DATA}
+    response = {}
     sql_connection = sqlite3.connect("lightning.db")
     sql_connection.row_factory = sqlite3.Row
     with sql_connection:
@@ -691,6 +691,15 @@ def get_lightning_data():
             response.update({"last_strike_24hr": {}})
         else:
             response.update({"last_strike_24hr": dict(row)})
+
+        cursor = sql_connection.execute('''
+            SELECT * FROM lightning_data ORDER BY record_time DESC LIMIT 1
+            ''', [int(time.mktime((datetime.today() - timedelta(days=1)).timetuple()))])
+        row = cursor.fetchone()
+        if row is None:
+            response.update({"last_event": {}})
+        else:
+            response.update({"last_event": dict(row)})
     return response
 
 
