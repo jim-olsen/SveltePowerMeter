@@ -13,7 +13,7 @@
     import LoadGraph from "./components/powermeter/LoadGraph.svelte";
     import BlueIrisAlert from "./components/blueiris/BlueIrisAlert.svelte";
 
-    import {blueIrisAlert, currentView} from "./stores";
+    import {blueIrisAlert, currentView, lightningData} from "./stores";
     import MainDashboard from "./components/dahsboards/MainDashboard.svelte";
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
@@ -28,6 +28,7 @@
     import BatteryCellVoltageGraph from "./components/battery/BatteryCellVoltageGraph.svelte";
     import BatteryBankCellPressureDiffGraph from "./components/battery/BatteryBankCellPressureDiffGraph.svelte";
     import BatteryBankTemperatureGraph from "./components/battery/BatteryBankTemperatureGraph.svelte";
+    import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -36,6 +37,7 @@
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
                         'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph'];
     let lastBlueIrisAlert = {};
+    let lastLightningData = {};
 
     /**
      * Cause the Blue iris alert to pop up and display the view of the new alert we have received
@@ -44,6 +46,19 @@
         if ($currentView !== 'alerts') {
             let returnView = $currentView;
             $currentView = 'alerts';
+            setTimeout(() => {
+                $currentView = returnView;
+            }, 30000);
+        }
+    }
+
+    /**
+     * Cause the lightning alert screen to display the new lightning data we received
+     */
+    function displayLightningAlert() {
+        if ($currentView !== 'lightningDashboard') {
+            let returnView = $currentView;
+            $currentView = 'lightningDashboard';
             setTimeout(() => {
                 $currentView = returnView;
             }, 30000);
@@ -64,6 +79,17 @@
     });
 
     /**
+     * If we receive new lightning data and it is not due to not having any data, display the new data and update the
+     * last value.
+     */
+    const unsubscribeLightningData = lightningData.subscribe(data => {
+        if (lastLightningData.hasOwnProperty("last_strike_24hr") && data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity) {
+            displayLightningAlert();
+        }
+        lastLightningData = data;
+    });
+
+    /**
      * If there is not any currently defined alerts on the server after a delay to let it try and get the latest one,
      * then set a dummy id so that we do receive the first real alert to come in.
      */
@@ -78,6 +104,7 @@
 
     onDestroy(() => {
         unsubscribeBlueIris();
+        unsubscribeLightningData();
     });
 
     function onKeyDown(event) {
@@ -184,5 +211,8 @@
     {/if}
     {#if $currentView.startsWith('battery_cell_graph_')}
         <BatteryCellVoltageGraph />
+    {/if}
+    {#if $currentView === 'lightningDashboard'}
+        <LightningDashboard />
     {/if}
 </div>

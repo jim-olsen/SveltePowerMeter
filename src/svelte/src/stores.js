@@ -597,3 +597,30 @@ export const batteryBankTemperatureGraphData = writable({}, () => {
         clearInterval(batteryBankVoltageGraphInterval);
     };
 });
+
+/**
+ * Retrieve the current lighthing data
+ */
+function getLightningData() {
+    fetch("/lightningData", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            lightningData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the latest lightning data
+ * @type {Writable<{}>}
+ */
+export const lightningData = writable({}, () => {
+    getLightningData()
+    let lightningInterval = setInterval(getLightningData, 5000);
+    return () => {
+        clearInterval(lightningInterval);
+    }
+})
