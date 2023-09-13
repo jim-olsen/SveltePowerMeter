@@ -83,7 +83,10 @@
      * last value.
      */
     const unsubscribeLightningData = lightningData.subscribe(data => {
-        if (lastLightningData.hasOwnProperty("last_strike_24hr") && data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity) {
+        if (lastLightningData.hasOwnProperty("last_strike_24hr") &&
+            data.hasOwnProperty("last_strike_24hr") &&
+            data?.last_strike_24hr?.hasOwnProperty("intensity") &&
+            data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity) {
             displayLightningAlert();
         }
         lastLightningData = data;
