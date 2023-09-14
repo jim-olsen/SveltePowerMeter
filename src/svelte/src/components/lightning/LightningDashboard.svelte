@@ -1,13 +1,18 @@
 <script xmlns="http://www.w3.org/1999/html">
     import {lightningData, currentView} from "../../stores";
-    import Fa from "svelte-fa";
     import {faBoltLightning} from "@fortawesome/free-solid-svg-icons";
+    import Fa from "svelte-fa";
+    import FaLayers from "svelte-fa/src/fa-layers.svelte";
+    import FaLayersText from "svelte-fa/src/fa-layers-text.svelte";
 </script>
 <div style="display:flex; flex-flow:column; justify-content: space-evenly; align-items: center; width: 100%; gap: 5px;">
     <div style="display:flex; flex-flow:row; justify-content: space-evenly; align-items: center; width: 100%; gap: 5px;">
         <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: yellow; font-size: 6vh;"
             on:click={() => $currentView = 'dashboard'}>
-            <Fa icon="{faBoltLightning}" style="font-size: 32vw;"/>
+            <FaLayers size="10x" style="color: darkgoldenrod;">
+                <Fa icon="{faBoltLightning}"/>
+                <FaLayersText scale="{1.1}" style="color:greenyellow;font-weight: bolder;">{$lightningData?.last_strike_24hr?.distance}</FaLayersText>
+            </FaLayers>
         </div>
         <div style="display:flex; flex-flow: column; justify-content: center; align-items: center">
             <div><span class="normalText">Last Strike</span></div>
