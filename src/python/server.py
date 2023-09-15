@@ -146,7 +146,11 @@ def process_victron_data(advertisement: AdvertisementData):
     else:
         current_data["charge_state"] = "OTHER"
     current_data["battery_voltage"] = float(charger_data.battery_voltage) / 100
-    stats_data['day_solar_wh'] = charger_data.yield_today * 10
+    # We need to protect against the charge controller resetting this running stat before we increment the day,
+    # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we recognize
+    # a day has passed
+    if stats_data['day_solar_wh'] < charger_data.yield_today * 10:
+        stats_data['day_solar_wh'] = charger_data.yield_today * 10
 
 #
 # Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
@@ -360,6 +364,7 @@ def update_running_stats():
                 current_day_of_year = datetime.today().timetuple().tm_yday
                 stats_data['day_load_wh'] = 0
                 stats_data['day_batt_wh'] = 0
+                stats_data['day_solar_wh'] = 0
 
             time.sleep(5)
         except Exception as e:
