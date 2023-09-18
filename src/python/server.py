@@ -1,17 +1,9 @@
 import os
 import pickle
-import re
-
-from Crypto.Cipher import AES
-from Crypto.Util import Counter
-from Crypto.Util.Padding import pad
-from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
 from datetime import datetime, timedelta
-import asyncio
-from bleak import BleakScanner, BLEDevice, AdvertisementData
 from PIL import Image
 from Starlink import Starlink
 from Shelly import Shelly
@@ -79,104 +71,10 @@ MQTT_SERVER_ADDR = '10.0.10.31'
 SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43',
                            'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46']
 
-VICTRON_ADDRESS = 'FA:66:AD:B2:8C:E4'
-VICTRON_BLE_KEY = '932d4be6e50cb7f03148f8529b05f58b'
-
 AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
 dishy = Starlink()
-
-def process_victron_data(advertisement: AdvertisementData):
-    global VICTRON_BLE_KEY
-
-    parser = Struct(
-        "prefix" / FixedSized(2, GreedyBytes),
-        # Model ID
-        "model_id" / Int16ul,
-        # Packet type
-        "readout_type" / Int8sl,
-        # IV for encryption
-        "iv" / Int16ul,
-        "encrypted_data" / GreedyBytes,
-        )
-    container = parser.parse(advertisement.manufacturer_data[737])
-
-    advertisement_key = bytes.fromhex(VICTRON_BLE_KEY)
-
-    # The first data byte is a key check byte
-    if container.encrypted_data[0] != advertisement_key[0]:
-        raise Exception("Incorrect advertisement key")
-
-    ctr = Counter.new(128, initial_value=container.iv, little_endian=True)
-
-    cipher = AES.new(
-            advertisement_key,
-            AES.MODE_CTR,
-            counter=ctr,
-    )
-
-    decrypted_packet = cipher.decrypt(pad(container.encrypted_data[1:], 16))
-    charger_parser = Struct(
-        # Charge State:   0 - Off
-        #                 3 - Bulk
-        #                 4 - Absorption
-        #                 5 - Float
-        "charge_state" / Int8ul,
-        "charger_error" / Int8ul,
-        # Battery voltage reading in 0.01V increments
-        "battery_voltage" / Int16sl,
-        # Battery charging Current reading in 0.1A increments
-        "battery_charging_current" / Int16sl,
-        # Todays solar power yield in 10Wh increments
-        "yield_today" / Int16ul,
-        # Current power from solar in 1W increments
-        "solar_power" / Int16ul,
-        # External device load in 0.1A increments
-        "external_device_load" / Int16ul,
-        )
-
-    charger_data = charger_parser.parse(decrypted_packet)
-    logger.debug(charger_data)
-    current_data["solar_watts"] = charger_data.solar_power
-    current_data["battery_charge_current"] = float(charger_data.battery_charging_current) / 10
-    charge_states = ["NIGHT", "LOW_POWER", "FAULT", "MPPT", "ABSORB", "FLOAT", "STORAGE", "EQUALIZE_MANUAL"]
-    if charger_data.charge_state <= 7:
-        current_data["charge_state"] = charge_states[charger_data.charge_state]
-    else:
-        current_data["charge_state"] = "OTHER"
-    current_data["battery_voltage"] = float(charger_data.battery_voltage) / 100
-    # We need to protect against the charge controller resetting this running stat before we increment the day,
-    # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we recognize
-    # a day has passed
-    if stats_data['day_solar_wh'] < charger_data.yield_today * 10:
-        stats_data['day_solar_wh'] = charger_data.yield_today * 10
-
-#
-# Connect to the BLE device and get the voltage from A0, and the loads from A1 and A2 pins.  See the circuit python
-# code for how this is implemented
-#
-async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData):
-    global LAST_BEACON_RECEIVED, VICTRON_ADDRESS, VICTRON_BLE_KEY
-
-    try:
-        if advertisement and advertisement.local_name == 'load':
-            LAST_BEACON_RECEIVED = time.time()
-            logger.debug("Received load data: " + str(advertisement.service_data))
-            load_data = advertisement.service_data.get(list(advertisement.service_data.keys())[0], "").decode()[2:]
-            sensor_values = re.findall("([0-9-]*\\.[0-9])", load_data)
-            # current_data["battery_voltage"] = float(sensor_values[0])
-            current_data["battery_load"] = float(sensor_values[1])
-            current_data["load_amps"] = float(sensor_values[2].replace("*", ""))
-            logger.debug(f"Voltage:{current_data['battery_voltage']}, Batt Load: {current_data['battery_load']}, "
-                     f"Load: {current_data['load_amps']}")
-        elif advertisement and device.address == VICTRON_ADDRESS:
-            logger.debug("Received victron update")
-            process_victron_data(advertisement)
-
-    except Exception as e:
-        logger.error(f"Failure inside of BLE beacon parsing: {e}")
-
 
 #
 # Update all the sql tables with the latest current data into the database for future processing and analysis
@@ -369,23 +267,6 @@ def update_running_stats():
             time.sleep(5)
         except Exception as e:
             logger.error('Failure in updating stats: ' + str(e))
-
-
-#
-# For development purposes, allow collection of the live power data from an existing instance rather than going live
-# to the bluetooth device.  This allows development to be done from a remote location.
-#
-def update_through_proxy(proxy):
-    global current_data
-
-    while True:
-        try:
-            r = requests.get(proxy + '/currentData')
-            if r.status_code == 200:
-                current_data = r.json()
-        except Exception as e:
-            logger.error(f"Failed to contact proxy: {e}")
-        time.sleep(5)
 
 
 #
@@ -919,10 +800,6 @@ def power_cycle_relay():
     return {}
 
 
-def run_ble_thread(address, loop):
-    loop.run_until_complete(update_ble_values(address, loop))
-
-
 #
 # Update the day accumulated data from the daily table for today.  If none is present for today, just skip updating
 #
@@ -968,6 +845,7 @@ def update_lightning_data(lightning_event: dict):
         except Exception as e:
             logger.error(e)
 
+
 #
 # Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
 #
@@ -979,6 +857,7 @@ def start_mqtt_client():
         c.subscribe("battery_status")
         c.subscribe("load_data")
         c.subscribe("lightning_data")
+        c.subscribe("solar_charger_data")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES
@@ -1005,7 +884,17 @@ def start_mqtt_client():
         elif msg.topic == "lightning_data":
             logger.debug("Received lightning data")
             update_lightning_data(json.loads(msg.payload))
-
+        elif msg.topic == "solar_charger_data":
+            charger_data = json.loads(msg.payload)
+            current_data["solar_watts"] = charger_data.get("solar_watts", 0)
+            current_data["battery_charge_current"] = charger_data.get("battery_charge_current", 0)
+            current_data["charge_state"] = charger_data.get("charge_state", "OTHER")
+            current_data["battery_voltage"] = charger_data.get("battery_voltage", 0)
+            # We need to protect against the charge controller resetting this running stat before we increment the day,
+            # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
+            # recognize a day has passed
+            if stats_data['day_solar_wh'] < charger_data.get("day_solar_wh", 0):
+                stats_data['day_solar_wh'] = charger_data.get("day_solar_wh", 0)
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -1023,29 +912,6 @@ def start_mqtt_client():
     client.on_disconnect = on_disconnect
     client.connect(MQTT_SERVER_ADDR, 1883, 60)
     client.loop_forever()
-
-
-async def find_advertisements():
-    global LAST_BEACON_RECEIVED
-
-    LAST_BEACON_RECEIVED = time.time()
-    while True:
-        try:
-            async with BleakScanner(detection_callback=update_ble_values):
-                while True:
-                    await asyncio.sleep(10)
-                    if time.time() - LAST_BEACON_RECEIVED > 15:
-                        await BleakScanner.stop()
-                        break
-            logger.error(f"Failed to hear from any beacons in {time.time() - LAST_BEACON_RECEIVED} seconds, restarting scanner")
-        except Exception as e:
-            print("Failure in Bleak Scanner: ", e, " retrying.....")
-            await asyncio.sleep(10)
-
-
-def advertisement_monitor_thread():
-    loop = asyncio.new_event_loop()
-    loop.run_until_complete(find_advertisements())
 
 
 def main(proxy=None):
@@ -1156,18 +1022,6 @@ def main(proxy=None):
     starlink_thread = threading.Thread(target=manage_starlink, args=())
     starlink_thread.daemon = True
     starlink_thread.start()
-
-
-    if proxy is None:
-        advertisement_thread = threading.Thread(target=advertisement_monitor_thread, args=())
-        advertisement_thread.daemon = True
-        advertisement_thread.start()
-
-        logging.getLogger('werkzeug').setLevel(logging.CRITICAL)
-    else:
-        proxy_thread = threading.Thread(target=update_through_proxy, args=(proxy,))
-        proxy_thread.daemon = True
-        proxy_thread.start()
 
     for shelley_addr in SHELLY_DEVICE_ADDRESSES:
         retry_count = 0
