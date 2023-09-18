@@ -162,9 +162,10 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
     scanner = BleakScanner(detection_callback=update_ble_values)
     while failure_count < 10 and time.time() - LAST_BEACON_RECEIVED < 60:
         # Connect to all of the batteries in turn
-        for battery in batteries:
+        for idx, battery in enumerate(batteries):
             # Filter for our bank of batteries
-            if battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or battery.name().startswith('BANK3'):
+            if (battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or
+                    battery.name().startswith('BANK3')):
                 try:
                     logger.info(f"Connecting to battery {battery.name()}")
                     logger.info(f'Battery {battery.name()} percent charged {await battery.capacity_percent()}%')
@@ -191,7 +192,12 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
                 except Exception as e:
                     logger.error(f"Failed to read from battery {battery.name()}: {e}")
                     failure_count += 1
-                await asyncio.sleep(1)
+                if idx % 2 == 0:
+                    await scanner.start()
+                    await asyncio.sleep(5)
+                    await scanner.stop()
+                else:
+                    await asyncio.sleep(1)
 
         # Now that we have completed our direct connections, open up BLE advertising monitoring
         await scanner.start()
@@ -275,7 +281,7 @@ def main():
     logging.getLogger('energy_monitor').setLevel(logging.WARNING)
 
     logger.info("Finding all batteries in range")
-    batteries = find_all_batteries()
+    batteries = sorted(find_all_batteries(), key=lambda x: x.name())
 
     logger.info(f"Found batteries {batteries}")
 
