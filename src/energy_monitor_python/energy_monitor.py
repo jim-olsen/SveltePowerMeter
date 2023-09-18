@@ -194,7 +194,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
                     failure_count += 1
                 if idx % 2 == 1:
                     await scanner.start()
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(2)
                     await scanner.stop()
                 else:
                     await asyncio.sleep(1)
