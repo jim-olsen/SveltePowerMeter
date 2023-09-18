@@ -13,11 +13,11 @@ import numpy as np
 import sqlite3
 import logging
 import paho.mqtt.client as mqtt
-import requests
 import uuid
 
 logging.basicConfig()
 logging.getLogger('power_meter').setLevel(logging.INFO)
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 logger = logging.getLogger('power_meter')
 
 current_data = {}
@@ -75,6 +75,7 @@ AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
 dishy = Starlink()
+
 
 #
 # Update all the sql tables with the latest current data into the database for future processing and analysis
@@ -1053,5 +1054,4 @@ def main(proxy=None):
 # execute this python file to startup your server and serve the svelte app
 #
 if __name__ == "__main__":
-    # main(proxy="http://10.0.10.32:8050")
     main()
