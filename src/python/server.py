@@ -877,6 +877,10 @@ def start_mqtt_client():
             logger.debug("Received Battery Status")
             battery_info = json.loads(msg.payload)
             BATTERIES[battery_info["name"]] = battery_info
+            total_percent = 0
+            for battery_name, battery in BATTERIES.items():
+                total_percent += battery.get("capacity_percent", 0)
+            current_data["battery_percent"] = total_percent / len(BATTERIES.items())
         elif msg.topic == "load_data":
             logger.debug("Received load data")
             load_info = json.loads(msg.payload)
