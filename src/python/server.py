@@ -659,6 +659,23 @@ def get_stats_data():
             stats_data['five_min_solar_watts'] = net_data['five_min_solar_watts']
             stats_data['five_min_battery_voltage'] = net_data['five_min_battery_voltage']
 
+    battery_sql_connection = sqlite3.connect("battery.db")
+    battery_sql_connection.row_factory = sqlite3.Row
+    with battery_sql_connection:
+        cursor = battery_sql_connection.execute(
+            '''
+            SELECT MIN(capacity_percent) AS battery_min_percent, MAX(capacity_percent) AS battery_max_percent 
+            FROM battery_data WHERE record_time >= ?
+            ''',
+            [int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
+            ])
+        row = cursor.fetchone()
+        if row is not None:
+            stats_data['battery_min_percent'] = row['battery_min_percent']
+            stats_data['battery_max_percent'] = row['battery_max_percent']
+
+
     return stats_data
 
 
