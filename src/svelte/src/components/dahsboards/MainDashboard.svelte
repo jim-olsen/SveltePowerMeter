@@ -98,11 +98,12 @@
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
                 on:click={()=> $currentView = 'voltageGraph'}>
-            <span class="largeText">{$powerCurrentData?.battery_percent ? ($powerCurrentData?.battery_percent)?.toFixed(2) : '---'}</span>
+            <span class="largeText">{$powerCurrentData?.battery_percent ? ($powerCurrentData?.battery_percent)?.toFixed(1) : '---'}%</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
                 <span class="smallText">{$powerStatsData?.battery_min_percent ? ($powerStatsData?.battery_min_percent)?.toFixed(2) : '---'}%</span>
+                <span class="smallText">&nbsp</span>
+                <span class="smallText">&nbsp</span>
                 <span class="smallText">{$powerStatsData?.battery_max_percent ? ($powerStatsData?.battery_max_percent)?.toFixed(2) : '---'}%</span>
-                <span class="smallText">Batt&nbsp%</span>
             </div>
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
