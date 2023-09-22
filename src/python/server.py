@@ -664,8 +664,9 @@ def get_stats_data():
     with battery_sql_connection:
         cursor = battery_sql_connection.execute(
             '''
-            SELECT MIN(capacity_percent) AS battery_min_percent, MAX(capacity_percent) AS battery_max_percent 
-            FROM battery_data WHERE record_time >= ?
+            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                    WHERE record_time >= ? GROUP BY name)
             ''',
             [int(time.mktime(
                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
