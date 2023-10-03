@@ -13,10 +13,13 @@ def start_mqtt_client():
 
         logger.info("MQTT Client Connected")
         MQTT_CLIENT = c
-        c.subscribe('battery_status')
-        c.subscribe('solar_charger_data')
-        c.subscribe('load_data')
-        c.subscribe('lightning_data')
+#        c.subscribe('battery_status')
+#        c.subscribe('solar_charger_data')
+#        c.subscribe('load_data')
+#        c.subscribe('lightning_data')
+#        c.subscribe('blueiris')
+#        c.subscribe('weather/loop')
+        c.subscribe('#')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -29,7 +32,12 @@ def start_mqtt_client():
             time.sleep(30)
 
     def on_message(c, userdata, msg):
-        logger.info(f"Received message for topic {msg.topic}: {json.loads(msg.payload)}")
+        if "shelly" in msg.topic:
+            logger.info(f"Received message for topic {msg.topic}: {msg.payload}")
+            try:
+                logger.info(f"Received message for topic {msg.topic}: {json.loads(msg.payload)}")
+            except Exception as e:
+                logger.debug("Not valid json")
 
     client = mqtt.Client()
     client.on_connect = on_connect
