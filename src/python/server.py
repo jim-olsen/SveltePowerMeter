@@ -675,6 +675,51 @@ def get_stats_data():
         if row is not None:
             stats_data['battery_min_percent'] = row['battery_min_percent']
             stats_data['battery_max_percent'] = row['battery_max_percent']
+        cursor = battery_sql_connection.execute(
+            '''
+            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+            ''',
+            (int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple())),
+                int(time.mktime(
+                    (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
+            ))
+        row = cursor.fetchone()
+        if row is not None:
+            stats_data['battery_min_percent_one_day_ago'] = row['battery_min_percent']
+            stats_data['battery_max_percent_one_day_ago'] = row['battery_max_percent']
+        cursor = battery_sql_connection.execute(
+            '''
+            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+            ''',
+            (int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple())),
+             int(time.mktime(
+                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple()))
+            ))
+        row = cursor.fetchone()
+        if row is not None:
+            stats_data['battery_min_percent_two_days_ago'] = row['battery_min_percent']
+            stats_data['battery_max_percent_two_days_ago'] = row['battery_max_percent']
+        cursor = battery_sql_connection.execute(
+            '''
+            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+            ''',
+            (int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple())),
+             int(time.mktime(
+                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=3)).timetuple()))
+            ))
+        row = cursor.fetchone()
+        if row is not None:
+            stats_data['battery_min_percent_three_days_ago'] = row['battery_min_percent']
+            stats_data['battery_max_percent_three_days_ago'] = row['battery_max_percent']
 
 
     return stats_data

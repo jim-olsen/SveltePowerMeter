@@ -32,12 +32,11 @@ def start_mqtt_client():
             time.sleep(30)
 
     def on_message(c, userdata, msg):
-        if "shelly" in msg.topic:
-            logger.info(f"Received message for topic {msg.topic}: {msg.payload}")
-            try:
-                logger.info(f"Received message for topic {msg.topic}: {json.loads(msg.payload)}")
-            except Exception as e:
-                logger.debug("Not valid json")
+        logger.info(f"Received message for topic {msg.topic}: {msg.payload}")
+        try:
+            logger.info(f"Received message for topic {msg.topic}: {json.loads(msg.payload)}")
+        except Exception as e:
+            logger.debug("Not valid json")
 
     client = mqtt.Client()
     client.on_connect = on_connect
