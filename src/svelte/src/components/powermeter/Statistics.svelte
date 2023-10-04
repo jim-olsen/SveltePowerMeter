@@ -105,22 +105,32 @@
     </div>
     <div style="display:flex; flex-flow:row; justify-content: space-between; width: 100%;" class="card" >
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
-            <span class="normalText">{$powerStatsData?.total_load_wh ? $powerStatsData?.total_load_wh.toFixed(0) : '---'}</span>
+            <span class="normalText">{$powerStatsData?.battery_min_percent?.toFixed(0) ?? '---'}/{$powerStatsData?.battery_max_percent?.toFixed(0) ?? '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
-                <span class="smallText">Total</span>
-                <span class="smallText">Use Wh</span>
+                <span class="smallText">% Min/Max</span>
+                <span class="smallText">Today</span>
             </div>
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
-            <span class="normalText">{$powerStatsData?.total_solar_wh ? $powerStatsData?.total_solar_wh.toFixed(0) : '---'}</span>
+            <span class="normalText">{$powerStatsData?.battery_min_percent_one_day_ago?.toFixed(0) ?? '---'}/{$powerStatsData?.battery_max_percent_one_day_ago?.toFixed(0) ?? '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
-                <span class="smallText">Total</span>
-                <span class="smallText">Solar Wh</span>
+                <span class="smallText">% Min/Max</span>
+                <span class="smallText">Yesterday</span>
             </div>
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
+            <span class="normalText">{$powerStatsData?.battery_min_percent_two_days_ago?.toFixed(0) ?? '---'}/{$powerStatsData?.battery_max_percent_two_days_ago?.toFixed(0) ?? '---'}</span>
+            <div style="display:flex; flex-flow:column; justify-content: stretch;">
+                <span class="smallText">% Min/Max</span>
+                <span class="smallText">2 Days Ago</span>
+            </div>
         </div>
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;">
+            <span class="normalText">{$powerStatsData?.battery_min_percent_three_days_ago?.toFixed(0) ?? '---'}/{$powerStatsData?.battery_max_percent_three_days_ago?.toFixed(0) ?? '---'}</span>
+            <div style="display:flex; flex-flow:column; justify-content: stretch;">
+                <span class="smallText">% Min/Max</span>
+                <span class="smallText">3 Days Ago</span>
+            </div>
         </div>
     </div>
 </div>
