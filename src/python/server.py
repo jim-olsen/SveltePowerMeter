@@ -961,8 +961,8 @@ def start_mqtt_client():
             # We need to protect against the charge controller resetting this running stat before we increment the day,
             # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
             # recognize a day has passed
-            if stats_data['day_solar_wh'] < charger_data.get("day_solar_wh", 0):
-                stats_data['day_solar_wh'] = charger_data.get("day_solar_wh", 0)
+            #if stats_data['day_solar_wh'] < charger_data.get("day_solar_wh", 0):
+            stats_data['day_solar_wh'] = charger_data.get("day_solar_wh", 0)
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
