@@ -79,7 +79,7 @@
 </script>
 <div class="card"
      style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;">
-    <span style="font-size: 6vw">{shellyDeviceName}</span>
+    <span class="normalText">{shellyDeviceName}</span>
     <div style="display: flex; flex-flow: row; justify-content: space-between; font-size: 6vw;width: 100%;">
         <div bind:this={deviceIcon} on:click={(e) => {executeCommand(); e.stopPropagation()}} style="font-size: 6vw; color: darkgray;">
             <Fa icon="{faLightbulb}" style="font-size: 6vw;"/>
