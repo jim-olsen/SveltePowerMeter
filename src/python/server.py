@@ -69,7 +69,8 @@ MQTT_SERVER_ADDR = '10.0.10.31'
 # For now I have shelly devices manually listed.  There is not a great discovery mechanism built in but am exploring
 # options
 SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43',
-                           'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46']
+                           'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46', 'http://10.0.10.47',
+                           'http://10.0.10.48']
 
 AVAILABLE_SHELLEYS = []
 
