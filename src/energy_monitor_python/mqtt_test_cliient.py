@@ -14,12 +14,13 @@ def start_mqtt_client():
         logger.info("MQTT Client Connected")
         MQTT_CLIENT = c
 #        c.subscribe('battery_status')
-        c.subscribe('solar_charger_data')
+#        c.subscribe('solar_charger_data')
 #        c.subscribe('load_data')
 #        c.subscribe('lightning_data')
 #        c.subscribe('blueiris')
 #        c.subscribe('weather/loop')
 #        c.subscribe('#')
+        c.subscribe('adsb')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")

@@ -37,6 +37,7 @@ stats_data = {
 WEATHER_DATA = {}
 LIGHTNING_DATA = {}
 BLUEIRIS_ALERT = {}
+ADSB_DATA = {}
 BATTERIES = {}
 LAST_BEACON_RECEIVED = time.time()
 
@@ -525,6 +526,9 @@ def graph_wx_data():
     return graph_data
 
 
+#
+# Get the last blue iris alert that we received from MQTT
+#
 @app.route("/blueIrisAlert")
 def get_blueiris_alert():
     global BLUEIRIS_ALERT
@@ -537,6 +541,24 @@ def get_blueiris_alert():
         return_value.pop('alertImage', None)
 
     return return_value
+
+
+#
+# Get the last in range ADSB packet we received
+#
+@app.route("/adsbData")
+def get_adsb_data():
+    global ADSB_DATA
+
+    no_image = request.args.get('noImage', 'False').lower() == 'true'
+
+    return_value = ADSB_DATA.copy()
+
+    if no_image:
+        return_value.pop('picture', None)
+
+    return return_value
+
 
 
 #
@@ -923,9 +945,10 @@ def start_mqtt_client():
         c.subscribe("load_data")
         c.subscribe("lightning_data")
         c.subscribe("solar_charger_data")
+        c.subscribe("adsb")
 
     def on_message(c, userdata, msg):
-        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES
+        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
 
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
         if msg.topic == "weather/loop":
@@ -936,6 +959,12 @@ def start_mqtt_client():
             BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
             file = open(b"last_blue_iris_alert.pkl", "wb")
             pickle.dump(BLUEIRIS_ALERT, file)
+            file.close()
+        elif msg.topic == "adsb":
+            ADSB_DATA = json.loads(msg.payload)
+            ADSB_DATA['id'] = str(uuid.uuid4())
+            file = open(b"last_adsb_data.pkl", "wb")
+            pickle.dump(ADSB_DATA, file)
             file.close()
         elif msg.topic == "battery_status":
             logger.debug("Received Battery Status")
@@ -984,7 +1013,7 @@ def start_mqtt_client():
 
 
 def main(proxy=None):
-    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES
+    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA
 
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
@@ -1085,6 +1114,12 @@ def main(proxy=None):
             BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
     except Exception as e:
         print("Failed to load last blue iris alert: " + str(e))
+
+    try:
+        if os.path.exists("last_adsb_data.pkl"):
+            ADSB_DATA = pickle.load(open("last_adsb_data.pkl", "rb"))
+    except Exception as e:
+        print("Failed to load last adsb data: " + str(e))
 
     refresh_daily_data()
 
