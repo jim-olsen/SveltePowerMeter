@@ -28,18 +28,21 @@
         "C7": "C7"
     }
 </script>
-<div style="display:flex; flex-flow:column; justify-content: center; align-items: center; width: 100%;"
+<div style="display:flex; flex-flow:column; justify-content: space-between; align-items: center; width: 100%;"
          on:click={() => currentView.set('dashboard')}>
-    <h2>Flight {$adsbData.hasOwnProperty("flight") ? $adsbData.flight : "Unknown"} is approaching, Distance {$adsbData.hasOwnProperty("r_dst") ? $adsbData.r_dst : "Unknown"} nm</h2>
+    <div><span class="mediumSmallText">Flight {$adsbData.hasOwnProperty("flight") ? $adsbData.flight : "Unknown"} is approaching, Distance {$adsbData.hasOwnProperty("r_dst") ? $adsbData.r_dst : "Unknown"} nm</span></div>
     <div style="display:flex; flex-flow: row; align-items: center; justify-content: space-between; align-content: space-between; width: 100%;">
-        <div><span class="smallText">Altitude: {$adsbData.hasOwnProperty("alt_baro") ? $adsbData.alt_baro : "Unknown"} ft</span></div>
-        <div><span class="smallText">Speed: {$adsbData.hasOwnProperty("gs") ? $adsbData.gs : "Unknown"} kt</span></div>
-        <div><span class="smallText">Squawk: {$adsbData.hasOwnProperty("squawk") ? $adsbData.squawk : "None"}</span></div>
-        <div><span class="smallText">Category: {$adsbData.hasOwnProperty("category") ? categories[$adsbData.category] : "None"}</span></div>
-        <div><span class="smallText">DBFlags: {$adsbData.hasOwnProperty("dbFlags") ? $adsbData.squawk : "None"}</span></div>
+        <div><span class="mediumSmallerText">Alt: {$adsbData.hasOwnProperty("alt_baro") ? $adsbData.alt_baro : "Unknown"} ft</span></div>
+        <div><span class="mediumSmallerText">Speed: {$adsbData.hasOwnProperty("gs") ? $adsbData.gs : "Unknown"} kt</span></div>
+        <div><span class="mediumSmallerText">Squawk: {$adsbData.hasOwnProperty("squawk") ? $adsbData.squawk : "None"}</span></div>
+        <div><span class="mediumSmallerText">Cat: {$adsbData.hasOwnProperty("category") ? categories[$adsbData.category] : "None"}</span></div>
+    </div>
+    <div style="display:flex; flex-flow: row; align-items: center; justify-content: space-between; align-content: space-between; width: 100%;">
+        <div><span class="mediumSmallerText">Desc: {$adsbData.hasOwnProperty("desc") ? $adsbData.desc : "Unknown"}</span></div>
+        <div><span class="mediumSmallerText">Owner: {$adsbData.hasOwnProperty("ownOp") ? $adsbData.ownOp : "Unknown"}</span></div>
     </div>
     {#if $adsbData.hasOwnProperty("picture")}
-        <img src="{'data:image/png;base64, ' + $adsbData.picture}" style="height: 80vh;"/>
+        <img src="{'data:image/png;base64, ' + $adsbData.picture}" style="height: 70vh;"/>
     {:else}
         <h2>No Picture Available</h2>
     {/if}
