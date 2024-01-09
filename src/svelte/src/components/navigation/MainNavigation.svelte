@@ -8,7 +8,8 @@
         faLightbulb,
         faSnowflake,
         faExclamationTriangle,
-        faBoltLightning
+        faBoltLightning,
+        faPlane
     } from "@fortawesome/free-solid-svg-icons";
 </script>
     <div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 15px; gap: 15px;">
@@ -46,5 +47,10 @@
              on:click={()=> $currentView = 'lightningDashboard'}>
             <Fa icon={faBoltLightning} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">Lightning</span>
+        </div>
+        <div class="card" style="display: flex; flex-flow: column; justify-content: center;  align-items: center;flex: 1 0 25%;"
+             on:click={()=> $currentView = 'adsb'}>
+            <Fa icon={faPlane} style="font-size: 6vw; color: cadetblue"/>
+            <span class="largeText">ADSB</span>
         </div>
     </div>

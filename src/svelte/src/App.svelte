@@ -13,7 +13,7 @@
     import LoadGraph from "./components/powermeter/LoadGraph.svelte";
     import BlueIrisAlert from "./components/blueiris/BlueIrisAlert.svelte";
 
-    import {blueIrisAlert, currentView, lightningData} from "./stores";
+    import {blueIrisAlert, currentView, lightningData, adsbData} from "./stores";
     import MainDashboard from "./components/dahsboards/MainDashboard.svelte";
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
@@ -29,6 +29,7 @@
     import BatteryBankCellPressureDiffGraph from "./components/battery/BatteryBankCellPressureDiffGraph.svelte";
     import BatteryBankTemperatureGraph from "./components/battery/BatteryBankTemperatureGraph.svelte";
     import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
+    import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -37,6 +38,7 @@
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
                         'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph'];
     let lastBlueIrisAlert = {};
+    let lastADSBData = {};
     let lastLightningData = {};
 
     /**
@@ -46,6 +48,19 @@
         if ($currentView !== 'alerts') {
             let returnView = $currentView;
             $currentView = 'alerts';
+            setTimeout(() => {
+                $currentView = returnView;
+            }, 30000);
+        }
+    }
+
+    /**
+     * Display a new ADSB alert of incoming plane
+     */
+    function displayADSBData() {
+        if ($currentView !== 'adsb') {
+            let returnView = $currentView;
+            $currentView = 'adsb';
             setTimeout(() => {
                 $currentView = returnView;
             }, 30000);
@@ -79,6 +94,19 @@
     });
 
     /**
+     * Monitor for any new adsb flight data that come in, and switch over to the alert screen if we receive a new one,
+     * and return to the previous screen after 30 seconds.
+     */
+    const unsubscribeADSBData = adsbData.subscribe(data => {
+        if (!lastADSBData.hasOwnProperty("id")) {
+            lastADSBData = data;
+        } else if (data.hasOwnProperty("id") && lastADSBData.id !== data.id) {
+            lastADSBData = data;
+            displayADSBData();
+        }
+    });
+
+    /**
      * If we receive new lightning data and it is not due to not having any data, display the new data and update the
      * last value.
      */
@@ -100,7 +128,9 @@
         setTimeout(() => {
             if (!lastBlueIrisAlert.hasOwnProperty("id")) {
                 lastBlueIrisAlert = {"id": "dummyid"};
-                console.log("Setting dummy id");
+            }
+            if (!lastADSBData.hasOwnProperty("id")) {
+                lastADSBData = {"id": "dummyid"};
             }
         }, 15000)
     })
@@ -108,6 +138,7 @@
     onDestroy(() => {
         unsubscribeBlueIris();
         unsubscribeLightningData();
+        unsubscribeADSBData();
     });
 
     function onKeyDown(event) {
@@ -199,6 +230,9 @@
     {/if}
     {#if $currentView === 'alerts'}
         <BlueIrisAlert />
+    {/if}
+    {#if $currentView === 'adsb'}
+        <ADSBInfo />
     {/if}
     {#if $currentView === 'weather'}
         <WxDashboard />

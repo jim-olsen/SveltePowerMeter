@@ -4,6 +4,7 @@ export const powerGraphDuration = writable(2)
 export const weatherGraphDuration = writable(1)
 
 let lastBlueIrisAlert = {};
+let lastADSBData = {};
 
 export const currentView = writable('dashboard');
 
@@ -251,6 +252,49 @@ export const blueIrisAlert = writable({}, () => {
     return () => {
         clearInterval(blueIrisAlertInterval);
         lastBlueIrisAlert = {};
+    }
+})
+
+
+/**
+ * Retrieve the last recorded adsb packet
+ */
+function getADSBData() {
+    fetch("/adsbData?noImage=True", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            if (d.hasOwnProperty("id") &&
+                (!lastADSBData.hasOwnProperty("id") || lastADSBData.id !== d.id)) {
+                fetch("/adsbData", {
+                    headers: {
+                        "Accept": "application/json"
+                    }
+                })
+                    .then(d => d.json())
+                    .then(d => {
+                        adsbData.set(d)
+                        lastADSBData = d;
+                    });
+            } else {
+                adsbData.set(lastADSBData)
+            }
+        });
+}
+
+/**
+ * A subscribable that contains the latest adsb data
+ * @type {Writeable<{}>}
+ */
+export const adsbData = writable({}, () => {
+    getADSBData();
+    let adsbDataInterval = setInterval(getADSBData, 3000);
+    return () => {
+        clearInterval(adsbDataInterval);
+        lastADSBData = {};
     }
 })
 
