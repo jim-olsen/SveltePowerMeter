@@ -902,7 +902,7 @@ def refresh_daily_data():
         if row is not None:
             rowdict = dict(row)
             stats_data['day_load_wh'] = rowdict['day_load_wh']
-            stats_data['day_solar_wh'] = rowdict['day_solar_wh']
+            # sstats_data['day_solar_wh'] = rowdict['day_solar_wh']
             stats_data['day_batt_wh'] = rowdict['day_batt_wh']
             stats_data['last_charge_state'] = rowdict['last_charge_state']
 
