@@ -143,10 +143,10 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
 # code for how this is implemented
 #
 async def update_ble_values(device: BLEDevice, advertisement: AdvertisementData):
-    global VICTRON_ADDRESS
+    global VICTRON_ADDRESSES
 
     try:
-        if advertisement and device.address == VICTRON_ADDRESS:
+        if advertisement and device.address in VICTRON_ADDRESSES:
             logger.debug("Received victron update")
             process_victron_data(device, advertisement)
 
