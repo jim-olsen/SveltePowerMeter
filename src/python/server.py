@@ -116,7 +116,7 @@ def update_sql_tables():
                                    int(time.time()),
                                    current_data.get('battery_load', None),
                                    current_data.get('load_amps', None),
-                                   current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0),
+                                   current_data.get('load_watts', None),
                                    current_data.get('battery_voltage', None),
                                    current_data.get('battery_voltage', 0) * current_data.get('battery_load', 0),
                                    current_data.get('day_solar_wh', 0) - current_data.get('day_load_wh', 0),
@@ -250,7 +250,7 @@ def update_running_stats():
         try:
             if ('load_amps' in current_data) & ('battery_voltage' in current_data):
                 stats_data['day_load_wh'] += 0.00139 * (
-                        current_data.get('load_amps', 0) * current_data.get('battery_voltage', 0))
+                        current_data.get('load_watts', 0))
                 # Now comes from the victron....
                 # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
                 stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
@@ -946,6 +946,7 @@ def start_mqtt_client():
         c.subscribe("lightning_data")
         c.subscribe("solar_charger_data")
         c.subscribe("adsb")
+        c.subscribe("dc_meter_data")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
@@ -978,7 +979,7 @@ def start_mqtt_client():
             logger.debug("Received load data")
             load_info = json.loads(msg.payload)
             current_data["battery_load"] = load_info["battery_load"]
-            current_data["load_amps"] = load_info["load_amps"]
+            # current_data["load_amps"] = load_info["load_amps"]
         elif msg.topic == "lightning_data":
             logger.debug("Received lightning data")
             update_lightning_data(json.loads(msg.payload))
@@ -993,6 +994,13 @@ def start_mqtt_client():
             # recognize a day has passed
             if stats_data['day_solar_wh'] < charger_data.get("day_solar_wh", 0):
                 stats_data['day_solar_wh'] = charger_data.get("day_solar_wh", 0)
+        elif msg.topic == "dc_meter_data":
+            meter_data = json.loads(msg.payload)
+            if meter_data['device_name'] == "Cabin Load":
+                current_data['load_amps'] = meter_data['amps']
+                current_data['load_watts'] = meter_data['watts']
+                current_data['load_volts'] = meter_data['volts']
+
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")

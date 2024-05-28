@@ -20,7 +20,8 @@ def start_mqtt_client():
 #        c.subscribe('blueiris')
 #        c.subscribe('weather/loop')
 #        c.subscribe('#')
-        c.subscribe('adsb')
+#        c.subscribe('adsb')
+        c.subscribe('dc_meter_data')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")

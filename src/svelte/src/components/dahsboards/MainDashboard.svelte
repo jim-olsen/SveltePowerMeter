@@ -69,7 +69,7 @@
         {/if}
         <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end; flex: 2; gap: 10px;"
                 on:click={() => $currentView = 'loadGraph'}>
-            <span class="largeText">{$powerCurrentData?.load_amps ? ($powerCurrentData?.load_amps * $powerCurrentData?.battery_voltage)?.toFixed(1) : '---'}</span>
+            <span class="largeText">{$powerCurrentData?.load_watts ? $powerCurrentData?.load_watts?.toFixed(1) : '---'}</span>
             <div style="display:flex; flex-flow:column; justify-content: stretch;">
                 <span class="smallText">Load</span>
                 <span class="smallText">Watts</span>
