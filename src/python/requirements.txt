@@ -13,4 +13,5 @@ asyncio >= 3.4.3
 paho-mqtt >= 1.6.1
 construct>=2.10.68
 pycryptodome>=3.0.0
+flask-socketio>=5.3.6
 

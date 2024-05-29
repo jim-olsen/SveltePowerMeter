@@ -3,10 +3,6 @@ import pickle
 from flask import Flask, send_from_directory, send_file, request
 import time
 import threading
-from datetime import datetime, timedelta
-from PIL import Image
-from Starlink import Starlink
-from Shelly import Shelly
 import io
 import json
 import numpy as np
@@ -14,6 +10,12 @@ import sqlite3
 import logging
 import paho.mqtt.client as mqtt
 import uuid
+from datetime import datetime, timedelta
+from PIL import Image
+from Starlink import Starlink
+from Shelly import Shelly
+from flask_socketio import SocketIO, emit
+
 
 logging.basicConfig()
 logging.getLogger('power_meter').setLevel(logging.INFO)
@@ -77,6 +79,7 @@ AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
 dishy = Starlink()
+socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
 
 #
@@ -243,7 +246,7 @@ def update_sql_tables():
 # Update the running stats with the latest data by looping blu
 #
 def update_running_stats():
-    global stats_data
+    global stats_data, dishy
     last_update = datetime.today()
     current_day_of_year = datetime.today().timetuple().tm_yday
     while True:
@@ -267,6 +270,16 @@ def update_running_stats():
                 stats_data['day_batt_wh'] = 0
                 stats_data['day_solar_wh'] = 0
 
+            get_stats_data()
+            # We serialize then deserialize to get around datetime not being serializable by socketio
+            socketio.emit('stats_data', json.loads(json.dumps(stats_data, default=str)))
+            socketio.emit( 'starlink_status', dishy.get_status())
+            history = dishy.get_history()
+            history.pop('ping_drop_rate')
+            history.pop('ping_latency')
+            history.pop('downlink_bps')
+            history.pop('uplink_bps')
+            socketio.emit('starlink_history', history)
             time.sleep(5)
         except Exception as e:
             logger.error('Failure in updating stats: ' + str(e))
@@ -744,7 +757,6 @@ def get_stats_data():
             stats_data['battery_min_percent_three_days_ago'] = row['battery_min_percent']
             stats_data['battery_max_percent_three_days_ago'] = row['battery_max_percent']
 
-
     return stats_data
 
 
@@ -949,21 +961,24 @@ def start_mqtt_client():
         c.subscribe("dc_meter_data")
 
     def on_message(c, userdata, msg):
-        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
+        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA, LIGHTNING_DATA
 
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
         if msg.topic == "weather/loop":
             WEATHER_DATA = json.loads(msg.payload)
+            socketio.emit('weather_data', WEATHER_DATA)
         elif msg.topic == "blueiris":
             BLUEIRIS_ALERT = json.loads(msg.payload)
             BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
             BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
+            socketio.emit('blueiris_alert', BLUEIRIS_ALERT)
             file = open(b"last_blue_iris_alert.pkl", "wb")
             pickle.dump(BLUEIRIS_ALERT, file)
             file.close()
         elif msg.topic == "adsb":
             ADSB_DATA = json.loads(msg.payload)
             ADSB_DATA['id'] = str(uuid.uuid4())
+            socketio.emit('adsb_data', ADSB_DATA)
             file = open(b"last_adsb_data.pkl", "wb")
             pickle.dump(ADSB_DATA, file)
             file.close()
@@ -983,12 +998,14 @@ def start_mqtt_client():
         elif msg.topic == "lightning_data":
             logger.debug("Received lightning data")
             update_lightning_data(json.loads(msg.payload))
+            socketio.emit('lightning_data', LIGHTNING_DATA)
         elif msg.topic == "solar_charger_data":
             charger_data = json.loads(msg.payload)
             current_data["solar_watts"] = charger_data.get("solar_watts", 0)
             current_data["battery_charge_current"] = charger_data.get("battery_charge_current", 0)
             current_data["charge_state"] = charger_data.get("charge_state", "OTHER")
             current_data["battery_voltage"] = charger_data.get("battery_voltage", 0)
+            socketio.emit('current_data', current_data)
             # We need to protect against the charge controller resetting this running stat before we increment the day,
             # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
             # recognize a day has passed
@@ -1000,6 +1017,7 @@ def start_mqtt_client():
                 current_data['load_amps'] = meter_data['amps']
                 current_data['load_watts'] = meter_data['watts']
                 current_data['load_volts'] = meter_data['volts']
+                socketio.emit('current_data', current_data)
 
 
     def on_disconnect(c, userdata, rc):
