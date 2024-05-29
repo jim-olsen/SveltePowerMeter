@@ -185,10 +185,12 @@ function getBatteryCurrentData() {
  * @type {Writable<{}>}
  */
 export const batteryCurrentData = writable([], () => {
-    getBatteryCurrentData();
-    let batteryCurrentInterval = setInterval(getBatteryCurrentData, 30000);
+    //getBatteryCurrentData();
+    //let batteryCurrentInterval = setInterval(getBatteryCurrentData, 30000);
+    websocket.on('battery_data', (data) => batteryCurrentData.set(data));
     return () => {
-        clearInterval(batteryCurrentInterval);
+        //clearInterval(batteryCurrentInterval);
+        websocket.removeAllListeners('battery_data');
     };
 });
 
