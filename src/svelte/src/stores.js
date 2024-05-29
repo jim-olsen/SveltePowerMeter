@@ -154,13 +154,11 @@ function getPowerCurrentData() {
  * @type {Writable<{}>}
  */
 export const powerCurrentData = writable({}, () => {
-    //getPowerCurrentData();
+    getPowerCurrentData();
     websocket.on('current_data', (currentData) => {
        powerCurrentData.set(currentData)
     });
-//    let powerCurrentInterval = setInterval(getPowerCurrentData, 5000);
     return () => {
-        //clearInterval(powerCurrentInterval);
         websocket.removeAllListeners('current_data');
     };
 });
@@ -185,11 +183,9 @@ function getBatteryCurrentData() {
  * @type {Writable<{}>}
  */
 export const batteryCurrentData = writable([], () => {
-    //getBatteryCurrentData();
-    //let batteryCurrentInterval = setInterval(getBatteryCurrentData, 30000);
+    getBatteryCurrentData();
     websocket.on('battery_data', (data) => batteryCurrentData.set(data));
     return () => {
-        //clearInterval(batteryCurrentInterval);
         websocket.removeAllListeners('battery_data');
     };
 });
@@ -214,14 +210,9 @@ function getPowerStatsData() {
  * @type {Writable<{}>}
  */
 export const powerStatsData = writable({}, () => {
-    //getPowerStatsData();
-    //let powerStatsInterval = setInterval(getPowerStatsData, 5000);
-    websocket.on('stats_data', (data) => {
-        powerStatsData.set(data);
-        console.log(data);
-    });
+    getPowerStatsData();
+    websocket.on('stats_data', (data) => powerStatsData.set(data));
     return () => {
-        //clearInterval(powerStatsInterval);
         websocket.removeAllListeners('stats_data');
     };
 });
@@ -260,12 +251,8 @@ function getBlueIrisAlert() {
  * @type {Writeable<{}>}
  */
 export const blueIrisAlert = writable({}, () => {
-    //getBlueIrisAlert();
-    //let blueIrisAlertInterval = setInterval(getBlueIrisAlert, 3000);
     websocket.on('blueiris_alert', (data) => blueIrisAlert.set(data));
     return () => {
-        //clearInterval(blueIrisAlertInterval);
-        //lastBlueIrisAlert = {};
         websocket.removeAllListeners('blueiris_alert');
     }
 })
@@ -305,12 +292,8 @@ function getADSBData() {
  * @type {Writeable<{}>}
  */
 export const adsbData = writable({}, () => {
-    //getADSBData();
-    //let adsbDataInterval = setInterval(getADSBData, 3000);
     websocket.on('adsb_data', (data) => adsbData.set(data));
     return () => {
-        //clearInterval(adsbDataInterval);
-        //lastADSBData = {};
         websocket.removeAllListeners('adsb_data');
     }
 })
@@ -335,11 +318,9 @@ function getStarlinkStatus() {
  * @type {Writable<{}>}
  */
 export const starlinkStatus = writable({}, () => {
-    //getStarlinkStatus();
-    //let statusInterval = setInterval(getStarlinkStatus, 5000)
+    getStarlinkStatus();
     websocket.on('starlink_status', (data) => starlinkStatus.set(data));
     return () => {
-        //clearInterval(statusInterval)
         websocket.removeAllListeners('starlink_status');
     }
 })
@@ -364,11 +345,9 @@ function getStarlinkHistory() {
  * @type {Writable<{}>}
  */
 export const starlinkHistory = writable({}, () => {
-    //getStarlinkHistory();
-    //let historyInterval = setInterval(getStarlinkHistory, 10000);
+    getStarlinkHistory();
     websocket.on('starlink_history', (data) => starlinkHistory.set(data));
     return () => {
-        //clearInterval(historyInterval);
         websocket.removeAllListeners('starlink_history');
     }
 })
@@ -420,13 +399,11 @@ function getWeatherData() {
  * @type {Writable<{}>}
  */
 export const weatherData = writable({}, () => {
-    //getWeatherData()
+    getWeatherData();
     websocket.on('weather_data', (data) => {
        weatherData.set(data);
     });
-    //let weatherInterval = setInterval(getWeatherData, 5000);
     return () => {
-        //clearInterval(weatherInterval);
         websocket.removeAllListeners('weather_data');
     }
 })
@@ -687,11 +664,9 @@ function getLightningData() {
  * @type {Writable<{}>}
  */
 export const lightningData = writable({}, () => {
-    //getLightningData()
-    //let lightningInterval = setInterval(getLightningData, 5000);
+    getLightningData()
     websocket.on('lightning_data', (data) => lightningData.set(data));
     return () => {
-        // clearInterval(lightningInterval);
         websocket.removeAllListeners('lightning_data');
     }
 })
