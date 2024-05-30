@@ -29,6 +29,6 @@ async def async_find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
 #
 # Synchronous version of the above async function
 #
-def find_all_batteries() -> [SmartBattery]:
-    return asyncio.run(async_find_all_batteries())
+def find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
+    return asyncio.run(async_find_all_batteries(refresh_rate))
 
