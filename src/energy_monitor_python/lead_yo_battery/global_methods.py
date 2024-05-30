@@ -10,7 +10,7 @@ logger = logging.getLogger('lead_yo_battery')
 # Look for all LeadYO battery advertisements by finding any advertisements that include their uuid as a supported
 # protocol.  Return an instance of a smart battery object for each found instance.
 #
-async def async_find_all_batteries() -> [SmartBattery]:
+async def async_find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
 
     logger.debug("Finding all available batteries within range")
     found_batteries = []
@@ -21,7 +21,7 @@ async def async_find_all_batteries() -> [SmartBattery]:
 
         if '0000ff00-0000-1000-8000-00805f9b34fb' in uuids:
             logger.info("Found battery %s at %s", str(d.name), str(d.address))
-            found_batteries.append(SmartBattery(d.address, d.name))
+            found_batteries.append(SmartBattery(d.address, d.name, refresh_rate=refresh_rate))
 
     return found_batteries
 

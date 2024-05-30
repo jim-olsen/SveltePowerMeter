@@ -7,13 +7,15 @@ from typing import Union
 
 logger = logging.getLogger('lead_yo_battery')
 
+
 class SmartBattery:
     SPP_DATA_UUID = '0000ff01-0000-1000-8000-00805f9b34fb'
     SPP_COMMAND_UUID = '0000ff02-0000-1000-8000-00805f9b34fb'
 
-    def __init__(self, battery_address: Union[BLEDevice, str], battery_name):
+    def __init__(self, battery_address: Union[BLEDevice, str], battery_name: str, refresh_rate: int = 5):
         self.battery_address = battery_address
         self.battery_name = battery_name
+        self.refresh_rate = refresh_rate
         self.spp_command_characteristic = None
         self.spp_data_characteristic = None
         self.basic_information_and_status = None
@@ -95,7 +97,8 @@ class SmartBattery:
                             command_complete.clear()
                             logger.debug("Sending command to fetch basic info and status from battery")
                             await client.write_gatt_char(self.spp_command_characteristic,
-                                         bytearray([0xDD, 0xA5, 0x03, 0x00, 0xFF, 0xFD, 0x77]), response=False)
+                                                         bytearray([0xDD, 0xA5, 0x03, 0x00, 0xFF, 0xFD, 0x77]),
+                                                         response=False)
                             await asyncio.wait_for(command_complete.wait(), 1)
                         except Exception as e:
                             logger.error("Failed to receive result from battery to command request: %s", str(e))
@@ -104,7 +107,8 @@ class SmartBattery:
                             command_complete.clear()
                             logger.debug("Sending command to fetch cell block info from battery")
                             await client.write_gatt_char(self.spp_command_characteristic,
-                                                         bytearray([0xDD, 0xA5, 0x04, 0x00, 0xFF, 0xFC, 0x77]), response=False)
+                                                         bytearray([0xDD, 0xA5, 0x04, 0x00, 0xFF, 0xFC, 0x77]),
+                                                         response=False)
                             await asyncio.wait_for(command_complete.wait(), 1)
                         except Exception as e:
                             logger.error("Failed to receive result from battery to command request: %s", str(e))
@@ -124,7 +128,7 @@ class SmartBattery:
 
     async def refresh_data(self):
         if self.basic_information_and_status is None or self.last_basic_info_update is None or \
-                time.time() - self.last_basic_info_update >= 5:
+                time.time() - self.last_basic_info_update >= self.refresh_rate:
             await self.get_basic_info_and_status()
 
     async def voltage(self) -> float:
@@ -152,7 +156,8 @@ class SmartBattery:
         if cell_number <= 16:
             return int.from_bytes(self.basic_information_and_status[12:14], byteorder='big') & (1 << cell_number) == 1
 
-        return int.from_bytes(self.basic_information_and_status[14:16], byteorder='big') & (1 << (cell_number - 16)) == 1
+        return int.from_bytes(self.basic_information_and_status[14:16], byteorder='big') & (
+                    1 << (cell_number - 16)) == 1
 
     async def protection_status(self) -> [str]:
         await self.refresh_data()
@@ -190,7 +195,7 @@ class SmartBattery:
     async def version(self) -> str:
         await self.refresh_data()
         return str((self.basic_information_and_status[18] & 0xF0) >> 4) + '.' + \
-               str(self.basic_information_and_status[18] & 0x0F)
+            str(self.basic_information_and_status[18] & 0x0F)
 
     async def capacity_percent(self) -> int:
         await self.refresh_data()
