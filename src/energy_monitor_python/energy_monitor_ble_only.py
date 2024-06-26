@@ -203,7 +203,7 @@ def monitor_ble():
 def main():
 
     logging.basicConfig()
-    logging.getLogger('energy_monitor').setLevel(logging.DEBUG)
+    logging.getLogger('energy_monitor').setLevel(logging.WARNING)
 
     mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
     mqtt_thread.daemon = True
