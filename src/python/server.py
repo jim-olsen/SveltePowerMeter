@@ -14,55 +14,50 @@ from datetime import datetime, timedelta
 from PIL import Image
 from Starlink import Starlink
 from Shelly import Shelly
-from flask_socketio import SocketIO, emit
-
+from flask_socketio import SocketIO
+from homemonitor_data import CurrentPowerData, StatsData, WeatherData
 
 logging.basicConfig()
 logging.getLogger('power_meter').setLevel(logging.INFO)
 logging.getLogger('werkzeug').setLevel(logging.WARNING)
 logger = logging.getLogger('power_meter')
 
-current_data = {}
-stats_data = {
-    'current_date': datetime.today().date(),
-    'total_load_wh': 0,
-    'total_net': [],
-    'day_load_wh': 0,
-    'total_solar_wh': 0,
-    'day_solar_wh': 0,
-    'day_batt_wh': 0,
-    'last_charge_state': 'MPPT',
-    'avg_load': 0.0,
-    'avg_net': 0.0,
-    'avg_solar': 0.0
-}
-WEATHER_DATA = {}
-LIGHTNING_DATA = {}
+CURRENT_DATA: CurrentPowerData = CurrentPowerData(battery_load=None, load_amps=None, load_watts=None,
+                                                  battery_voltage=None, day_solar_wh=0,
+                                                  day_load_wh=0, battery_sense_voltage=None,
+                                                  battery_voltage_slow=None, battery_daily_minimum_voltage=None,
+                                                  battery_daily_maximum_voltage=None, target_regulation_voltage=None,
+                                                  array_voltage=None, array_charge_current=None,
+                                                  battery_charge_current=None, battery_charge_current_slow=None,
+                                                  input_power=None, solar_watts=None, heatsink_temperature=None,
+                                                  battery_temperature=None, charge_state='NIGHT',
+                                                  seconds_in_absorption_daily=0, seconds_in_float_daily=0,
+                                                  seconds_in_equalization_daily=0)
+
+STATS_DATA = StatsData(current_date=datetime.today().date(), total_load_wh=0, day_load_wh=0, total_solar_wh=0,
+    day_solar_wh=0, day_batt_wh=0, last_charge_state='MPPT', avg_load=0.0, avg_net=0.0, avg_solar=0.0,
+    yesterday_batt_wh=None, yesterday_load_wh=None, yesterday_net_wh=None, five_day_net=None, ten_day_net=None,
+    five_min_load_watts=None, five_min_battery_watts=None, five_min_solar_watts=None, five_min_battery_voltage=None,
+    battery_min_percent=None, battery_max_percent=None, battery_min_percent_one_day_ago=None,
+    battery_max_percent_one_day_ago=None, battery_min_percent_two_days_ago=None, battery_max_percent_two_days_ago=None,
+    battery_min_percent_three_days_ago=None, battery_max_percent_three_days_ago=None)
+
+WEATHER_DATA: WeatherData = WeatherData(altimeter_inHg=None, appTemp_F=None, barometer_inHg=None, cloudbase_foot=None,
+                                        daily_rain=None, dateTime=None, dayRain_in=None, day_of_year=None,
+                                        dewpoint_F=None, heatindex_F=None, hourRain_in=None, humidex_F=None,
+                                        inTemp_F=None, minute_of_day=None, outHumidity=None, outTemp_F=None,
+                                        pressure_inHg=None, rain24_in=None, rainRate_inch_per_hour=None, rain_in=None,
+                                        rain_total=None, usUnits=None, windDir=None, windSpeed_mph=None,
+                                        wind_average=None, windchill_F=None)
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
-LAST_BEACON_RECEIVED = time.time()
-
-# List of valid fields for querying for weather graph data.  This protects against sql injection using a dynamic field
-# based request
-VALID_WX_FIELDS = ["altimeter_inHg", "appTemp_F", "barometer_inHg", "cloudbase_foot", "daily_rain", "dateTime",
-                   "dayRain_in", "day_of_year", "dewpoint_F", "heatindex_F", "hourRain_in", "humidex_F", "inTemp_F",
-                   "minute_of_day", "outHumidity", "outTemp_F", "pressure_inHg", "rain24_in", "rainRate_inch_per_hour",
-                   "rain_in", "rain_total", "usUnits", "windDir", "windSpeed_mph", "wind_average", "windchill_F"]
-
-# List of valid fields for querying power graph data.  This protects against sql injection using a dynamic field
-# based request
-VALID_POWER_FIELDS = ["battery_load", "load_amps", "load_watts", "battery_voltage", "battery_watts", "net_production",
-                      "battery_sense_voltage", "battery_voltage_slow", "battery_daily_minimum_voltage",
-                      "battery_daily_maximum_voltage", "target_regulation_voltage", "array_voltage",
-                      "array_charge_current", "battery_charge_current", "battery_charge_current_slow", "input_power",
-                      "solar_watts", "heatsink_temperature", "battery_temperature", "charge_state",
-                      "seconds_in_absorption_daily", "seconds_in_float_daily", "seconds_in_equalization_daily"]
 
 # List of valid fields for querying battery graph data.  This protects against sql injection using a dynamic field.
 VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nominal_capacity", "cycles",
                         "balance_status_cell_one", "balance_status_cell_two", "balance_status_cell_three",
-                        "balance_status_cell_four", "protection_status", "version", "capacity_percent", "control_status",
+                        "balance_status_cell_four", "protection_status", "version", "capacity_percent",
+                        "control_status",
                         "num_cells", "battery_temp_one", "battery_temp_two", "battery_temp_three", "cell_voltage_one",
                         "cell_voltage_two", "cell_voltage_three", "cell_voltage_four"]
 
@@ -86,9 +81,9 @@ socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threa
 # Update all the sql tables with the latest current data into the database for future processing and analysis
 #
 def update_sql_tables():
-    global current_data
+    global CURRENT_DATA
     global WEATHER_DATA
-    global stats_data
+    global STATS_DATA
 
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
@@ -96,17 +91,17 @@ def update_sql_tables():
                                         [int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0,
                                                                                   microsecond=0).timetuple()))])
         if cursor.fetchone() is None:
-            stats_data['day_load_wh'] = 0
-            stats_data['day_solar_wh'] = 0
-            stats_data['day_batt_wh'] = 0
+            STATS_DATA.day_load_wh = 0
+            STATS_DATA.day_solar_wh = 0
+            STATS_DATA.day_batt_wh = 0
 
         sql_connection.execute('''INSERT OR REPLACE INTO daily_power_data (record_date, day_load_wh, day_solar_wh, 
                 day_batt_wh, last_charge_state) VALUES (?,?,?,?,?);''',
                                (
                                    int(time.mktime(datetime.today().replace(hour=0, minute=0, second=0,
                                                                             microsecond=0).timetuple())),
-                                   stats_data.get('day_load_wh', None), stats_data.get('day_solar_wh', None),
-                                   stats_data.get('day_batt_wh', None), stats_data.get('last_charge_state', None)))
+                                   STATS_DATA.day_load_wh, STATS_DATA.day_solar_wh,
+                                   STATS_DATA.day_batt_wh, STATS_DATA.last_charge_state))
         sql_connection.execute('''INSERT OR REPLACE INTO power_data (record_time, battery_load, load_amps,
                                 load_watts, battery_voltage, battery_watts, net_production, battery_sense_voltage, 
                                 battery_voltage_slow, battery_daily_minimum_voltage, battery_daily_maximum_voltage,
@@ -117,29 +112,29 @@ def update_sql_tables():
                                 (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
                                (
                                    int(time.time()),
-                                   current_data.get('battery_load', None),
-                                   current_data.get('load_amps', None),
-                                   current_data.get('load_watts', None),
-                                   current_data.get('battery_voltage', None),
-                                   current_data.get('battery_voltage', 0) * current_data.get('battery_load', 0),
-                                   current_data.get('day_solar_wh', 0) - current_data.get('day_load_wh', 0),
-                                   current_data.get('battery_sense_voltage', None),
-                                   current_data.get('battery_voltage_slow', None),
-                                   current_data.get('battery_daily_minimum_voltage', None),
-                                   current_data.get('battery_daily_maximum_voltage', None),
-                                   current_data.get('target_regulation_voltage', None),
-                                   current_data.get('array_voltage', None),
-                                   current_data.get('array_charge_current', None),
-                                   current_data.get('battery_charge_current', None),
-                                   current_data.get('battery_charge_current_slow', None),
-                                   current_data.get('input_power', None),
-                                   current_data.get('solar_watts', None),
-                                   current_data.get('heatsink_temperature', None),
-                                   current_data.get('battery_temperature', None),
-                                   current_data.get('charge_state', None),
-                                   current_data.get('seconds_in_absorption_daily', None),
-                                   current_data.get('seconds_in_float_daily', None),
-                                   current_data.get('seconds_in_equalization_daily', None)
+                                   CURRENT_DATA.battery_load,
+                                   CURRENT_DATA.load_amps,
+                                   CURRENT_DATA.load_watts,
+                                   CURRENT_DATA.battery_voltage,
+                                   CURRENT_DATA.battery_voltage * CURRENT_DATA.battery_load,
+                                   CURRENT_DATA.day_solar_wh - CURRENT_DATA.day_load_wh,
+                                   CURRENT_DATA.battery_sense_voltage,
+                                   CURRENT_DATA.battery_voltage_slow,
+                                   CURRENT_DATA.battery_daily_minimum_voltage,
+                                   CURRENT_DATA.battery_daily_maximum_voltage,
+                                   CURRENT_DATA.target_regulation_voltage,
+                                   CURRENT_DATA.array_voltage,
+                                   CURRENT_DATA.array_charge_current,
+                                   CURRENT_DATA.battery_charge_current,
+                                   CURRENT_DATA.battery_charge_current_slow,
+                                   CURRENT_DATA.input_power,
+                                   CURRENT_DATA.solar_watts,
+                                   CURRENT_DATA.heatsink_temperature,
+                                   CURRENT_DATA.battery_temperature,
+                                   CURRENT_DATA.charge_state,
+                                   CURRENT_DATA.seconds_in_absorption_daily,
+                                   CURRENT_DATA.seconds_in_float_daily,
+                                   CURRENT_DATA.seconds_in_equalization_daily
                                ))
 
     wx_sql_connection = sqlite3.connect("wxdata.db")
@@ -167,26 +162,26 @@ def update_sql_tables():
                 windchill_F
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (int(time.time()),
-                      WEATHER_DATA.get("altimeter_inHg", None),
-                      WEATHER_DATA.get("barometer_inHg", None),
-                      WEATHER_DATA.get("cloudbase_foot", None),
-                      WEATHER_DATA.get("daily_rain", None),
-                      WEATHER_DATA.get("dayRain_in", None),
-                      WEATHER_DATA.get("dewpoint_F", None),
-                      WEATHER_DATA.get("heatindex_F", None),
-                      WEATHER_DATA.get("hourRain_in", None),
-                      WEATHER_DATA.get("humidex_F", None),
-                      WEATHER_DATA.get("inTemp_F", None),
-                      WEATHER_DATA.get("outHumidity", None),
-                      WEATHER_DATA.get("outTemp_F", None),
-                      WEATHER_DATA.get("pressure_inHg", None),
-                      WEATHER_DATA.get("rain24_in", None),
-                      WEATHER_DATA.get("rainRate_inch_per_hour", None),
-                      WEATHER_DATA.get("rain_in", None),
-                      WEATHER_DATA.get("rain_total", None),
-                      WEATHER_DATA.get("windSpeed_mph", None),
-                      WEATHER_DATA.get("wind_average", None),
-                      WEATHER_DATA.get("windchill_F", None)))
+                      WEATHER_DATA.altimeter_inHg,
+                      WEATHER_DATA.barometer_inHg,
+                      WEATHER_DATA.cloudbase_foot,
+                      WEATHER_DATA.daily_rain,
+                      WEATHER_DATA.dayRain_in,
+                      WEATHER_DATA.dewpoint_F,
+                      WEATHER_DATA.heatindex_F,
+                      WEATHER_DATA.hourRain_in,
+                      WEATHER_DATA.humidex_F,
+                      WEATHER_DATA.inTemp_F,
+                      WEATHER_DATA.outHumidity,
+                      WEATHER_DATA.outTemp_F,
+                      WEATHER_DATA.pressure_inHg,
+                      WEATHER_DATA.rain24_in,
+                      WEATHER_DATA.rainRate_inch_per_hour,
+                      WEATHER_DATA.rain_in,
+                      WEATHER_DATA.rain_total,
+                      WEATHER_DATA.windSpeed_mph,
+                      WEATHER_DATA.wind_average,
+                      WEATHER_DATA.windchill_F))
 
         battery_sql_connection = sqlite3.connect("battery.db")
         for battery_name, battery in BATTERIES.items():
@@ -243,22 +238,22 @@ def update_sql_tables():
 
 
 #
-# Update the running stats with the latest data by looping blu
+# Update the running stats with the latest data by looping
 #
 def update_running_stats():
-    global stats_data, dishy
+    global STATS_DATA, dishy
     last_update = datetime.today()
     current_day_of_year = datetime.today().timetuple().tm_yday
     while True:
         try:
-            if ('load_amps' in current_data) & ('battery_voltage' in current_data):
-                stats_data['day_load_wh'] += 0.00139 * (
-                        current_data.get('load_watts', 0))
+            if CURRENT_DATA.load_amps is not None and CURRENT_DATA.battery_voltage is not None:
+                STATS_DATA.day_load_wh += 0.00139 * (
+                    CURRENT_DATA.load_watts if CURRENT_DATA.load_watts else 0)
                 # Now comes from the victron....
                 # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
-                stats_data['day_batt_wh'] += 0.00139 * current_data.get('battery_load', 0) * \
-                                             current_data.get('battery_voltage', 0)
-                stats_data['last_charge_state'] = current_data.get('charge_state', 'NIGHT')
+                STATS_DATA.day_batt_wh += 0.00139 * CURRENT_DATA.battery_load if CURRENT_DATA.battery_load else 0 * \
+                                                                                                                   CURRENT_DATA.battery_voltage if CURRENT_DATA.battery_voltage else 0
+                STATS_DATA.last_charge_state = CURRENT_DATA.charge_state if CURRENT_DATA.charge_state else 'NIGHT'
 
             if datetime.today() > last_update + timedelta(minutes=1):
                 update_sql_tables()
@@ -266,14 +261,141 @@ def update_running_stats():
 
             if datetime.today().timetuple().tm_yday != current_day_of_year:
                 current_day_of_year = datetime.today().timetuple().tm_yday
-                stats_data['day_load_wh'] = 0
-                stats_data['day_batt_wh'] = 0
-                stats_data['day_solar_wh'] = 0
+                STATS_DATA.day_load_wh = 0
+                STATS_DATA.day_batt_wh = 0
+                STATS_DATA.day_solar_wh = 0
 
-            get_stats_data()
+            sql_connection = sqlite3.connect("powerdata.db")
+            sql_connection.row_factory = sqlite3.Row
+            with sql_connection:
+                cursor = sql_connection.execute('''SELECT avg(day_batt_wh) AS avg_net, avg(day_load_wh) AS avg_load, 
+                    avg(day_solar_wh) AS avg_solar, sum(day_load_wh) AS total_load_wh, sum(day_solar_wh) AS total_solar_wh 
+                    FROM daily_power_data
+                    ''')
+                summary_data = cursor.fetchone()
+                STATS_DATA.avg_net = summary_data['avg_net']
+                STATS_DATA.avg_load = summary_data['avg_load']
+                STATS_DATA.avg_solar = summary_data['avg_solar']
+                STATS_DATA.total_load_wh = summary_data['total_load_wh']
+                STATS_DATA.total_solar_wh = summary_data['total_solar_wh']
+
+                cursor = sql_connection.execute(
+                    '''
+                        SELECT day_batt_wh AS yesterday_batt_wh, day_load_wh AS yesterday_load_wh, 
+                            day_solar_wh - day_load_wh as yesterday_net_wh FROM daily_power_data WHERE record_date = ?
+                        ''',
+                        [int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
+                        ])
+                yesterdays_data = cursor.fetchone()
+                if yesterdays_data is not None:
+                    STATS_DATA.yesterday_batt_wh = yesterdays_data['yesterday_batt_wh']
+                    STATS_DATA.yesterday_load_wh = yesterdays_data['yesterday_load_wh']
+                    STATS_DATA.yesterday_net_wh = yesterdays_data['yesterday_net_wh']
+
+                cursor = sql_connection.execute('''
+                    SELECT sum(day_solar_wh - day_load_wh) AS five_day_net FROM daily_power_data WHERE record_date >= ?
+                        ''',
+                                        [int(time.mktime(
+                                            (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                      microsecond=0) - timedelta(days=5)).timetuple()))
+                                        ])
+                net_data = cursor.fetchone()
+                if net_data is not None:
+                    STATS_DATA.five_day_net = net_data['five_day_net']
+
+                cursor = sql_connection.execute('''
+                    SELECT sum(day_solar_wh - day_load_wh) AS ten_day_net FROM daily_power_data WHERE record_date >= ?
+                    ''',
+                                        [int(time.mktime(
+                                            (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                      microsecond=0) - timedelta(days=10)).timetuple()))
+                                        ])
+                net_data = cursor.fetchone()
+                if net_data is not None:
+                    STATS_DATA.ten_day_net = net_data['ten_day_net']
+
+                cursor = sql_connection.execute('''
+                    SELECT avg(load_watts) AS five_min_load_watts, avg(battery_watts) AS five_min_battery_watts, 
+                    avg(solar_watts) AS five_min_solar_watts, avg(battery_voltage) AS five_min_battery_voltage 
+                    FROM power_data WHERE record_time >= ? 
+                    ''',
+                                        [int(time.mktime(
+                                            (datetime.today() -
+                                             timedelta(minutes=5)).timetuple()))
+                                        ])
+                net_data = cursor.fetchone()
+                if net_data is not None:
+                    STATS_DATA.five_min_load_watts = net_data['five_min_load_watts']
+                    STATS_DATA.five_min_battery_watts = net_data['five_min_battery_watts']
+                    STATS_DATA.five_min_solar_watts = net_data['five_min_solar_watts']
+                    STATS_DATA.five_min_battery_voltage = net_data['five_min_battery_voltage']
+
+                battery_sql_connection = sqlite3.connect("battery.db")
+                battery_sql_connection.row_factory = sqlite3.Row
+            with battery_sql_connection:
+                cursor = battery_sql_connection.execute(
+                    '''
+                        SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                            (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                                WHERE record_time >= ? GROUP BY name)
+                        ''',
+                        [int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
+                        ])
+                row = cursor.fetchone()
+                if row is not None:
+                    STATS_DATA.battery_min_percent = row['battery_min_percent']
+                    STATS_DATA.battery_max_percent = row['battery_max_percent']
+                cursor = battery_sql_connection.execute(
+                        '''
+                        SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                            (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                                WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+                        ''',
+                        (int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple())),
+                        int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
+                        ))
+                row = cursor.fetchone()
+                if row is not None:
+                    STATS_DATA.battery_min_percent_one_day_ago = row['battery_min_percent']
+                    STATS_DATA.battery_max_percent_one_day_ago = row['battery_max_percent']
+                cursor = battery_sql_connection.execute(
+                        '''
+                        SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                            (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                                WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+                        ''',
+                        (int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple())),
+                        int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple()))
+                        ))
+                row = cursor.fetchone()
+                if row is not None:
+                    STATS_DATA.battery_min_percent_two_days_ago = row['battery_min_percent']
+                    STATS_DATA.battery_max_percent_two_days_ago = row['battery_max_percent']
+                cursor = battery_sql_connection.execute(
+                        '''
+                        SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
+                            (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
+                                WHERE record_time <= ? AND record_time >= ? GROUP BY name)
+                        ''',
+                        (int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple())),
+                        int(time.mktime(
+                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=3)).timetuple()))
+                        ))
+                row = cursor.fetchone()
+                if row is not None:
+                    STATS_DATA.battery_min_percent_three_days_ago = row['battery_min_percent']
+                    STATS_DATA.battery_max_percent_three_days_ago = row['battery_max_percent']
+
             # We serialize then deserialize to get around datetime not being serializable by socketio
-            socketio.emit('stats_data', json.loads(json.dumps(stats_data, default=str)))
-            socketio.emit( 'starlink_status', dishy.get_status())
+            socketio.emit('stats_data', json.loads(json.dumps(STATS_DATA.__dict__, default=str)))
+            socketio.emit('starlink_status', dishy.get_status())
             history = dishy.get_history()
             history.pop('ping_drop_rate')
             history.pop('ping_latency')
@@ -377,12 +499,12 @@ def home(path):
 #
 @app.route("/graphData")
 def get_graph_data():
-    global VALID_POWER_FIELDS
+    global CURRENT_DATA
 
     days = int(request.args.get('days', 4))
     data_fields = request.args.getlist('dataField')
     graph_data = {'time': []}
-    if data_fields and all( field in VALID_POWER_FIELDS for field in data_fields):
+    if data_fields and all(field in list(CURRENT_DATA.__dict__.keys()) for field in data_fields):
         for field in data_fields:
             graph_data[field] = []
         sql_connection = sqlite3.connect("powerdata.db")
@@ -393,7 +515,7 @@ def get_graph_data():
                 sql_statement += ", " + field
             sql_statement += " FROM power_data WHERE record_time >= ? ORDER BY record_time ASC"
             cursor = sql_connection.execute(sql_statement,
-                                        [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
+                                            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
             for row in cursor.fetchall():
                 rowdict = dict(row)
                 graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
@@ -405,9 +527,9 @@ def get_graph_data():
 
 @app.route("/currentData")
 def get_current_data():
-    global current_data
+    global CURRENT_DATA
 
-    return current_data
+    return CURRENT_DATA.__dict__
 
 
 @app.route("/batteryData")
@@ -415,6 +537,7 @@ def get_battery_data():
     global BATTERIES
 
     return list(BATTERIES.values())
+
 
 #
 # Take the requested field and requested number of days, and create graph data for that fields values over the specified
@@ -438,7 +561,7 @@ def get_battery_graph_data():
     data_fields = request.args.getlist('dataField')
     battery_name = request.args.get('batteryName', '')
     graph_data = {'time': []}
-    if data_fields and all( field in VALID_BATTERY_FIELDS for field in data_fields):
+    if data_fields and all(field in VALID_BATTERY_FIELDS for field in data_fields):
         for field in data_fields:
             graph_data[field] = []
         sql_connection = sqlite3.connect("battery.db")
@@ -463,11 +586,12 @@ def get_battery_graph_data():
 
     return graph_data
 
+
 @app.route("/weatherData")
 def get_weather_data():
     global WEATHER_DATA
 
-    return WEATHER_DATA
+    return WEATHER_DATA.__dict__
 
 
 @app.route("/weatherDailyMinMax")
@@ -488,9 +612,10 @@ def get_weather_max_min():
             min(windchill_F) AS windchill_F_min, max(windchill_F) AS windchill_F_max
             FROM wx_data WHERE record_time >= ? 
             ''',
-                        [int(time.mktime(
-                            (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
-                        ])
+                                           [int(time.mktime(
+                                               (datetime.today().replace(hour=0, minute=0, second=0,
+                                                                         microsecond=0)).timetuple()))
+                                           ])
         min_max_data = cursor.fetchone()
         if min_max_data is None:
             min_max_data = {}
@@ -513,12 +638,12 @@ def get_weather_max_min():
 #
 @app.route("/graphWxData")
 def graph_wx_data():
-    global VALID_WX_FIELDS
+    global WEATHER_DATA
 
     days = int(request.args.get('days', 1))
     data_fields = request.args.getlist('dataField')
     graph_data = {'time': []}
-    if data_fields and all(field in VALID_WX_FIELDS for field in data_fields):
+    if data_fields and all(field in list(WEATHER_DATA.__dict__.keys()) for field in data_fields):
         for field in data_fields:
             graph_data[field] = []
         sql_connection = sqlite3.connect("wxdata.db")
@@ -573,13 +698,11 @@ def get_adsb_data():
     return return_value
 
 
-
 #
 # Return both the last lightning event seen, as well as summary data for the day
 #
 @app.route("/lightningData")
 def get_lightning_data():
-    global LIGHTNING_DATA
     response = {}
     sql_connection = sqlite3.connect("lightning.db")
     sql_connection.row_factory = sqlite3.Row
@@ -628,136 +751,9 @@ def get_lightning_data():
 
 @app.route("/statsData")
 def get_stats_data():
-    global stats_data
-    sql_connection = sqlite3.connect("powerdata.db")
-    sql_connection.row_factory = sqlite3.Row
-    with sql_connection:
-        cursor = sql_connection.execute('''SELECT avg(day_batt_wh) AS avg_net, avg(day_load_wh) AS avg_load, 
-        avg(day_solar_wh) AS avg_solar, sum(day_load_wh) AS total_load_wh, sum(day_solar_wh) AS total_solar_wh 
-        FROM daily_power_data
-        ''')
-        summary_data = cursor.fetchone()
-        stats_data['avg_net'] = summary_data['avg_net']
-        stats_data['avg_load'] = summary_data['avg_load']
-        stats_data['avg_solar'] = summary_data['avg_solar']
-        stats_data['total_load_wh'] = summary_data['total_load_wh']
-        stats_data['total_solar_wh'] = summary_data['total_solar_wh']
+    global STATS_DATA
 
-        cursor = sql_connection.execute(
-            '''
-            SELECT day_batt_wh AS yesterday_batt_wh, day_load_wh AS yesterday_load_wh, 
-                day_solar_wh - day_load_wh as yesterday_net_wh FROM daily_power_data WHERE record_date = ?
-            ''',
-            [int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
-            ])
-        yesterdays_data = cursor.fetchone()
-        if yesterdays_data is not None:
-            stats_data['yesterday_batt_wh'] = yesterdays_data['yesterday_batt_wh']
-            stats_data['yesterday_load_wh'] = yesterdays_data['yesterday_load_wh']
-            stats_data['yesterday_net_wh'] = yesterdays_data['yesterday_net_wh']
-
-        cursor = sql_connection.execute('''
-            SELECT sum(day_solar_wh - day_load_wh) AS five_day_net FROM daily_power_data WHERE record_date >= ?
-            ''',
-                                        [int(time.mktime(
-                                            (datetime.today().replace(hour=0, minute=0, second=0,
-                                                                      microsecond=0) - timedelta(days=5)).timetuple()))
-                                        ])
-        net_data = cursor.fetchone()
-        if net_data is not None:
-            stats_data['five_day_net'] = net_data['five_day_net']
-
-        cursor = sql_connection.execute('''
-            SELECT sum(day_solar_wh - day_load_wh) AS ten_day_net FROM daily_power_data WHERE record_date >= ?
-            ''',
-                                        [int(time.mktime(
-                                            (datetime.today().replace(hour=0, minute=0, second=0,
-                                                                      microsecond=0) - timedelta(days=10)).timetuple()))
-                                        ])
-        net_data = cursor.fetchone()
-        if net_data is not None:
-            stats_data['ten_day_net'] = net_data['ten_day_net']
-
-        cursor = sql_connection.execute('''
-            SELECT avg(load_watts) AS five_min_load_watts, avg(battery_watts) AS five_min_battery_watts, 
-            avg(solar_watts) AS five_min_solar_watts, avg(battery_voltage) AS five_min_battery_voltage 
-            FROM power_data WHERE record_time >= ? 
-            ''',
-                                        [int(time.mktime(
-                                            (datetime.today() -
-                                             timedelta(minutes=5)).timetuple()))
-                                        ])
-        net_data = cursor.fetchone()
-        if net_data is not None:
-            stats_data['five_min_load_watts'] = net_data['five_min_load_watts']
-            stats_data['five_min_battery_watts'] = net_data['five_min_battery_watts']
-            stats_data['five_min_solar_watts'] = net_data['five_min_solar_watts']
-            stats_data['five_min_battery_voltage'] = net_data['five_min_battery_voltage']
-
-    battery_sql_connection = sqlite3.connect("battery.db")
-    battery_sql_connection.row_factory = sqlite3.Row
-    with battery_sql_connection:
-        cursor = battery_sql_connection.execute(
-            '''
-            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
-                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
-                    WHERE record_time >= ? GROUP BY name)
-            ''',
-            [int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
-            ])
-        row = cursor.fetchone()
-        if row is not None:
-            stats_data['battery_min_percent'] = row['battery_min_percent']
-            stats_data['battery_max_percent'] = row['battery_max_percent']
-        cursor = battery_sql_connection.execute(
-            '''
-            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
-                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
-                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
-            ''',
-            (int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple())),
-                int(time.mktime(
-                    (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple()))
-            ))
-        row = cursor.fetchone()
-        if row is not None:
-            stats_data['battery_min_percent_one_day_ago'] = row['battery_min_percent']
-            stats_data['battery_max_percent_one_day_ago'] = row['battery_max_percent']
-        cursor = battery_sql_connection.execute(
-            '''
-            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
-                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
-                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
-            ''',
-            (int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)).timetuple())),
-             int(time.mktime(
-                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple()))
-            ))
-        row = cursor.fetchone()
-        if row is not None:
-            stats_data['battery_min_percent_two_days_ago'] = row['battery_min_percent']
-            stats_data['battery_max_percent_two_days_ago'] = row['battery_max_percent']
-        cursor = battery_sql_connection.execute(
-            '''
-            SELECT AVG(min_capacity) AS battery_min_percent, AVG(max_capacity) AS battery_max_percent FROM 
-                (SELECT name, MAX(capacity_percent) AS max_capacity, MIN(capacity_percent) AS min_capacity FROM battery_data 
-                    WHERE record_time <= ? AND record_time >= ? GROUP BY name)
-            ''',
-            (int(time.mktime(
-                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=2)).timetuple())),
-             int(time.mktime(
-                 (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=3)).timetuple()))
-            ))
-        row = cursor.fetchone()
-        if row is not None:
-            stats_data['battery_min_percent_three_days_ago'] = row['battery_min_percent']
-            stats_data['battery_max_percent_three_days_ago'] = row['battery_max_percent']
-
-    return stats_data
+    return STATS_DATA.__dict__
 
 
 #
@@ -913,19 +909,15 @@ def refresh_daily_data():
         row = cursor.fetchone()
         if row is not None:
             rowdict = dict(row)
-            stats_data['day_load_wh'] = rowdict['day_load_wh']
-            # sstats_data['day_solar_wh'] = rowdict['day_solar_wh']
-            stats_data['day_batt_wh'] = rowdict['day_batt_wh']
-            stats_data['last_charge_state'] = rowdict['last_charge_state']
+            STATS_DATA.day_load_wh = rowdict['day_load_wh']
+            STATS_DATA.day_batt_wh = rowdict['day_batt_wh']
+            STATS_DATA.last_charge_state = rowdict['last_charge_state']
 
 
 #
 # update lightning information in the in memory object and in the sql database
 #
 def update_lightning_data(lightning_event: dict):
-    global LIGHTNING_DATA
-
-    LIGHTNING_DATA = lightning_event
     sql_connection = sqlite3.connect("lightning.db")
     with sql_connection:
         try:
@@ -936,11 +928,11 @@ def update_lightning_data(lightning_event: dict):
                 intensity
                 ) VALUES (?, ?, ?, ?)
             ''',
-                               (int(time.time()),
-                                lightning_event.get("event", "unknown"),
-                                lightning_event.get("distance", None),
-                                lightning_event.get("intensity", None)
-                                ))
+                                            (int(time.time()),
+                                             lightning_event.get("event", "unknown"),
+                                             lightning_event.get("distance", None),
+                                             lightning_event.get("intensity", None)
+                                             ))
         except Exception as e:
             logger.error(e)
 
@@ -961,12 +953,12 @@ def start_mqtt_client():
         c.subscribe("dc_meter_data")
 
     def on_message(c, userdata, msg):
-        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA, LIGHTNING_DATA
+        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
 
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
         if msg.topic == "weather/loop":
-            WEATHER_DATA = json.loads(msg.payload)
-            socketio.emit('weather_data', WEATHER_DATA)
+            WEATHER_DATA = WEATHER_DATA.load_from_json(msg.payload)
+            socketio.emit('weather_data', WEATHER_DATA.__dict__)
         elif msg.topic == "blueiris":
             BLUEIRIS_ALERT = json.loads(msg.payload)
             BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
@@ -989,37 +981,36 @@ def start_mqtt_client():
             total_percent = 0
             for battery_name, battery in BATTERIES.items():
                 total_percent += battery.get("capacity_percent", 0)
-            current_data["battery_percent"] = total_percent / len(BATTERIES.items())
+            CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
             socketio.emit("battery_data", list(BATTERIES.values()));
         elif msg.topic == "load_data":
             logger.debug("Received load data")
             load_info = json.loads(msg.payload)
-            current_data["battery_load"] = load_info["battery_load"]
-            # current_data["load_amps"] = load_info["load_amps"]
+            CURRENT_DATA.battery_load = load_info["battery_load"]
         elif msg.topic == "lightning_data":
             logger.debug("Received lightning data")
-            update_lightning_data(json.loads(msg.payload))
-            socketio.emit('lightning_data', LIGHTNING_DATA)
+            lightning_data = json.loads(msg.payload)
+            update_lightning_data(lightning_data)
+            socketio.emit('lightning_data', lightning_data)
         elif msg.topic == "solar_charger_data":
             charger_data = json.loads(msg.payload)
-            current_data["solar_watts"] = charger_data.get("solar_watts", 0)
-            current_data["battery_charge_current"] = charger_data.get("battery_charge_current", 0)
-            current_data["charge_state"] = charger_data.get("charge_state", "OTHER")
-            current_data["battery_voltage"] = charger_data.get("battery_voltage", 0)
-            socketio.emit('current_data', current_data)
+            CURRENT_DATA.solar_watts = charger_data.get("solar_watts", 0)
+            CURRENT_DATA.battery_charge_current = charger_data.get("battery_charge_current", 0)
+            CURRENT_DATA.charge_state = charger_data.get("charge_state", "OTHER")
+            CURRENT_DATA.battery_voltage = charger_data.get("battery_voltage", 0)
+            socketio.emit('current_data', CURRENT_DATA.__dict__)
             # We need to protect against the charge controller resetting this running stat before we increment the day,
             # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
             # recognize a day has passed
-            if stats_data['day_solar_wh'] < charger_data.get("day_solar_wh", 0):
-                stats_data['day_solar_wh'] = charger_data.get("day_solar_wh", 0)
+            if STATS_DATA.day_solar_wh < charger_data.get("day_solar_wh", 0):
+                STATS_DATA.day_solar_wh = charger_data.get("day_solar_wh", 0)
         elif msg.topic == "dc_meter_data":
             meter_data = json.loads(msg.payload)
             if meter_data['device_name'] == "Cabin Load":
-                current_data['load_amps'] = meter_data['amps']
-                current_data['load_watts'] = meter_data['watts']
-                current_data['load_volts'] = meter_data['volts']
-                socketio.emit('current_data', current_data)
-
+                CURRENT_DATA.load_amps = meter_data['amps']
+                CURRENT_DATA.load_watts = meter_data['watts']
+                CURRENT_DATA.load_volts = meter_data['volts']
+                socketio.emit('current_data', CURRENT_DATA.__dict__)
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -1039,9 +1030,7 @@ def start_mqtt_client():
     client.loop_forever()
 
 
-def main(proxy=None):
-    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA
-
+def create_sql_tables_if_not_exist():
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.execute('''CREATE TABLE IF NOT EXISTS power_data (record_time INTEGER PRIMARY KEY,
                 battery_load REAL,
@@ -1136,6 +1125,12 @@ def main(proxy=None):
                 PRIMARY KEY (record_time))
     ''')
 
+
+def main(proxy=None):
+    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA
+
+    create_sql_tables_if_not_exist()
+
     try:
         if os.path.exists("last_blue_iris_alert.pkl"):
             BLUEIRIS_ALERT = pickle.load(open("last_blue_iris_alert.pkl", "rb"))
@@ -1159,7 +1154,7 @@ def main(proxy=None):
         while True:
             try:
                 AVAILABLE_SHELLEYS.append(Shelly(shelley_addr))
-                logger.info("Shelly device" +  shelley_addr + " successfully added")
+                logger.info("Shelly device" + shelley_addr + " successfully added")
                 break
             except Exception as e:
                 retry_count += 1
