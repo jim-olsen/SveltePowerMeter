@@ -665,7 +665,7 @@ function getLightningData() {
  */
 export const lightningData = writable({}, () => {
     getLightningData()
-    websocket.on('lightning_data', (data) => lightningData.set(data));
+    websocket.on('lightning_data', (data) => getLightningData());
     return () => {
         websocket.removeAllListeners('lightning_data');
     }
