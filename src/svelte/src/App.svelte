@@ -97,7 +97,7 @@
             lastBlueIrisAlert = data;
         } else if (data.hasOwnProperty("id") && lastBlueIrisAlert.id !== data.id) {
             lastBlueIrisAlert = data;
-            if ($currentView in alertAllowedViews) {
+            if (alertAllowedViews.includes($currentView)) {
                 displayBlueIrisAlert()
             }
         }
@@ -112,7 +112,7 @@
             lastADSBData = data;
         } else if (data.hasOwnProperty("id") && lastADSBData.id !== data.id) {
             lastADSBData = data;
-            if ($currentView in alertAllowedViews) {
+            if (alertAllowedViews.includes($currentView)) {
                 displayADSBData();
             }
         }
@@ -127,7 +127,7 @@
             data.hasOwnProperty("last_strike_24hr") &&
             data?.last_strike_24hr?.hasOwnProperty("intensity") &&
             data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity &&
-            $currentView in alertAllowedViews) {
+            alertAllowedViews.includes($currentView)) {
                 displayLightningAlert();
         }
         lastLightningData = data;
