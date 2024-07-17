@@ -37,20 +37,32 @@
     let graphWidth, graphHeight;
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
                         'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph'];
+    let alertAllowedViews = ['dashboard', 'alerts', 'adsb', 'lightningDashboard'];
     let lastBlueIrisAlert = {};
     let lastADSBData = {};
     let lastLightningData = {};
+
+    /**
+     * Restore to the previous view only if the current view is the original calling view
+     * @param callingView The popped up view that needs to be reset to the previous view
+     * @param previousView The previous view to restore to before the popup happened.
+     */
+    function restoreView(callingView, previousView) {
+        if ($currentView !== callingView) {
+            setTimeout(restoreView, 500, callingView, previousView);
+        } else {
+            $currentView = previousView;
+        }
+    }
 
     /**
      * Cause the Blue iris alert to pop up and display the view of the new alert we have received
      */
     function displayBlueIrisAlert() {
         if ($currentView !== 'alerts') {
-            let returnView = $currentView;
+            let previousView = $currentView;
             $currentView = 'alerts';
-            setTimeout(() => {
-                $currentView = returnView;
-            }, 30000);
+            setTimeout(restoreView, 30000, 'alerts', previousView);
         }
     }
 
@@ -59,11 +71,9 @@
      */
     function displayADSBData() {
         if ($currentView !== 'adsb') {
-            let returnView = $currentView;
+            let previousView = $currentView;
             $currentView = 'adsb';
-            setTimeout(() => {
-                $currentView = returnView;
-            }, 30000);
+            setTimeout(restoreView, 30000, 'adsb', previousView);
         }
     }
 
@@ -72,11 +82,9 @@
      */
     function displayLightningAlert() {
         if ($currentView !== 'lightningDashboard') {
-            let returnView = $currentView;
+            let previousView = $currentView;
             $currentView = 'lightningDashboard';
-            setTimeout(() => {
-                $currentView = returnView;
-            }, 30000);
+            setTimeout(restoreView, 30000, 'lightningDashboard', previousView);
         }
     }
 
@@ -89,7 +97,9 @@
             lastBlueIrisAlert = data;
         } else if (data.hasOwnProperty("id") && lastBlueIrisAlert.id !== data.id) {
             lastBlueIrisAlert = data;
-            displayBlueIrisAlert();
+            if ($currentView in alertAllowedViews) {
+                displayBlueIrisAlert()
+            }
         }
     });
 
@@ -102,7 +112,9 @@
             lastADSBData = data;
         } else if (data.hasOwnProperty("id") && lastADSBData.id !== data.id) {
             lastADSBData = data;
-            displayADSBData();
+            if ($currentView in alertAllowedViews) {
+                displayADSBData();
+            }
         }
     });
 
@@ -114,8 +126,9 @@
         if (lastLightningData.hasOwnProperty("last_strike_24hr") &&
             data.hasOwnProperty("last_strike_24hr") &&
             data?.last_strike_24hr?.hasOwnProperty("intensity") &&
-            data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity) {
-            displayLightningAlert();
+            data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity &&
+            $currentView in alertAllowedViews) {
+                displayLightningAlert();
         }
         lastLightningData = data;
     });
