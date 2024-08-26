@@ -30,6 +30,7 @@
     import BatteryBankTemperatureGraph from "./components/battery/BatteryBankTemperatureGraph.svelte";
     import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
     import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
+    import StarlinkPower from "./components/starlink/StarlinkPower.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -233,6 +234,11 @@
         <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
             <StarlinkPingLatency chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
             <StarlinkPingDrop chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
+        </div>
+    {/if}
+    {#if $currentView === 'starlinkPowerGraphs'}
+        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+            <StarlinkPower chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight) - (outerHeight * 0.15)} />
         </div>
     {/if}
     {#if $currentView === 'shelley'}

@@ -125,6 +125,9 @@ class Starlink:
                                   "aap": result.ready_states.aap,
                                   "rf": result.ready_states.rf}
 
+        history = self.get_history()
+        status["power_in"] = history.get("power_in", [])[0]
+
         return status
 
     #
@@ -178,6 +181,7 @@ class Starlink:
         history.update(self.get_history_object(result, "pop_ping_latency_ms", "ping_latency"))
         history.update(self.get_history_object(result, "downlink_throughput_bps", "downlink_bps"))
         history.update(self.get_history_object(result, "uplink_throughput_bps", "uplink_bps"))
+        history.update(self.get_history_object(result, "power_in", "power_in"))
 
         history["outages"] = []
         total_outages = 0

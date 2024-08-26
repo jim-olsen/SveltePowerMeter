@@ -157,8 +157,8 @@
             <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;" on:click={()=> $currentView = 'starlinkOutages'}>
                 <span class="normalText" style="color: {$starlinkStatus?.state === 'CONNECTED' ? 'greenyellow' : 'orangered'};">{$starlinkStatus?.state ? $starlinkStatus.state : 'UNKNOWN'}</span>
             </div>
-            <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;">
-                <span class="normalText">Heater <span style="color: {$starlinkStatus?.alerts?.is_heating ? 'red' : 'greenyellow'};">{$starlinkStatus?.alerts?.is_heating ? 'On' : 'Off'}</span></span>
+            <div style="display:flex; flex-flow:row; justify-content: flex-end; align-items: flex-end;" on:click={()=> $currentView = 'starlinkPowerGraphs'}>
+                <span class="mediumSmallText">Heater <span style="color: {$starlinkStatus?.alerts?.is_heating ? 'red' : 'greenyellow'};">{$starlinkStatus?.alerts?.is_heating ? 'On' : 'Off'}</span> : <span class="mediumSmallText">{$starlinkStatus?.power_in?.toFixed(1)} W</span></span>
             </div>
         </div>
         <div style="display:flex; flex-flow: column; flex: 2;" on:click={()=> $currentView = 'starlinkSpeedGraphs'}>

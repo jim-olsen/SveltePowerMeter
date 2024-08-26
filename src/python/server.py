@@ -778,6 +778,7 @@ def starlink_history():
         history.pop('ping_latency')
         history.pop('downlink_bps')
         history.pop('uplink_bps')
+        history.pop('power_in')
     return json.dumps(history, indent=3)
 
 
