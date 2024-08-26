@@ -126,7 +126,7 @@ class Starlink:
                                   "rf": result.ready_states.rf}
 
         history = self.get_history()
-        status["power_in"] = history.get("power_in", [])[0]
+        status["power_in"] = history.get("power_in", [0])[0]
 
         return status
 
