@@ -8,6 +8,8 @@ from flask import Flask, request
 MQTT_SERVER_ADDR = '10.0.10.31'
 MQTT_CLIENT: mqtt.Client = None
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 logger = logging.getLogger('ecowitt_to_mqtt')
 
 #
@@ -61,6 +63,7 @@ def wxData():
         'windDir': request.args.get('winddir', 0)
     }
     MQTT_CLIENT.publish('weather/loop', json.dumps(weatherData))
+    logger.debug('Responding with: ' + json.dumps(weatherData))
     return weatherData
 
 def main():
