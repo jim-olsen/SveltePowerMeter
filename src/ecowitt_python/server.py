@@ -1,13 +1,13 @@
 import json
 import logging
-import sys
+import os
 import threading
 import time
 
 import paho.mqtt.client as mqtt
 from flask import Flask, request
 
-MQTT_SERVER_ADDR = '10.0.10.31'
+MQTT_SERVER_ADDR = '10.0.10.30'
 MQTT_CLIENT: mqtt.Client = None
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -42,7 +42,7 @@ def start_mqtt_client():
         client.loop_forever()
     except Exception as e:
         logging.error(f"Failed to connect to MQTT server: {e}")
-        sys.exit(1)
+        os._exit(1)
 
 
 @app.route("/wxData")
@@ -85,7 +85,7 @@ def main():
         app.run(port=8090, host='0.0.0.0')
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
-        sys.exit(1)
+        os._exit(1)
 
 
 if __name__ == "__main__":
