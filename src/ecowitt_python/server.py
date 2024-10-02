@@ -120,13 +120,13 @@ def dataReport():
             'pressure_inHg': request.form.get('baromrelin', 0),
             'windchill_F': str(calculate_wind_chill(float(request.form.get('tempf', 0)), float(request.form.get('windspeedmph', 0)))),
             'dewpoint_F': str(calculate_dew_point(float(request.form.get('tempf', 0)), float(request.form.get('humidity', 0)))),
-            'hourRain_in': request.args.get('hrain_piezo', 0),
-            'rain24_in': request.args.get('drain_piezo', 0),
-            'dayRain_in': request.args.get('drain_piezo', 0),
-            'weekRain_in': request.args.get('wrain_piezo', 0),
-            'solarRadiation': request.args.get('solarradiation', 0),
-            'inHumidity': request.args.get('humidityin', 0),
-            'windDir': request.args.get('winddir', 0)
+            'hourRain_in': request.form.get('hrain_piezo', 0),
+            'rain24_in': request.form.get('drain_piezo', 0),
+            'dayRain_in': request.form.get('drain_piezo', 0),
+            'weekRain_in': request.form.get('wrain_piezo', 0),
+            'solarRadiation': request.form.get('solarradiation', 0),
+            'inHumidity': request.form.get('humidityin', 0),
+            'windDir': request.form.get('winddir', 0)
         })
         MQTT_CLIENT.publish('weather/loop', json.dumps(weatherData))
         logger.debug('Responding with: ' + json.dumps(weatherData))
