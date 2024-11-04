@@ -68,7 +68,7 @@ MQTT_SERVER_ADDR = '10.0.10.31'
 # options
 SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43',
                            'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46', 'http://10.0.10.47',
-                           'http://10.0.10.48']
+                           'http://10.0.10.48', 'http://10.0.10.49', 'http://10.0.10.50']
 
 AVAILABLE_SHELLEYS = []
 
