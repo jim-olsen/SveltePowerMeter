@@ -13,7 +13,7 @@
     let pingLatencyChartData = [];
 
     const unsubscribeHistory = starlinkGraphHistory.subscribe(history => {
-        if (history.hasOwnProperty("ping_latency")) {
+        if (history.hasOwnProperty("ping_latency") && history.ping_latency.length > 0) {
             pingLatencyChartData = [[]];
             history.ping_latency.forEach((value, i) => {
                 pingLatencyChartData[0].unshift({"x": history.uplink_bps.length - i, "y": value});
