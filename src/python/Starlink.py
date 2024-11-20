@@ -146,19 +146,20 @@ class Starlink:
         minimum_val = float("inf")
         samples = getattr(source, field)
         num_samples = len(samples)
-        loop_end = int(source.current) % num_samples
-        for i in range(num_samples):
-            value = samples[(loop_end + 1 + i) % num_samples]
-            if value < minimum_val:
-                minimum_val = value
-            if value > maximum_val:
-                maximum_val = value
-            total_val += value
-            result[target_name].append(value)
-        result["average_" + target_name] = total_val / len(result[target_name])
-        result["minimum_" + target_name] = minimum_val
-        result["maximum_" + target_name] = maximum_val
-        result["median_" + target_name] = statistics.median(result[target_name])
+        if num_samples > 0 :
+            loop_end = int(source.current) % num_samples
+            for i in range(num_samples):
+                value = samples[(loop_end + 1 + i) % num_samples]
+                if value < minimum_val:
+                    minimum_val = value
+                if value > maximum_val:
+                    maximum_val = value
+                total_val += value
+                result[target_name].append(value)
+            result["average_" + target_name] = total_val / len(result[target_name])
+            result["minimum_" + target_name] = minimum_val
+            result["maximum_" + target_name] = maximum_val
+            result["median_" + target_name] = statistics.median(result[target_name])
 
         return result
 
