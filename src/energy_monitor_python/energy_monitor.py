@@ -68,7 +68,7 @@ async def async_monitor_batteries(batteries: List[SmartBattery]):
         for idx, battery in enumerate(batteries):
             # Filter for our bank of batteries
             if (battery.name().startswith('BANK1') or battery.name().startswith('BANK2') or
-                    battery.name().startswith('BANK3')):
+                    battery.name().startswith('BANK3') or battery.name().startswith('BANK4')):
                 try:
                     logger.info(f"Connecting to battery {battery.name()}")
                     logger.info(f'Battery {battery.name()} percent charged {await battery.capacity_percent()}%')
