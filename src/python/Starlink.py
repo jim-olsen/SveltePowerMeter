@@ -16,7 +16,7 @@ while True:
     try:
         from yagrc import importer
 
-        importer.add_lazy_packages(["spacex.api.device"])
+        importer.add_lazy_packages(["spacex_api.device"])
         print("Lazy packages successfully added")
         break
     except (ImportError, AttributeError):
@@ -24,9 +24,9 @@ while True:
         time.sleep(5)
 
 
-from spacex.api.device import device_pb2
-from spacex.api.device import device_pb2_grpc
-from spacex.api.device import dish_pb2
+from spacex_api.device import device_pb2
+from spacex_api.device import device_pb2_grpc
+from spacex_api.device import dish_pb2
 
 RETRY_COUNT = 50
 
