@@ -310,6 +310,9 @@ function getStarlinkStatus() {
         .then(d => d.json())
         .then(d => {
             starlinkStatus.set(d);
+        })
+        .catch(error => {
+            starlinkStatus.set({});
         });
 }
 
@@ -337,7 +340,10 @@ function getStarlinkHistory() {
         .then(d => d.json())
         .then(d => {
             starlinkHistory.set(d);
-        });
+        })
+        .catch(error => {
+            starlinkHistory.set({})
+        })
 }
 
 /**
@@ -364,7 +370,10 @@ function getStarlinkGraphHistory() {
         .then(d => d.json())
         .then(d => {
             starlinkGraphHistory.set(d);
-        });
+        })
+        .catch(error => {
+            starlinkGraphHistory.set([]);
+        })
 }
 
 /**
