@@ -1015,6 +1015,7 @@ def start_mqtt_client():
                     socketio.emit('current_data', CURRENT_DATA.__dict__)
         except Exception as e:
             logger.error(f"Failed to process mqtt message: {e}")
+            logger.error(f"Payload of message: {msg.payload}")
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
