@@ -112,7 +112,8 @@ def dataReport():
             'outTemp_F': request.form.get('tempf', 0),
             'rain_total': request.form.get('yrain_piezo', 0),
             'barometer_inHg': request.form.get('baromrelin', 0),
-            'inTemp_F': request.form.get('tempinf', 0),
+            'inTemp_F': request.form.get('temp1f', 0),
+#            'inTemp_F': request.form.get('tempinf', 0),
             'outHumidity': request.form.get('humidity', 0),
             'daily_rain': request.form.get('drain_piezo', 0),
             'wind_average': request.form.get('windspeedmph', 0),
@@ -125,7 +126,8 @@ def dataReport():
             'dayRain_in': request.form.get('drain_piezo', 0),
             'weekRain_in': request.form.get('wrain_piezo', 0),
             'solarRadiation': request.form.get('solarradiation', 0),
-            'inHumidity': request.form.get('humidityin', 0),
+            'inHumidity': request.form.get('humidity1', 0),
+#            'inHumidity': request.form.get('humidityin', 0),
             'windDir': request.form.get('winddir', 0)
         })
         MQTT_CLIENT.publish('weather/loop', json.dumps(weatherData))
