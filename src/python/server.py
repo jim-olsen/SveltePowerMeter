@@ -1011,6 +1011,7 @@ def start_mqtt_client():
                     CURRENT_DATA.load_volts = meter_data['volts']
                     socketio.emit('current_data', CURRENT_DATA.__dict__)
             elif msg.topic == "battery_monitor_data":
+                meter_data = json.loads(msg.payload)
                 if meter_data['device_name'] == "Battery Load":
                     CURRENT_DATA.battery_load = meter_data['amps']
         except Exception as e:
