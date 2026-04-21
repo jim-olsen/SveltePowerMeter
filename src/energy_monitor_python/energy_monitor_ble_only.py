@@ -111,6 +111,7 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
                 "soc" / BitsSwapped(BitsInteger(10)),
                 "pad" / BitsInteger(2)))
         )
+        logger.error(f"Raw Packet: {decrypted_packet.hex()}")
         battery_monitor_data = battery_monitor_parser.parse(decrypted_packet)
         amps = battery_monitor_data.current / 1000
         volts = battery_monitor_data.voltage / 100
