@@ -60,8 +60,8 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
     # Victron BLE packets are encrypted with a key specific to your installation, so decrypt the data for processing
     decrypted_packet = cipher.decrypt(pad(container.encrypted_data[1:], 16))
     # If it is a smart shunt, parse packet as a dc meter
-    logger.error(f"Received packet for device {device.address}, type {container.model_id}")
-    if container.model_id == 0xc030:
+    logger.debug(f"Received packet for device {device.address}, type {container.model_id}, readout type {container.readout_type}")
+    if container.readout_type == 0x0D:
         dc_meter_parser = Struct(
             "meter_type" / Int16sl,
             # Voltage reading in 10mV increments
@@ -92,7 +92,9 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
             }))
         else:
             logger.error("Received dc meter data but MQTT not connected")
-    else:
+    elif container.readout_type == 0x02:
+        logger.error("received battery monitor data")
+    elif container.readout_type == 0x01:
         # Else assume it is a charge controller
         charger_parser = Struct(
             "charge_state" / Int8ul,
@@ -125,6 +127,8 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
             }))
         else:
             logger.error('Received solar charger data, but MQTT not connected')
+    else:
+        logger.error(f"Received packet for device {device.address}, type {container.model_id} with unknown readout type {container.readout_type}")
 
 
 #
