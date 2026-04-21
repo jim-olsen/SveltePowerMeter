@@ -139,6 +139,7 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
                 'device_name': device.name,
                 'remaining_minutes': battery_monitor_data.remaining_minutes,
                 'voltage': volts,
+                'amps': amps,
                 'soc': battery_monitor_data.bitfields.soc / 10,
                 'watts': amps * volts
             }))
