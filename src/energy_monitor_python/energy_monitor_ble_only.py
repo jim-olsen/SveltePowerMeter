@@ -60,6 +60,7 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
     # Victron BLE packets are encrypted with a key specific to your installation, so decrypt the data for processing
     decrypted_packet = cipher.decrypt(pad(container.encrypted_data[1:], 16))
     # If it is a smart shunt, parse packet as a dc meter
+    logger.error(f"Received packet for device {device.address}, type {container.model_id}")
     if container.model_id == 0xc030:
         dc_meter_parser = Struct(
             "meter_type" / Int16sl,
