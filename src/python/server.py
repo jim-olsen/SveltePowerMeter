@@ -985,10 +985,6 @@ def start_mqtt_client():
                     total_percent += battery.get("capacity_percent", 0)
                 CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
                 socketio.emit("battery_data", list(BATTERIES.values()));
-            elif msg.topic == "load_data":
-                logger.debug("Received load data")
-                load_info = json.loads(msg.payload)
-                CURRENT_DATA.battery_load = load_info["battery_load"]
             elif msg.topic == "lightning_data":
                 logger.debug("Received lightning data")
                 lightning_data = json.loads(msg.payload)
@@ -1013,6 +1009,8 @@ def start_mqtt_client():
                     CURRENT_DATA.load_watts = meter_data['watts']
                     CURRENT_DATA.load_volts = meter_data['volts']
                     socketio.emit('current_data', CURRENT_DATA.__dict__)
+                elif meter_data['device_name'] == "Battery Load":
+                    CURRENT_DATA.battery_load = meter_data['amps']
         except Exception as e:
             logger.error(f"Failed to process mqtt message: {e}")
             logger.error(f"Payload of message: {msg.payload}")

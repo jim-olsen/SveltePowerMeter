@@ -4,14 +4,10 @@ import time
 import asyncio
 import paho.mqtt.client as mqtt
 import json
-import board
-import busio
-import adafruit_ads1x15.ads1115 as ADS
 import RPi.GPIO as GPIO
 
 from lead_yo_battery import find_all_batteries, SmartBattery
 from typing import List
-from adafruit_ads1x15.analog_in import AnalogIn
 from DFRobot_AS3935_Lib import DFRobot_AS3935
 
 logger = logging.getLogger('energy_monitor')
@@ -112,36 +108,6 @@ def monitor_batteries(batteries: List[SmartBattery]):
     loop = asyncio.new_event_loop()
     loop.run_until_complete(async_monitor_batteries(batteries))
 
-
-#
-# This process handles reading values from a directly connected ADS 1115 A/D chip.  This chip is used to read values
-# from connected load sensors that provide +/- 100amp readings to sense load in the system.  In this case the direct
-# consumption load sensor is on pin A0, and the battery monitor (both input and output) is connected to pin A1.  Pin
-# A2 is grounded to provide a zero reference, since it seems to vary slightly and can be used for correction
-#
-def read_analog_values_thread():
-    i2c = busio.I2C(board.SCL, board.SDA)
-    ads = ADS.ADS1115(i2c)
-    ads.gain = 2/3
-
-    while True:
-        # reference from an empty pin tells us about how much it is off
-        reference = AnalogIn(ads, ADS.P2).voltage
-        # 2.5 is zero amps, -0.5 is -100, 4.5 is +100
-        load_amps = ((AnalogIn(ads, ADS.P0).voltage + (reference / 1.4) - 2.5) / 2) * 100
-        battery_amps = ((AnalogIn(ads, ADS.P1).voltage + (reference / 1.4) - 2.5) / 2) * 100
-        logger.debug(f"Load: {load_amps}A, battery_load: {battery_amps}A")
-        if MQTT_CLIENT:
-            MQTT_CLIENT.publish('load_data', json.dumps({
-                'battery_load': battery_amps,
-                'load_amps':  load_amps
-            }))
-        time.sleep(5)
-
-    logger.error("Fell out of analog reader loop that should never end, allow restart of service")
-    raise SystemExit("Fell out of analog reader loop that should never end, allow restart of service")
-
-
 def lightning_sensor_callback_handler(channel):
     global LIGHTNING_SENSOR, MQTT_CLIENT
 
@@ -202,10 +168,6 @@ def main():
     mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
     mqtt_thread.daemon = True
     mqtt_thread.start()
-
-    analog_thread = threading.Thread(target=read_analog_values_thread, args=())
-    analog_thread.daemon = True
-    analog_thread.start()
 
     monitor_batteries(batteries)
 

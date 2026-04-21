@@ -8,9 +8,11 @@ from Crypto.Util import Counter
 from Crypto.Util.Padding import pad
 from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl
 
-VICTRON_ADDRESSES = ['FA:66:AD:B2:8C:E4', 'F2:5B:16:A1:15:77']
+# These are keys, but they can only be used to decrypt local BLE data that is read only so I am not concerned
+VICTRON_ADDRESSES = ['FA:66:AD:B2:8C:E4', 'F2:5B:16:A1:15:77', 'CF:60:ED:01:FC:32']
 VICTRON_BLE_KEYS = {'FA:66:AD:B2:8C:E4': '932d4be6e50cb7f03148f8529b05f58b',
-                    'F2:5B:16:A1:15:77': 'c926a1a391161e689bb9a804e8b982b9'}
+                    'F2:5B:16:A1:15:77': 'c926a1a391161e689bb9a804e8b982b9',
+                    'CF:60:ED:01:FC:32': '8e9c957bb2083fdbbf348419411aff90'}
 logger = logging.getLogger('energy_monitor')
 
 

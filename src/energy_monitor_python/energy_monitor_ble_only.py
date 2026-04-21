@@ -12,12 +12,12 @@ from Crypto.Util.Padding import pad
 from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl
 
 logger = logging.getLogger('energy_monitor')
-# The bluetooth address and encryption key of the victron solar charger.  These need to be gotten for your specific
-# installation, and are not real easy to get at the moment.  Supposedly support in the app in the future should provide
-# the key, but for now it is very difficult and there are guides online
-VICTRON_ADDRESSES = ['FA:66:AD:B2:8C:E4', 'F2:5B:16:A1:15:77']
+# The bluetooth address and encryption key of the victron solar charger.  These can now be gotten from the application
+# once connected to the device.  These only decrypt local BLE data that is read only so I am not concerned about them
+VICTRON_ADDRESSES = ['FA:66:AD:B2:8C:E4', 'F2:5B:16:A1:15:77', 'CF:60:ED:01:FC:32']
 VICTRON_BLE_KEYS = {'FA:66:AD:B2:8C:E4': '932d4be6e50cb7f03148f8529b05f58b',
-                    'F2:5B:16:A1:15:77': 'c926a1a391161e689bb9a804e8b982b9'}
+                    'F2:5B:16:A1:15:77': 'c926a1a391161e689bb9a804e8b982b9',
+                    'CF:60:ED:01:FC:32': '8e9c957bb2083fdbbf348419411aff90'}
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
