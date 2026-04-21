@@ -129,9 +129,9 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
                 "unused" / Padding(10),
                 )))
         )
-        logger.debug(f"Raw Packet: {decrypted_packet.hex()}")
+        logger.error(f"Raw Packet: {decrypted_packet.hex()}")
         battery_monitor_data = battery_monitor_parser.parse(decrypted_packet)
-        amps = battery_monitor_data.current / 1000
+        amps = battery_monitor_data.bitfields.current / 1000
         volts = battery_monitor_data.voltage / 100
         logger.error(f"{device.name} - {amps}A {volts}V {amps * volts}W")
         if MQTT_CLIENT:
