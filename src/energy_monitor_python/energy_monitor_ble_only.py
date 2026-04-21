@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad
 from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl, Int24ul, BitsSwapped, \
-    BitsInteger, Bitwise
+    BitsInteger, Bitwise, Adapter, Padding
 
 logger = logging.getLogger('energy_monitor')
 # The bluetooth address and encryption key of the victron solar charger.  These can now be gotten from the application
@@ -24,11 +24,33 @@ MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
 MQTT_CLIENT: mqtt.Client = None
 
-
 # When we receive a bluetooth advertising packet from the victron charger, decode the available data and post to the
 # correct MQTT topic
 def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
     global VICTRON_BLE_KEYS, MQTT_CLIENT, LAST_BEACON_RECEIVED
+
+    class BitReverseAdapter(Adapter):
+        def __init__(self, subcon, bits, signed=False):
+            super().__init__(subcon)
+            self.bits = bits
+            self.signed = signed
+        def _decode(self, obj, context, path):
+            res = 0
+            for i in range(self.bits):
+                if (obj >> i) & 1:
+                    res |= (1 << (self.bits - 1 - i))
+            if self.signed and (res & (1 << (self.bits - 1))):
+                res -= (1 << self.bits)
+            return res
+        def _encode(self, obj, context, path):
+            val = obj
+            if self.signed and val < 0:
+                val += (1 << self.bits)
+            res = 0
+            for i in range(self.bits):
+                if (val >> i) & 1:
+                    res |= (1 << (self.bits - 1 - i))
+            return res
 
     LAST_BEACON_RECEIVED = time.time()
     # The structure of a victron packet
@@ -99,19 +121,15 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
             "voltage" / Int16sl,
             "alarm" / Int16ul,
             "aux" / Int16ul,
-            # aux input mode:
-            #   0 = Starter battery voltage
-            #   1 = Midpoint voltage
-            #   2 = Temperature
-            #   3 = Disabled
-            "bitFields" / Bitwise(Struct(
-                "aux_mode" / BitsSwapped(BitsInteger(2)),
-                "current" / BitsSwapped(BitsInteger(22)),
-                "consumed_ah" / BitsSwapped(BitsInteger(20)),
-                "soc" / BitsSwapped(BitsInteger(10)),
-                "pad" / BitsInteger(10)))
+            "bitfields" / BitsSwapped(Bitwise(Struct(
+                "aux_mode" / BitReverseAdapter(BitsInteger(2), 2),
+                "current" / BitReverseAdapter(BitsInteger(22), 22, signed=True),
+                "consumed_ah" / BitReverseAdapter(BitsInteger(20), 20),
+                "soc" / BitReverseAdapter(BitsInteger(10), 10),
+                "unused" / Padding(10),
+                )))
         )
-        logger.error(f"Raw Packet: {decrypted_packet.hex()}")
+        logger.debug(f"Raw Packet: {decrypted_packet.hex()}")
         battery_monitor_data = battery_monitor_parser.parse(decrypted_packet)
         amps = battery_monitor_data.current / 1000
         volts = battery_monitor_data.voltage / 100
