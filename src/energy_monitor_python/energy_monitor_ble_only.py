@@ -9,7 +9,8 @@ from bleak import BleakScanner, BLEDevice, AdvertisementData
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad
-from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl
+from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl, Int24ul, BitsSwapped, \
+    BitsInteger
 
 logger = logging.getLogger('energy_monitor')
 # The bluetooth address and encryption key of the victron solar charger.  These can now be gotten from the application
@@ -93,7 +94,33 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
         else:
             logger.error("Received dc meter data but MQTT not connected")
     elif container.readout_type == 0x02:
-        logger.error("received battery monitor data")
+        battery_monitor_parser = Struct(
+            "remaining_minutes" / Int16ul,
+            "voltage" / Int16sl,
+            "alarm" / Int16ul,
+            "aux" / Int16ul,
+            # aux input mode:
+            #   0 = Starter battery voltage
+            #   1 = Midpoint voltage
+            #   2 = Temperature
+            #   3 = Disabled
+            "aux_mode" / BitsSwapped(BitsInteger(2)),
+            "current" / BitsSwapped(BitsInteger(22)),
+            "consumed_ah" / BitsSwapped(BitsInteger(20)),
+            "soc" / BitsSwapped(BitsInteger(10))
+        )
+        battery_monitor_data = battery_monitor_parser.parse(decrypted_packet)
+        amps = battery_monitor_data.current / 1000
+        volts = battery_monitor_data.voltage / 100
+        logger.error(f"{device.name} - {amps}A {volts}V {amps * volts}W")
+        if MQTT_CLIENT:
+            MQTT_CLIENT.publish('battery_monitor_data', json.dumps({
+                'device_name': device.name,
+                'remaining_minutes': battery_monitor_data.remaining_minutes,
+                'voltage': volts,
+                'soc': battery_monitor_data.soc / 10,
+                'watts': amps * volts
+            }))
     elif container.readout_type == 0x01:
         # Else assume it is a charge controller
         charger_parser = Struct(

@@ -952,6 +952,7 @@ def start_mqtt_client():
         c.subscribe("solar_charger_data")
         c.subscribe("adsb")
         c.subscribe("dc_meter_data")
+        c.subscribe("battery_monitor_data")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
@@ -1009,7 +1010,8 @@ def start_mqtt_client():
                     CURRENT_DATA.load_watts = meter_data['watts']
                     CURRENT_DATA.load_volts = meter_data['volts']
                     socketio.emit('current_data', CURRENT_DATA.__dict__)
-                elif meter_data['device_name'] == "Battery Load":
+            elif msg.topic == "battery_monitor_data":
+                if meter_data['device_name'] == "Battery Load":
                     CURRENT_DATA.battery_load = meter_data['amps']
         except Exception as e:
             logger.error(f"Failed to process mqtt message: {e}")
