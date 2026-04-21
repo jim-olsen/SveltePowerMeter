@@ -10,7 +10,7 @@ from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad
 from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl, Int24ul, BitsSwapped, \
-    BitsInteger
+    BitsInteger, Bitwise
 
 logger = logging.getLogger('energy_monitor')
 # The bluetooth address and encryption key of the victron solar charger.  These can now be gotten from the application
@@ -104,10 +104,11 @@ def process_victron_data(device: BLEDevice, advertisement: AdvertisementData):
             #   1 = Midpoint voltage
             #   2 = Temperature
             #   3 = Disabled
-            "aux_mode" / BitsSwapped(BitsInteger(2)),
-            "current" / BitsSwapped(BitsInteger(22)),
-            "consumed_ah" / BitsSwapped(BitsInteger(20)),
-            "soc" / BitsSwapped(BitsInteger(10))
+            "bitFields" / Bitwise(Struct(
+                "aux_mode" / BitsSwapped(BitsInteger(2)),
+                "current" / BitsSwapped(BitsInteger(22)),
+                "consumed_ah" / BitsSwapped(BitsInteger(20)),
+                "soc" / BitsSwapped(BitsInteger(10))))
         )
         battery_monitor_data = battery_monitor_parser.parse(decrypted_packet)
         amps = battery_monitor_data.current / 1000
