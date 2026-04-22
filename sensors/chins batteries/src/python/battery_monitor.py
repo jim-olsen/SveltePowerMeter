@@ -1,25 +1,17 @@
 import logging
-import threading
 import time
 import asyncio
 import paho.mqtt.client as mqtt
 import json
-import RPi.GPIO as GPIO
 
 from lead_yo_battery import find_all_batteries, SmartBattery
 from typing import List
-from DFRobot_AS3935_Lib import DFRobot_AS3935
 
 logger = logging.getLogger('energy_monitor')
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
 MQTT_CLIENT: mqtt.Client = None
-AS3935_I2C_ADDR = 0x03
-AS3935_CAPACITANCE = 96
-AS3935_IRQ_PIN = 4
-LIGHTNING_SENSOR: DFRobot_AS3935 = None
-
 
 #
 # Startup the mqtt client and register callbacks to reconnect on any client disconnections
@@ -46,7 +38,6 @@ def start_mqtt_client():
     client.on_disconnect = on_disconnect
     client.connect(MQTT_SERVER_ADDR, 1883, 60)
     client.loop_forever()
-
 
 #
 # Monitor all connected batteries by connecting one by one and pulling all current info.  Do this in a cycle with a
@@ -108,66 +99,14 @@ def monitor_batteries(batteries: List[SmartBattery]):
     loop = asyncio.new_event_loop()
     loop.run_until_complete(async_monitor_batteries(batteries))
 
-def lightning_sensor_callback_handler(channel):
-    global LIGHTNING_SENSOR, MQTT_CLIENT
-
-    time.sleep(0.005)
-    interrupt_source = LIGHTNING_SENSOR.get_interrupt_src()
-    if interrupt_source == 1:
-        logger.warning(f"Detected lightning at {LIGHTNING_SENSOR.get_lightning_distKm()}km and intensity  {LIGHTNING_SENSOR.get_strike_energy_raw()}")
-        if MQTT_CLIENT:
-            MQTT_CLIENT.publish('lightning_data', json.dumps({
-                'event': 'lightning',
-                'distance': LIGHTNING_SENSOR.get_lightning_distKm(),
-                'intensity': LIGHTNING_SENSOR.get_strike_energy_raw()
-            }))
-    elif interrupt_source == 2:
-        logger.error("Lightning sensor detected a disturber")
-        if MQTT_CLIENT:
-            MQTT_CLIENT.publish('lightning_data', json.dumps({
-                'event': 'disturber'
-            }))
-    elif interrupt_source == 3:
-        logger.error("Lightning sensor is detecting too much noise")
-        if MQTT_CLIENT:
-            MQTT_CLIENT.publish('lightning_data', json.dumps({
-                'event': 'noise'
-            }))
-
-
 def main():
-    global AS3935_IRQ_PIN, AS3935_CAPACITANCE, AS3935_I2C_ADDR, LIGHTNING_SENSOR
-
     logging.basicConfig()
-    logging.getLogger('energy_monitor').setLevel(logging.WARNING)
+    logging.getLogger('battery_monitor').setLevel(logging.DEBUG)
 
     logger.info("Finding all batteries in range")
     batteries = sorted(find_all_batteries(10), key=lambda x: x.name())
 
     logger.info(f"Found batteries {batteries}")
-
-    logger.warning("Initializing AS3935")
-    lightning_sensor = DFRobot_AS3935(AS3935_I2C_ADDR, bus=1)
-    if lightning_sensor.reset():
-        logger.warning("Lightning detector successfully initialized")
-        lightning_sensor.power_up()
-        lightning_sensor.set_outdoors()
-        lightning_sensor.disturber_en()
-        lightning_sensor.set_irq_output_source(0)
-        time.sleep(0.5)
-        lightning_sensor.set_tuning_caps(AS3935_CAPACITANCE)
-        lightning_sensor.set_noise_floor_lv1(1)
-        lightning_sensor.set_watchdog_threshold(2)
-        lightning_sensor.set_spike_rejection(2)
-        LIGHTNING_SENSOR = lightning_sensor
-        GPIO.setup(AS3935_IRQ_PIN, GPIO.IN)
-        GPIO.add_event_detect(AS3935_IRQ_PIN, GPIO.RISING, callback=lightning_sensor_callback_handler)
-    else:
-        logger.error("Lightning detector failed to initialize")
-
-    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
-    mqtt_thread.daemon = True
-    mqtt_thread.start()
 
     monitor_batteries(batteries)
 
