@@ -12,7 +12,6 @@ import paho.mqtt.client as mqtt
 import uuid
 from datetime import datetime, timedelta
 from PIL import Image
-from Starlink import Starlink
 from Shelly import Shelly
 from flask_socketio import SocketIO
 from homemonitor_data import CurrentPowerData, StatsData, WeatherData
@@ -52,6 +51,7 @@ WEATHER_DATA: WeatherData = WeatherData(altimeter_inHg=None, appTemp_F=None, bar
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
+STARLINK = { 'status': None, 'history': None, 'obstruction_map': [] }
 
 # List of valid fields for querying battery graph data.  This protects against sql injection using a dynamic field.
 VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nominal_capacity", "cycles",
@@ -73,7 +73,6 @@ SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.
 AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
-dishy = Starlink()
 socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
 
@@ -406,68 +405,6 @@ def update_running_stats():
         except Exception as e:
             logger.error('Failure in updating stats: ' + str(e))
 
-
-#
-# Monitor the starlink for multiple potential problem situations.  First, make sure that the starlink is responding
-# correctly.  If the starlink unit is not available, eventually we want to try a power cycle on it.  Also check to see
-# if the unit has been stowed.  If it has been stowed for over 10 minutes, then we want to unstow it.
-#
-def manage_starlink():
-    global AVAILABLE_SHELLEYS
-
-    start_stow_time = 0
-    start_not_connected_time = 0
-    start_power_off_time = 0
-
-    while True:
-        try:
-            if not dishy.is_connected():
-                if start_not_connected_time == 0:
-                    logger.info("Detected that dishy is not connected, starting countdown")
-                    start_not_connected_time = time.time()
-                elif time.time() - start_not_connected_time > 28800:
-                    logger.warning("Dishy not connected for over 8 hours, trying a power cycle")
-                    for shelly in AVAILABLE_SHELLEYS:
-                        if shelly.name.casefold() == "dishy".casefold():
-                            logger.warning(
-                                "Found shelly dishy device, power cycling dishy due to disconnected state...")
-                            status = shelly.get_relay_status(0)
-                            if status["ison"] is False:
-                                shelly.turn_relay_on(0)
-                            else:
-                                shelly.power_cycle_relay(0, 10)
-                            start_not_connected_time = time.time()
-            else:
-                start_not_connected_time = 0
-
-            for shelly in AVAILABLE_SHELLEYS:
-                if shelly.name.casefold() == "dishy".casefold():
-                    status = shelly.get_relay_status(0)
-                    if status["ison"] is False:
-                        if start_power_off_time == 0:
-                            logger.info("Found dishy powered off, starting counter")
-                            start_power_off_time = time.time()
-                        elif time.time() - start_power_off_time > 600:
-                            logger.warning("Dishy off for over 10 minutes, turning back on")
-                            shelly.turn_relay_on(0)
-                            start_power_off_time = 0
-                    else:
-                        start_power_off_time = 0
-
-            if dishy.is_stowed():
-                logger.info("Dishy is currently stowed")
-                if start_stow_time == 0:
-                    start_stow_time = time.time()
-                elif time.time() - start_stow_time > 600:
-                    logger.warning("Dishy stowed too long, unstowing dish")
-                    dishy.dish_unstow()
-            else:
-                start_stow_time = 0
-        except Exception as e:
-            logger.error("Failure in starlink monitoring: " + str(e))
-        time.sleep(60)
-
-
 #
 # Serve up the svelte application
 #
@@ -761,9 +698,7 @@ def get_stats_data():
 #
 @app.route("/starlink/status")
 def starlink_status():
-    status = dishy.get_status()
-
-    return json.dumps(status, indent=3)
+    return json.dumps(STARLINK['status'], indent=3)
 
 
 #
@@ -772,7 +707,7 @@ def starlink_status():
 @app.route("/starlink/history")
 def starlink_history():
     skip_graphs = request.args.get('skipGraphs', "False").lower() == 'true'
-    history = dishy.get_history()
+    history = copy.deepcopy(STARLINK['history'])
     if skip_graphs:
         history.pop('ping_drop_rate')
         history.pop('ping_latency')
@@ -787,38 +722,13 @@ def starlink_history():
 #
 @app.route("/starlink/obstruction_image")
 def starlink_obstruction_image():
-    obstruction_image = dishy.get_obstruction_map()
+    obstruction_image = STARLINK['obstruction_map']
     numpy_image = np.array(obstruction_image).astype('uint8')
     img = Image.fromarray(numpy_image)
     file_object = io.BytesIO()
     img.save(file_object, 'PNG')
     file_object.seek(0)
     return send_file(file_object, mimetype='image/PNG')
-
-
-#
-# Issue a request to the disk to stow itself
-#
-@app.route("/starlink/stow", methods=['POST'])
-def stow_dish():
-    dishy.dish_stow()
-
-
-#
-# Issue a request to the dish to unstow itself
-#
-@app.route("/starlink/unstow", methods=['POST'])
-def unstow_dish():
-    dishy.dish_unstow()
-
-
-#
-# Issue a request for the dish to reboot itself
-#
-@app.route("/starlink/reboot", methods=['POST'])
-def reboot_dish():
-    dishy.dish_reboot()
-
 
 #
 # Get the shelly object instance matching the name.  Return none if no matching Shelly
@@ -953,6 +863,7 @@ def start_mqtt_client():
         c.subscribe("adsb")
         c.subscribe("dc_meter_data")
         c.subscribe("battery_monitor_data")
+        c.subscribe("starlink")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
@@ -1014,6 +925,11 @@ def start_mqtt_client():
                 meter_data = json.loads(msg.payload)
                 if meter_data['device_name'] == "Battery Load":
                     CURRENT_DATA.battery_load = meter_data['amps']
+            elif msg.topic == "starlink":
+                starlink_data = json.loads(msg.payload)
+                STARLINK['status'] = starlink_data.get('status', None)
+                STARLINK['history'] = starlink_data.get('history', None)
+                STARLINK['obstruction_map'] = starlink_data.get('obstruction_map', [])
         except Exception as e:
             logger.error(f"Failed to process mqtt message: {e}")
             logger.error(f"Payload of message: {msg.payload}")
@@ -1150,10 +1066,6 @@ def main(proxy=None):
         print("Failed to load last adsb data: " + str(e))
 
     refresh_daily_data()
-
-    starlink_thread = threading.Thread(target=manage_starlink, args=())
-    starlink_thread.daemon = True
-    starlink_thread.start()
 
     for shelley_addr in SHELLY_DEVICE_ADDRESSES:
         retry_count = 0

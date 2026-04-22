@@ -1,11 +1,9 @@
-import signal
 import sys
 
 import grpc
 import math
 import json
 import time
-import os
 import statistics
 import logging
 from PIL import Image
