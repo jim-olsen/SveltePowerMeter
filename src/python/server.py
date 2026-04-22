@@ -1,3 +1,4 @@
+import copy
 import os
 import pickle
 from flask import Flask, send_from_directory, send_file, request
@@ -51,7 +52,7 @@ WEATHER_DATA: WeatherData = WeatherData(altimeter_inHg=None, appTemp_F=None, bar
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
-STARLINK = { 'status': None, 'history': None, 'obstruction_map': [] }
+STARLINK = { 'status': {}, 'history': {}, 'obstruction_map': [] }
 
 # List of valid fields for querying battery graph data.  This protects against sql injection using a dynamic field.
 VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nominal_capacity", "cycles",
@@ -240,7 +241,7 @@ def update_sql_tables():
 # Update the running stats with the latest data by looping
 #
 def update_running_stats():
-    global STATS_DATA, dishy
+    global STATS_DATA
     last_update = datetime.today()
     current_day_of_year = datetime.today().timetuple().tm_yday
     while True:
@@ -394,8 +395,8 @@ def update_running_stats():
 
             # We serialize then deserialize to get around datetime not being serializable by socketio
             socketio.emit('stats_data', json.loads(json.dumps(STATS_DATA.__dict__, default=str)))
-            socketio.emit('starlink_status', dishy.get_status())
-            history = dishy.get_history()
+            socketio.emit('starlink_status', STARLINK["status"])
+            history = copy.deepcopy(STARLINK["history"])
             history.pop('ping_drop_rate')
             history.pop('ping_latency')
             history.pop('downlink_bps')
