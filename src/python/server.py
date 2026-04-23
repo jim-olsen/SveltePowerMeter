@@ -13,7 +13,6 @@ import paho.mqtt.client as mqtt
 import uuid
 from datetime import datetime, timedelta
 from PIL import Image
-from Shelly import Shelly
 from flask_socketio import SocketIO
 from homemonitor_data import CurrentPowerData, StatsData, WeatherData
 
@@ -64,12 +63,7 @@ VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nomi
 
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
-
-# For now I have shelly devices manually listed.  There is not a great discovery mechanism built in but am exploring
-# options
-SHELLY_DEVICE_ADDRESSES = ['http://10.0.10.40', 'http://10.0.10.41', 'http://10.0.10.42', 'http://10.0.10.43',
-                           'http://10.0.10.44', 'http://10.0.10.45', 'http://10.0.10.46', 'http://10.0.10.47',
-                           'http://10.0.10.48', 'http://10.0.10.50']
+MQTT_CLIENT = None
 
 AVAILABLE_SHELLEYS = []
 
@@ -397,10 +391,10 @@ def update_running_stats():
             socketio.emit('stats_data', json.loads(json.dumps(STATS_DATA.__dict__, default=str)))
             socketio.emit('starlink_status', STARLINK["status"])
             history = copy.deepcopy(STARLINK["history"])
-            history.pop('ping_drop_rate')
-            history.pop('ping_latency')
-            history.pop('downlink_bps')
-            history.pop('uplink_bps')
+            history.pop('ping_drop_rate', None)
+            history.pop('ping_latency', None)
+            history.pop('downlink_bps', None)
+            history.pop('uplink_bps', None)
             socketio.emit('starlink_history', history)
             time.sleep(5)
         except Exception as e:
@@ -710,11 +704,11 @@ def starlink_history():
     skip_graphs = request.args.get('skipGraphs', "False").lower() == 'true'
     history = copy.deepcopy(STARLINK['history'])
     if skip_graphs:
-        history.pop('ping_drop_rate')
-        history.pop('ping_latency')
-        history.pop('downlink_bps')
-        history.pop('uplink_bps')
-        history.pop('power_in')
+        history.pop('ping_drop_rate', None)
+        history.pop('ping_latency', None)
+        history.pop('downlink_bps', None)
+        history.pop('uplink_bps', None)
+        history.pop('power_in', None)
     return json.dumps(history, indent=3)
 
 
@@ -738,7 +732,7 @@ def get_shelly_by_name(name):
     global AVAILABLE_SHELLEYS
 
     for shelly in AVAILABLE_SHELLEYS:
-        if shelly.get_settings().get("name", None) == name:
+        if shelly.get("name", None) == name:
             return shelly
     return None
 
@@ -750,7 +744,7 @@ def get_shelly_by_name(name):
 def get_all_shellys():
     global AVAILABLE_SHELLEYS
 
-    return json.dumps([shelly.__dict__ for shelly in AVAILABLE_SHELLEYS])
+    return json.dumps(AVAILABLE_SHELLEYS)
 
 
 #
@@ -758,11 +752,10 @@ def get_all_shellys():
 #
 @app.route("/shelly/relay/status", methods=['GET'])
 def relay_status():
-    relay_number = request.args.get("relay", default=0, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
-        return shelly.get_relay_status(relay_number)
+        return shelly
     return {}
 
 
@@ -771,11 +764,11 @@ def relay_status():
 #
 @app.route("/shelly/relay/off", methods=['GET'])
 def turn_relay_off():
-    relay_number = request.args.get("relay", default=0, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
-        return shelly.turn_relay_off(relay_number)
+        MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'off')
+        return shelly
     return {}
 
 
@@ -784,11 +777,11 @@ def turn_relay_off():
 #
 @app.route("/shelly/relay/on", methods=['GET'])
 def turn_relay_on():
-    relay_number = request.args.get("relay", default=0, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
-        return shelly.turn_relay_on(relay_number)
+        MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'on')
+        return shelly
     return {}
 
 
@@ -797,15 +790,14 @@ def turn_relay_on():
 #
 @app.route("/shelly/relay/cycle", methods=['GET'])
 def power_cycle_relay():
-    relay_number = request.args.get("relay", default=0, type=int)
     delay = request.args.get("delay", default=5, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
-        return shelly.power_cycle_relay(relay=relay_number, delay=delay)
+        MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'cycle ' + delay)
+        return shelly
 
     return {}
-
 
 #
 # Update the day accumulated data from the daily table for today.  If none is present for today, just skip updating
@@ -854,7 +846,10 @@ def update_lightning_data(lightning_event: dict):
 #
 def start_mqtt_client():
     def on_connect(c, userdata, flags, rc):
+        global MQTT_CLIENT
+
         logger.info("MQTT Client Connected, subscribing...")
+        MQTT_CLIENT = c
         c.subscribe("weather/loop")
         c.subscribe("blueiris")
         c.subscribe("battery_status")
@@ -865,6 +860,7 @@ def start_mqtt_client():
         c.subscribe("dc_meter_data")
         c.subscribe("battery_monitor_data")
         c.subscribe("starlink")
+        c.subscribe("lights")
 
     def on_message(c, userdata, msg):
         global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
@@ -931,6 +927,13 @@ def start_mqtt_client():
                 STARLINK['status'] = starlink_data.get('status', None)
                 STARLINK['history'] = starlink_data.get('history', None)
                 STARLINK['obstruction_map'] = starlink_data.get('obstruction_map', [])
+            elif msg.topic == "lights":
+                update = json.loads(msg.payload)
+                device = next((d for d in AVAILABLE_SHELLEYS if d['id'] == update['id']), None)
+                if device:
+                    device['ison'] = update['ison']
+                else:
+                    AVAILABLE_SHELLEYS.append(update)
         except Exception as e:
             logger.error(f"Failed to process mqtt message: {e}")
             logger.error(f"Payload of message: {msg.payload}")
@@ -1067,20 +1070,6 @@ def main(proxy=None):
         print("Failed to load last adsb data: " + str(e))
 
     refresh_daily_data()
-
-    for shelley_addr in SHELLY_DEVICE_ADDRESSES:
-        retry_count = 0
-        while True:
-            try:
-                AVAILABLE_SHELLEYS.append(Shelly(shelley_addr))
-                logger.info("Shelly device" + shelley_addr + " successfully added")
-                break
-            except Exception as e:
-                retry_count += 1
-                logger.error("Failed to add shelly device" + shelley_addr + ": " + str(e))
-                if retry_count > 5:
-                    break
-                time.sleep(15)
 
     stats_thread = threading.Thread(target=update_running_stats, args=())
     stats_thread.daemon = True

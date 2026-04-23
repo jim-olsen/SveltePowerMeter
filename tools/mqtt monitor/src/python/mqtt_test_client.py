@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 import json
 import paho.mqtt.client as mqtt
@@ -23,7 +24,8 @@ def start_mqtt_client():
 #        c.subscribe('adsb')
 #        c.subscribe('dc_meter_data')
 #        c.subscribe('shelly/events/rpc')
-        c.subscribe('starlink')
+#        c.subscribe('starlink')
+        c.subscribe('lights')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -36,7 +38,7 @@ def start_mqtt_client():
             time.sleep(30)
 
     def on_message(c, userdata, msg):
-        logger.info(f"Received message for topic {msg.topic}: {msg.payload}")
+#        logger.info(f"Received message for topic {msg.topic}: {msg.payload}")
         try:
             logger.info(f"Received message for topic {msg.topic}: {json.loads(msg.payload)}")
         except Exception as e:
@@ -52,7 +54,15 @@ def start_mqtt_client():
 def main():
     logging.basicConfig()
     logging.getLogger('test_mqtt').setLevel(logging.INFO)
-    start_mqtt_client()
+    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
+    mqtt_thread.daemon = True
+    mqtt_thread.start()
+
+    while True:
+        time.sleep(3)
+#    MQTT_CLIENT.publish('shellies/command', 'announce')
+#    MQTT_CLIENT.publish('shellies/command', 'status_update')
+#    time.sleep(10)
 
 if __name__ == "__main__":
     main()
