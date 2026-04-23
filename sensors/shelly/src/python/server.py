@@ -12,7 +12,7 @@ SHELLY_DEVICES = {}
 logger = logging.getLogger('test_mqtt')
 
 def turn_relay_on(shelly_device, relay=0):
-    r = requests.get(shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=on')
+    r = requests.get('http://' + shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=on')
     if r.status_code == 200:
         return r.json()
     else:
@@ -20,7 +20,7 @@ def turn_relay_on(shelly_device, relay=0):
         return {}
 
 def turn_relay_off(shelly_device, relay=0):
-    r = requests.get(shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=off')
+    r = requests.get('http://' + shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=off')
     if r.status_code == 200:
         return r.json()
     else:
@@ -28,13 +28,11 @@ def turn_relay_off(shelly_device, relay=0):
         return {}
 
 def power_cycle_relay(shelly_device, relay=0, delay=5):
-    r = requests.get(shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=off&timer=' + str(delay))
+    r = requests.get('http://' + shelly_device['ip_address'] + '/relay/' + str(relay) + '?turn=off&timer=' + str(delay))
     if r.status_code == 200:
         while True:
-            current_status = self.get_relay_status(relay)
-            if "ison" in current_status:
-                if current_status["ison"]:
-                    break
+            if shelly_device['ison']:
+                break
             else:
                 logger.error(f"Received a status response on power cycle with no relay status, aborting... {current_status}")
                 break
@@ -52,10 +50,13 @@ def start_mqtt_client():
         c.subscribe('shellies/announce')
         c.subscribe('shelly/+/status/wifi')
         c.subscribe('shelly/+/status/switch:0')
+        c.subscribe('lights/+/command')
 
         c.message_callback_add('shellies/announce', on_shelly_announce)
         c.message_callback_add('shelly/+/status/wifi', on_wifi_status_update)
         c.message_callback_add('shelly/+/status/switch:0', on_switch_status_update)
+        c.message_callback_add('lights/+/command', on_command)
+
 
     def on_disconnect(c, userdata, rc):
         logger.warning(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -104,6 +105,28 @@ def start_mqtt_client():
             shelly_device['ison'] = switch_status['output']
         else:
             logger.error(f"Failed to parse shelly id from topic {msg.topic}")
+
+    def on_command(c, userdata, msg):
+        logger.error(f"Received device command on topic {msg.topic}: {msg.payload}")
+        match = re.match(r"^lights/([^/]+)/command?$", msg.topic)
+        if match:
+            shelly_id = match.group(1)
+            if shelly_id in SHELLY_DEVICES:
+                if msg.payload.decode() == 'on':
+                    logger.debug(f"Turn On {shelly_id}")
+                    turn_relay_on(SHELLY_DEVICES[shelly_id], 0)
+                elif msg.payload.decode() == 'off':
+                    logger.debug(f"Turn off {shelly_id}")
+                    turn_relay_off(SHELLY_DEVICES[shelly_id], 0)
+                elif msg.payload.decode().startswith("cycle"):
+                    logger.debug(f"Power cycle {shelly_id}")
+                    power_cycle_relay(SHELLY_DEVICES[shelly_id], 0, int(msg.payload.rsplit(" ", 1)[1]))
+                else:
+                    logger.error(f"Received unknown command {msg.payload} for {shelly_id}")
+            else:
+                logger.error(f"Do no have device {shelly_id} registered yet received command")
+        else:
+            logger.error(f"Invalid shelly id in command topic: {msg.topic}")
 
     def on_message(c, userdata, msg):
         logger.debug(f"Received message for topic {msg.topic}: {msg.payload}")
