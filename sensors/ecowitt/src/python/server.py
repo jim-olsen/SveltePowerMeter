@@ -9,7 +9,7 @@ import paho.mqtt.client as mqtt
 from flask import Flask, request
 
 MQTT_SERVER_ADDR = '10.0.10.31'
-MQTT_CLIENT: mqtt.Client = None
+MQTT_CLIENT: mqtt.Client
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logging.getLogger('werkzeug').setLevel(logging.WARNING)

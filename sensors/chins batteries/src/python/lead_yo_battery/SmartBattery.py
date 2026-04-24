@@ -3,7 +3,7 @@ import logging
 import time
 
 from bleak import BleakClient, BLEDevice
-from typing import Union
+from typing import Union, Any, List
 
 logger = logging.getLogger('lead_yo_battery')
 
@@ -159,10 +159,10 @@ class SmartBattery:
         return int.from_bytes(self.basic_information_and_status[14:16], byteorder='big') & (
                     1 << (cell_number - 16)) == 1
 
-    async def protection_status(self) -> [str]:
+    async def protection_status(self) -> List[Any]:
         await self.refresh_data()
         status = []
-        protect = int.from_bytes(self.basic_information_and_status[16:18], byteorder='big');
+        protect = int.from_bytes(self.basic_information_and_status[16:18], byteorder='big')
         if protect & 0x1:
             status.append('Cell Block Over-Vol')
         if protect & (1 << 1):
@@ -216,9 +216,9 @@ class SmartBattery:
         await self.refresh_data()
         return self.basic_information_and_status[21]
 
-    async def battery_temps_f(self) -> [float]:
+    async def battery_temps_f(self) -> List[float]:
         await self.refresh_data()
-        temps = []
+        temps : List[float] = []
 
         for i in range(self.basic_information_and_status[22]):
             temps.append((float(
@@ -227,9 +227,9 @@ class SmartBattery:
 
         return temps
 
-    async def cell_block_voltages(self) -> [float]:
+    async def cell_block_voltages(self) -> List[float]:
         await self.refresh_data()
-        voltages = []
+        voltages: List[float] = []
         for i in range(0, await self.num_cells() * 2, 2):
             voltages.append(float(int.from_bytes(self.cell_block_voltage[i:i + 2], byteorder='big')) / 1000)
 

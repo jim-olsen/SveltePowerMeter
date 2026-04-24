@@ -390,7 +390,7 @@ def get_graph_data(days, data_fields):
                                         [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
         for row in cursor.fetchall():
             rowdict = dict(row)
-            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time', 0)))
             for field in data_fields:
                 graph_data[field].append(rowdict.get(field, 0))
     return graph_data
@@ -415,7 +415,7 @@ def get_battery_graph_data(days, data_fields, battery_name):
         cursor = sql_connection.execute(sql_statement, parameters)
         for row in cursor.fetchall():
             rowdict = dict(row)
-            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time', 0)))
             for field in data_fields:
                 graph_data[field].append(rowdict.get(field, 0))
     return graph_data
@@ -458,7 +458,7 @@ def get_weather_graph_data(days, data_fields):
                                         [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
         for row in cursor.fetchall():
             rowdict = dict(row)
-            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time')))
+            graph_data['time'].append(datetime.fromtimestamp(rowdict.get('record_time', 0)))
             for field in data_fields:
                 graph_data[field].append(rowdict.get(field, 0))
     return graph_data

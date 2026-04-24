@@ -9,7 +9,7 @@ from bleak import BleakScanner, BLEDevice, AdvertisementData
 from Crypto.Cipher import AES
 from Crypto.Util import Counter
 from Crypto.Util.Padding import pad
-from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl, Int24ul, BitsSwapped, \
+from construct import Struct, FixedSized, GreedyBytes, Int16ul, Int8sl, Int8ul, Int16sl, Int24sl, BitsSwapped, \
     BitsInteger, Bitwise, Adapter, Padding
 
 logger = logging.getLogger('energy_monitor')
@@ -22,7 +22,7 @@ VICTRON_BLE_KEYS = {'FA:66:AD:B2:8C:E4': '932d4be6e50cb7f03148f8529b05f58b',
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
-MQTT_CLIENT: mqtt.Client = None
+MQTT_CLIENT: mqtt.Client
 
 # When we receive a bluetooth advertising packet from the victron charger, decode the available data and post to the
 # correct MQTT topic

@@ -1,3 +1,5 @@
+from typing import List
+
 from lead_yo_battery.SmartBattery import SmartBattery
 import asyncio
 import logging
@@ -10,7 +12,7 @@ logger = logging.getLogger('lead_yo_battery')
 # Look for all LeadYO battery advertisements by finding any advertisements that include their uuid as a supported
 # protocol.  Return an instance of a smart battery object for each found instance.
 #
-async def async_find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
+async def async_find_all_batteries(refresh_rate: int = 5) -> List[SmartBattery]:
 
     logger.debug("Finding all available batteries within range")
     found_batteries = []
@@ -29,6 +31,6 @@ async def async_find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
 #
 # Synchronous version of the above async function
 #
-def find_all_batteries(refresh_rate: int = 5) -> [SmartBattery]:
+def find_all_batteries(refresh_rate: int = 5) -> List[SmartBattery]:
     return asyncio.run(async_find_all_batteries(refresh_rate))
 

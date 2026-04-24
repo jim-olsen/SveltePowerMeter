@@ -9,7 +9,7 @@ LOG = logging.getLogger(__name__)
 
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
-MQTT_CLIENT: mqtt.Client = None
+MQTT_CLIENT: mqtt.Client
 
 #
 # Startup the mqtt client and register callbacks to reconnect on any client disconnections

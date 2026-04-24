@@ -34,7 +34,7 @@ def power_cycle_relay(shelly_device, relay=0, delay=5):
             if shelly_device['ison']:
                 break
             else:
-                logger.error(f"Received a status response on power cycle with no relay status, aborting... {current_status}")
+                logger.error(f"Received a status response on power cycle with no relay status, aborting... {r.status_code}")
                 break
         return r.json()
     else:
