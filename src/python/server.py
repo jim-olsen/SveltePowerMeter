@@ -446,81 +446,92 @@ def start_mqtt_client():
         c.subscribe("starlink")
         c.subscribe("lights")
 
-    def on_message(c, userdata, msg):
-        global WEATHER_DATA, BLUEIRIS_ALERT, BATTERIES, ADSB_DATA
+    def handle_weather_loop(c, userdata, msg):
+        global WEATHER_DATA
 
+        WEATHER_DATA = WEATHER_DATA.load_from_json(msg.payload)
+        socketio.emit('weather_data', WEATHER_DATA.__dict__)
+
+    def handle_blueiris(c, userdata, msg):
+        global BLUEIRIS_ALERT
+
+        BLUEIRIS_ALERT = json.loads(msg.payload)
+        BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
+        BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
+        socketio.emit('blueiris_alert', BLUEIRIS_ALERT)
+        file = open(b"last_blue_iris_alert.pkl", "wb")
+        pickle.dump(BLUEIRIS_ALERT, file)
+        file.close()
+
+    def handle_adsb(c, userdata, msg):
+        global ADSB_DATA
+
+        ADSB_DATA = json.loads(msg.payload)
+        ADSB_DATA['id'] = str(uuid.uuid4())
+        socketio.emit('adsb_data', ADSB_DATA)
+        file = open(b"last_adsb_data.pkl", "wb")
+        pickle.dump(ADSB_DATA, file)
+        file.close()
+
+    def handle_battery_status(c, userdata, msg):
+        logger.debug("Received Battery Status")
+        battery_info = json.loads(msg.payload)
+        BATTERIES[battery_info["name"]] = battery_info
+        total_percent = 0
+        for battery_name, battery in BATTERIES.items():
+            total_percent += battery.get("capacity_percent", 0)
+        CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
+        socketio.emit("battery_data", list(BATTERIES.values()));
+
+    def handle_lightning_data(c, userdata, msg):
+        logger.debug("Received lightning data")
+        lightning_data = json.loads(msg.payload)
+        update_lightning_data(lightning_data)
+        socketio.emit('lightning_data', lightning_data)
+
+    def handle_solar_charger_data(c, userdata, msg):
+        charger_data = json.loads(msg.payload)
+        CURRENT_DATA.solar_watts = charger_data.get("solar_watts", 0)
+        CURRENT_DATA.battery_charge_current = charger_data.get("battery_charge_current", 0)
+        CURRENT_DATA.charge_state = charger_data.get("charge_state", "OTHER")
+        CURRENT_DATA.battery_voltage = charger_data.get("battery_voltage", 0)
+        socketio.emit('current_data', CURRENT_DATA.__dict__)
+        # We need to protect against the charge controller resetting this running stat before we increment the day,
+        # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
+        # recognize a day has passed
+        if STATS_DATA.day_solar_wh < charger_data.get("day_solar_wh", 0):
+            STATS_DATA.day_solar_wh = charger_data.get("day_solar_wh", 0)
+
+    def handle_dc_meter_data(c, userdata, msg):
+        meter_data = json.loads(msg.payload)
+        if meter_data['device_name'] == "Cabin Load":
+            CURRENT_DATA.load_amps = meter_data['amps']
+            CURRENT_DATA.load_watts = meter_data['watts']
+            CURRENT_DATA.load_volts = meter_data['volts']
+            socketio.emit('current_data', CURRENT_DATA.__dict__)
+
+    def handle_battery_monitor_data(c, userdata, msg):
+        meter_data = json.loads(msg.payload)
+        if meter_data['device_name'] == "Battery Load":
+            CURRENT_DATA.battery_load = meter_data['amps']
+
+    def handle_starlink(c, userdata, msg):
+        starlink_data = json.loads(msg.payload)
+        STARLINK['status'] = starlink_data.get('status', None)
+        STARLINK['history'] = starlink_data.get('history', None)
+        STARLINK['obstruction_map'] = starlink_data.get('obstruction_map', [])
+
+    def handle_lights(c, userdata, msg):
+        update = json.loads(msg.payload)
+        device = next((d for d in AVAILABLE_SHELLEYS if d['id'] == update['id']), None)
+        if device:
+            device['ison'] = update['ison']
+        else:
+            AVAILABLE_SHELLEYS.append(update)
+
+    def on_message(c, userdata, msg):
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
-        try:
-            if msg.topic == "weather/loop":
-                WEATHER_DATA = WEATHER_DATA.load_from_json(msg.payload)
-                socketio.emit('weather_data', WEATHER_DATA.__dict__)
-            elif msg.topic == "blueiris":
-                BLUEIRIS_ALERT = json.loads(msg.payload)
-                BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
-                BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
-                socketio.emit('blueiris_alert', BLUEIRIS_ALERT)
-                file = open(b"last_blue_iris_alert.pkl", "wb")
-                pickle.dump(BLUEIRIS_ALERT, file)
-                file.close()
-            elif msg.topic == "adsb":
-                ADSB_DATA = json.loads(msg.payload)
-                ADSB_DATA['id'] = str(uuid.uuid4())
-                socketio.emit('adsb_data', ADSB_DATA)
-                file = open(b"last_adsb_data.pkl", "wb")
-                pickle.dump(ADSB_DATA, file)
-                file.close()
-            elif msg.topic == "battery_status":
-                logger.debug("Received Battery Status")
-                battery_info = json.loads(msg.payload)
-                BATTERIES[battery_info["name"]] = battery_info
-                total_percent = 0
-                for battery_name, battery in BATTERIES.items():
-                    total_percent += battery.get("capacity_percent", 0)
-                CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
-                socketio.emit("battery_data", list(BATTERIES.values()));
-            elif msg.topic == "lightning_data":
-                logger.debug("Received lightning data")
-                lightning_data = json.loads(msg.payload)
-                update_lightning_data(lightning_data)
-                socketio.emit('lightning_data', lightning_data)
-            elif msg.topic == "solar_charger_data":
-                charger_data = json.loads(msg.payload)
-                CURRENT_DATA.solar_watts = charger_data.get("solar_watts", 0)
-                CURRENT_DATA.battery_charge_current = charger_data.get("battery_charge_current", 0)
-                CURRENT_DATA.charge_state = charger_data.get("charge_state", "OTHER")
-                CURRENT_DATA.battery_voltage = charger_data.get("battery_voltage", 0)
-                socketio.emit('current_data', CURRENT_DATA.__dict__)
-                # We need to protect against the charge controller resetting this running stat before we increment the day,
-                # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
-                # recognize a day has passed
-                if STATS_DATA.day_solar_wh < charger_data.get("day_solar_wh", 0):
-                    STATS_DATA.day_solar_wh = charger_data.get("day_solar_wh", 0)
-            elif msg.topic == "dc_meter_data":
-                meter_data = json.loads(msg.payload)
-                if meter_data['device_name'] == "Cabin Load":
-                    CURRENT_DATA.load_amps = meter_data['amps']
-                    CURRENT_DATA.load_watts = meter_data['watts']
-                    CURRENT_DATA.load_volts = meter_data['volts']
-                    socketio.emit('current_data', CURRENT_DATA.__dict__)
-            elif msg.topic == "battery_monitor_data":
-                meter_data = json.loads(msg.payload)
-                if meter_data['device_name'] == "Battery Load":
-                    CURRENT_DATA.battery_load = meter_data['amps']
-            elif msg.topic == "starlink":
-                starlink_data = json.loads(msg.payload)
-                STARLINK['status'] = starlink_data.get('status', None)
-                STARLINK['history'] = starlink_data.get('history', None)
-                STARLINK['obstruction_map'] = starlink_data.get('obstruction_map', [])
-            elif msg.topic == "lights":
-                update = json.loads(msg.payload)
-                device = next((d for d in AVAILABLE_SHELLEYS if d['id'] == update['id']), None)
-                if device:
-                    device['ison'] = update['ison']
-                else:
-                    AVAILABLE_SHELLEYS.append(update)
-        except Exception as e:
-            logger.error(f"Failed to process mqtt message: {e}")
-            logger.error(f"Payload of message: {msg.payload}")
+        logger.warn(f"No callback registered for topic: {msg.topic}")
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
@@ -533,6 +544,16 @@ def start_mqtt_client():
             time.sleep(30)
 
     client = mqtt.Client()
+    client.message_callback_add("weather/loop", handle_weather_loop)
+    client.message_callback_add("blueiris", handle_blueiris)
+    client.message_callback_add("adsb", handle_adsb)
+    client.message_callback_add("battery_status", handle_battery_status)
+    client.message_callback_add("lightning_data", handle_lightning_data)
+    client.message_callback_add("solar_charger_data", handle_solar_charger_data)
+    client.message_callback_add("dc_meter_data", handle_dc_meter_data)
+    client.message_callback_add("battery_monitor_data", handle_battery_monitor_data)
+    client.message_callback_add("starlink", handle_starlink)
+    client.message_callback_add("lights", handle_lights)
     client.on_connect = on_connect
     client.on_message = on_message
     client.on_disconnect = on_disconnect
