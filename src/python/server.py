@@ -63,12 +63,12 @@ VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nomi
 
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
-MQTT_CLIENT = None
+MQTT_CLIENT : mqtt.Client
 
 AVAILABLE_SHELLEYS = []
 
 app = Flask(__name__)
-socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 
 
 # Update all the sql tables with the latest current data into the database for future processing and analysis
@@ -394,11 +394,11 @@ def turn_relay_on():
 #
 @app.route("/shelly/relay/cycle", methods=['GET'])
 def power_cycle_relay():
-    delay = request.args.get("delay", default=5, type=int)
+    delay : int = request.args.get("delay", default=5, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
-        MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'cycle ' + delay)
+        MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'cycle ' + str(delay))
         return shelly
 
     return {}
@@ -481,7 +481,7 @@ def start_mqtt_client():
         for battery_name, battery in BATTERIES.items():
             total_percent += battery.get("capacity_percent", 0)
         CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
-        socketio.emit("battery_data", list(BATTERIES.values()));
+        socketio.emit("battery_data", list(BATTERIES.values()))
 
     def handle_lightning_data(c, userdata, msg):
         logger.debug("Received lightning data")
@@ -531,7 +531,7 @@ def start_mqtt_client():
 
     def on_message(c, userdata, msg):
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
-        logger.warn(f"No callback registered for topic: {msg.topic}")
+        logger.warning(f"No callback registered for topic: {msg.topic}")
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
