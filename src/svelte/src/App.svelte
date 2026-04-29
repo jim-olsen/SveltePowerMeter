@@ -172,12 +172,12 @@
 </script>
 
 <svelte:window bind:outerWidth bind:outerHeight bind:innerWidth on:keydown={onKeyDown}/>
-<div style="display:flex; flex-flow: row; align-content: center; gap: 20px; width: 100%; height:{outerHeight - (outerHeight * 0.05)}px;"
+<div style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px;"
         on:dblclick={onDoubleTap}>
     {#if $currentView === 'dashboard'}
         <MainDashboard></MainDashboard>
     {:else if graphViews.includes($currentView)}
-        <div style="display:flex; flex-flow: column;justify-content: space-between; width: 100%; gap: 10px">
+        <div style="display:flex; flex-flow: column;justify-content: space-between; width: 100%; gap: 4px">
             <CurrentValues/>
             <div bind:clientWidth={graphWidth} bind:clientHeight={graphHeight} style="height: 100%; width:100%;">
                 {#if $currentView === 'voltageGraph'}

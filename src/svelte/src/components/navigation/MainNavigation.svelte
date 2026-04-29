@@ -12,7 +12,7 @@
         faPlane
     } from "@fortawesome/free-solid-svg-icons";
 </script>
-    <div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 15px; gap: 15px;">
+    <div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 6px; gap: 6px; width: 100%; box-sizing: border-box; padding: 2px;">
         <div class="card" style="display: flex; flex-flow: column; justify-content: center; align-items: center; flex: 1 0 25%;"
                 on:click={()=> $currentView = 'dashboard'}>
             <Fa icon={faDashboard} style="font-size: 6vw; color: cadetblue;"/>
