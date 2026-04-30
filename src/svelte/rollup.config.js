@@ -57,63 +57,71 @@ export default {
             proxy: [
                 {
                 from: '/graphData',
-                to: 'http://10.0.10.32:8050/graphData'
+                to: 'http://10.0.0.42:9095/graphData'
                 },
                 {
                     from: '/currentData',
-                    to: 'http://10.0.10.32:8050/currentData'
+                    to: 'http://10.0.0.42:9095/currentData'
                 },
                 {
                     from: '/statsData',
-                    to: 'http://10.0.10.32:8050/statsData'
+                    to: 'http://10.0.0.42:9095/statsData'
                 },
                 {
                     from: '/starlink',
-                    to: 'http://10.0.10.32:8050/starlink'
+                    to: 'http://10.0.0.42:9095/starlink'
                 },
                 {
                     from: '/shelly',
-                    to: 'http://10.0.10.32:8050/shelly'
+                    to: 'http://10.0.0.42:9095/shelly'
                 },
                 {
                     from: '/blueIrisAlert',
-                    to: 'http://10.0.10.32:8050/blueIrisAlert'
+                    to: 'http://10.0.0.42:9095/blueIrisAlert'
                 },
                 {
                     from: '/adsbData',
-                    to: 'http://10.0.10.32:8050/adsbData'
+                    to: 'http://10.0.0.42:9095/adsbData'
                 },
                 {
                     from: '/weatherData',
-                    to: 'http://10.0.10.32:8050/weatherData'
+                    to: 'http://10.0.0.42:9095/weatherData'
                 },
                 {
                     from: '/weatherDailyMinMax',
-                    to: 'http://10.0.10.32:8050/weatherDailyMinMax'
+                    to: 'http://10.0.0.42:9095/weatherDailyMinMax'
                 },
                 {
                     from: '/graphWxData',
-                    to: 'http://10.0.10.32:8050/graphWxData'
+                    to: 'http://10.0.0.42:9095/graphWxData'
                 },
                 {
                     from: '/batteryData',
-                    to: 'http://10.0.10.32:8050/batteryData'
+                    to: 'http://10.0.0.42:9095/batteryData'
                 },
                 {
                     from: '/graphBatteryData',
-                    to: 'http://10.0.10.32:8050/graphBatteryData'
+                    to: 'http://10.0.0.42:9095/graphBatteryData'
                 },
                 {
                     from: '/shelly/relay/on',
-                    to: 'http://10.0.10.32:8050/shelly/relay/on'
+                    to: 'http://10.0.0.42:9095/shelly/relay/on'
                 },
                 {
                     from: '/shelly/relay/off',
-                    to: 'http://10.0.10.32:8050/shelly/relay/off'
+                    to: 'http://10.0.0.42:9095/shelly/relay/off'
                 },
                 {
                     from: '/lightningData',
-                    to: 'http://10.0.10.32:8050/lightningData'
+                    to: 'http://10.0.0.42:9095/lightningData'
+                },
+                {
+                    from: '/socket.io',
+                    to: 'http://10.0.0.42:9095',
+                    opts: {
+                        websocket: true,
+                        rewrite: (path) => path
+                    }
                 }
                 ]
         })

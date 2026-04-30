@@ -71,11 +71,21 @@
 
     $: batteryPct = $powerCurrentData?.battery_percent;
     $: batteryLevel = batteryPct != null ? Math.max(0, Math.min(100, batteryPct)) : 0;
+    $: batteryMin = $powerStatsData?.battery_min_percent != null ? Math.max(0, Math.min(100, $powerStatsData.battery_min_percent)) : 0;
+    $: batteryMax = $powerStatsData?.battery_max_percent != null ? Math.max(0, Math.min(100, $powerStatsData.battery_max_percent)) : 0;
+    
+    // Logic to keep min/max text readable if they are too close
+    // Labels are centered on the dots. Each label is roughly 7-8% wide on a 100% bar.
+    // We want at least ~25% gap between the text centers for readability.
+    // We also clamp them so they don't go off-screen (approx 10% margin for half-label width)
+    $: minTextPos = Math.max(10, Math.min(batteryMin, batteryMax - 25));
+    $: maxTextPos = Math.min(90, Math.max(batteryMax, batteryMin + 25));
+
+    $: batteryRangeWidth = Math.max(0, batteryMax - batteryMin);
     $: batteryColor = batteryPct == null
         ? '#8892A6'
-        : batteryPct > 70 ? '#7CFF9A'
-        : batteryPct > 40 ? '#FFE45E'
-        : batteryPct > 20 ? '#FFB020'
+        : batteryPct >= 66 ? '#7CFF9A'
+        : batteryPct >= 33 ? '#FFE45E'
         : '#FF5C5C';
 
     $: starlinkConnected = $starlinkStatus?.state === 'CONNECTED';
@@ -97,6 +107,7 @@
                 {$powerCurrentData?.charge_state ?? '---'}
             </div>
         </div>
+        <div class="tile-top-extra"></div>
         <div class="metric-grid three">
             <div class="metric" on:click|stopPropagation={go('solarWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faSolarPanel}/></div>
@@ -114,6 +125,7 @@
                 <div class="metric-label">Solar Wh</div>
             </div>
         </div>
+        <div class="tile-bottom-extra"></div>
     </div>
 
     <!-- BATTERY TILE -->
@@ -127,11 +139,20 @@
                 {batteryPct != null ? batteryPct.toFixed(1) + '%' : '---'}
             </div>
         </div>
-        <div class="battery-bar" on:click|stopPropagation={go('voltageGraph')}>
-            <div class="battery-fill" style="width: {batteryLevel}%; background: linear-gradient(90deg, {batteryColor}, {batteryColor}cc);"></div>
-            <div class="battery-bar-labels">
-                <span>Min {fmt($powerStatsData?.battery_min_percent, 2, '%')}</span>
-                <span>Max {fmt($powerStatsData?.battery_max_percent, 2, '%')}</span>
+        <div class="tile-top-extra">
+            <div class="battery-bar" on:click|stopPropagation={go('voltageGraph')}>
+                <div class="battery-min-dot" style="left: {batteryMin}%;"></div>
+                <div class="battery-max-dot" style="left: {batteryMax}%;"></div>
+                <div class="battery-fill" 
+                     style="width: {batteryLevel}%; 
+                            background: linear-gradient(90deg, #FF5C5C 0%, #FFE45E 33%, #7CFF9A 66%, #7CFF9A 100%); 
+                            background-size: {(100 / (batteryLevel || 0.1)) * 100}% 100%;
+                            box-shadow: 0 0 12px {batteryColor}55;">
+                </div>
+                <div class="battery-bar-labels">
+                    <span class="min-label" style="left: {minTextPos}%;">Min {fmt($powerStatsData?.battery_min_percent, 2, '%')}</span>
+                    <span class="max-label" style="left: {maxTextPos}%;">Max {fmt($powerStatsData?.battery_max_percent, 2, '%')}</span>
+                </div>
             </div>
         </div>
         <div class="metric-grid two">
@@ -146,6 +167,7 @@
                 <div class="metric-label">Load Wh</div>
             </div>
         </div>
+        <div class="tile-bottom-extra"></div>
     </div>
 
     <!-- WEATHER TILE -->
@@ -159,6 +181,7 @@
                 {$weatherData?.outTemp_F ? Number($weatherData.outTemp_F).toFixed(0) + '°F' : '---'}
             </div>
         </div>
+        <div class="tile-top-extra"></div>
         <div class="metric-grid three">
             <div class="metric" on:click|stopPropagation={go('outTempGraph')}>
                 <div class="metric-icon"><Fa icon={faTemperatureHigh}/></div>
@@ -176,6 +199,7 @@
                 <div class="metric-label">Wind Avg</div>
             </div>
         </div>
+        <div class="tile-bottom-extra"></div>
     </div>
 
     <!-- STARLINK TILE -->
@@ -190,6 +214,7 @@
                 {$starlinkStatus?.state ?? 'UNKNOWN'}
             </div>
         </div>
+        <div class="tile-top-extra"></div>
         <div class="metric-grid three">
             <div class="metric" on:click|stopPropagation={go('starlinkSpeedGraphs')}>
                 <div class="metric-icon"><Fa icon={faArrowDown}/></div>
@@ -207,18 +232,20 @@
                 <div class="metric-label">Avg Drop</div>
             </div>
         </div>
-        <div class="sub-row" on:click|stopPropagation={go('starlinkPowerGraphs')}>
-            <span class="sub-chip">
-                <Fa icon={faFire} style="color: {$starlinkStatus?.alerts?.is_heating ? '#FF5C5C' : '#7CFF9A'};"/>
-                Heater {$starlinkStatus?.alerts?.is_heating ? 'On' : 'Off'}
-            </span>
-            <span class="sub-chip">
-                <Fa icon={faBolt}/>
-                {fmt($starlinkStatus?.power_in, 1, ' W')}
-            </span>
-            <span class="sub-chip">
-                Max Drop {starlinkHistoryData?.maximum_ping_drop_rate != null ? (starlinkHistoryData.maximum_ping_drop_rate * 100).toFixed(1) + '%' : '---'}
-            </span>
+        <div class="tile-bottom-extra">
+            <div class="sub-row" on:click|stopPropagation={go('starlinkPowerGraphs')}>
+                <span class="sub-chip">
+                    <Fa icon={faFire} style="color: {$starlinkStatus?.alerts?.is_heating ? '#FF5C5C' : '#7CFF9A'};"/>
+                    Heater {$starlinkStatus?.alerts?.is_heating ? 'On' : 'Off'}
+                </span>
+                <span class="sub-chip">
+                    <Fa icon={faBolt}/>
+                    {fmt($starlinkStatus?.power_in, 1, ' W')}
+                </span>
+                <span class="sub-chip">
+                    Max Drop {starlinkHistoryData?.maximum_ping_drop_rate != null ? (starlinkHistoryData.maximum_ping_drop_rate * 100).toFixed(1) + '%' : '---'}
+                </span>
+            </div>
         </div>
     </div>
 </div>
@@ -284,6 +311,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
+        height: 70px;
         margin-bottom: 6px;
     }
 
@@ -291,11 +319,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 68px;
-        height: 68px;
+        width: 60px;
+        height: 60px;
         border-radius: 14px;
         background: rgba(255, 255, 255, 0.05);
-        font-size: 40px;
+        font-size: 34px;
         flex: 0 0 auto;
         color: var(--accent);
     }
@@ -324,6 +352,20 @@
         gap: 6px;
         white-space: nowrap;
         font-variant-numeric: tabular-nums;
+    }
+
+    .tile-top-extra {
+        height: 42px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .tile-bottom-extra {
+        height: 48px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .status-dot {
@@ -379,6 +421,10 @@
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         font-variant-numeric: tabular-nums;
         font-stretch: 90%;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .metric-value .unit {
@@ -399,11 +445,31 @@
     .battery-bar {
         position: relative;
         height: 26px;
-        background: rgba(255, 255, 255, 0.06);
+        background: linear-gradient(90deg, 
+            rgba(255, 92, 92, 0.15) 0%, 
+            rgba(255, 228, 94, 0.15) 33%, 
+            rgba(124, 255, 154, 0.15) 66%, 
+            rgba(124, 255, 154, 0.15) 100%
+        );
         border-radius: 13px;
         overflow: hidden;
-        margin: 2px 0 6px;
+        margin: 0;
         border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .battery-bar::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent calc(10% - 4px),
+            rgba(0, 0, 0, 0.3) calc(10% - 4px),
+            rgba(0, 0, 0, 0.3) 10%
+        );
+        pointer-events: none;
+        z-index: 2;
     }
 
     .battery-fill {
@@ -412,23 +478,45 @@
         top: 0;
         bottom: 0;
         border-radius: 13px;
-        transition: width 0.4s ease;
-        box-shadow: 0 0 12px rgba(124, 255, 154, 0.35);
+        transition: width 0.4s ease, background-size 0.4s ease;
+        z-index: 1;
+    }
+
+    .battery-min-dot,
+    .battery-max-dot {
+        position: absolute;
+        top: 50%;
+        width: 12px;
+        height: 12px;
+        background: #000000;
+        border: 2px solid rgba(255, 255, 255, 0.4);
+        border-radius: 50%;
+        z-index: 3;
+        transform: translate(-50%, -50%);
+        transition: left 0.4s ease;
+        box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
     }
 
     .battery-bar-labels {
         position: absolute;
         inset: 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 14px;
+        padding: 0;
         font-size: 14px;
         color: #0b0f18;
         font-weight: 700;
         mix-blend-mode: screen;
         text-shadow: 0 0 2px rgba(0,0,0,0.4);
         font-variant-numeric: tabular-nums;
+        z-index: 4;
+        pointer-events: none;
+    }
+
+    .battery-bar-labels span {
+        position: absolute;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+        transition: left 0.4s ease;
     }
 
     .sub-row {
@@ -453,40 +541,45 @@
 
     /* Phone-size tuning — keep numbers BIG for at-a-distance readability */
     @media (max-width: 500px) {
-        .metric-value { font-size: 54px; }
+        .metric-value { font-size: 54px; height: 54px; }
         .metric-value .unit { font-size: 28px; }
         .metric-label { font-size: 12px; letter-spacing: 0.4px; }
         .tile-title { font-size: 20px; }
         .tile-badge { font-size: 22px; padding: 5px 12px; }
-        .tile-icon { width: 56px; height: 56px; font-size: 32px; border-radius: 12px; }
+        .tile-icon { width: 50px; height: 50px; font-size: 28px; border-radius: 12px; }
+        .tile-header { height: 60px; }
+        .tile-top-extra { height: 38px; }
+        .tile-bottom-extra { height: 42px; }
         .metric-icon { font-size: 30px; }
         .metric { min-height: 92px; padding: 6px 3px; }
         .tile { padding: 6px 8px; border-radius: 12px; }
         .tile-header { margin-bottom: 4px; gap: 6px; }
         .dash { gap: 5px; padding: 1px; }
         .sub-chip { font-size: 12px; padding: 3px 8px; }
-        .battery-bar { height: 24px; margin: 2px 0 5px; }
+        .battery-bar { height: 24px; margin: 0; }
         .battery-bar-labels { font-size: 13px; padding: 0 10px; }
     }
 
     /* Very short screens — shrink chrome but keep numbers large & readable */
     @media (max-height: 700px) {
         .metric { min-height: 78px; padding: 5px 3px; }
-        .metric-value { font-size: 48px; }
+        .metric-value { font-size: 48px; height: 48px; }
         .metric-value .unit { font-size: 26px; }
         .metric-label { font-size: 12px; }
         .metric-icon { font-size: 26px; }
         .tile { padding: 5px 8px; }
-        .tile-header { margin-bottom: 3px; }
-        .tile-icon { width: 52px; height: 52px; font-size: 30px; }
+        .tile-header { margin-bottom: 3px; height: 52px; }
+        .tile-top-extra { height: 32px; }
+        .tile-bottom-extra { height: 36px; }
+        .tile-icon { width: 44px; height: 44px; font-size: 26px; }
         .tile-title { font-size: 18px; }
-        .battery-bar { height: 22px; margin: 1px 0 4px; }
+        .battery-bar { height: 22px; margin: 0; }
         .dash { gap: 4px; padding: 1px; }
     }
 
     /* Very small screens — keep numbers as big as possible */
     @media (max-width: 380px) {
-        .metric-value { font-size: 44px; }
+        .metric-value { font-size: 44px; height: 44px; }
         .metric-value .unit { font-size: 24px; }
         .metric-icon { font-size: 24px; }
         .metric { min-height: 78px; }
