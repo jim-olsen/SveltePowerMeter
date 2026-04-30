@@ -371,7 +371,7 @@
 
     .metric-value {
         font-size: 64px;
-        font-weight: 400;
+        font-weight: 700;
         color: #fca503;
         line-height: 1;
         text-align: center;
@@ -383,7 +383,7 @@
 
     .metric-value .unit {
         font-size: 34px;
-        font-weight: 400;
+        font-weight: 500;
         color: #e6eaf2;
         margin-left: 2px;
     }
