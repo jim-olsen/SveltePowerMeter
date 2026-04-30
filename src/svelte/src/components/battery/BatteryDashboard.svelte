@@ -6,7 +6,8 @@
         faBolt,
         faThermometerHalf,
         faChartBar,
-        faArrowLeft
+        faArrowLeft,
+        faSync
     } from "@fortawesome/free-solid-svg-icons";
 
     let battery_overall_percent = 0;
@@ -103,6 +104,10 @@
                         <span class="metric" on:click|stopPropagation={go('batteryBankTemperatureGraph')}>
                             <Fa icon={faThermometerHalf} style="color:#FF5C5C;font-size:10px;"/>
                             <b>{#if battery.battery_temps_f && battery.battery_temps_f.length > 0}{fmt(battery.battery_temps_f[0], 0)}{:else}---{/if}</b><small>°F</small>
+                        </span>
+                        <span class="metric">
+                            <Fa icon={faSync} style="color:#7CFF9A;font-size:10px;"/>
+                            <b>{fmt(battery.cycles, 0)}</b>
                         </span>
                     </div>
                 </div>
@@ -253,14 +258,14 @@
     /* ── Row: Metrics ── */
     .card-row-metrics {
         display: flex;
-        gap: 6px;
+        gap: 3px;
         justify-content: space-between;
     }
     .metric {
         display: inline-flex;
         align-items: center;
-        gap: 2px;
-        font-size: 12px;
+        gap: 1px;
+        font-size: 10px;
         cursor: pointer;
         padding: 1px 2px;
         border-radius: 3px;
@@ -270,11 +275,11 @@
     .metric b {
         color: #fca503;
         font-variant-numeric: tabular-nums;
-        font-size: 24px;
+        font-size: 16px;
     }
     .metric small {
         color: #8892A6;
-        font-size: 16px;
+        font-size: 10px;
         margin-left: 1px;
     }
 
