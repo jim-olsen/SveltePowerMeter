@@ -1,5 +1,6 @@
 import logging
 import time
+import threading
 import asyncio
 import paho.mqtt.client as mqtt
 import json
@@ -11,7 +12,7 @@ logger = logging.getLogger('energy_monitor')
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
-MQTT_CLIENT: mqtt.Client
+MQTT_CLIENT: mqtt.Client = None
 
 #
 # Startup the mqtt client and register callbacks to reconnect on any client disconnections
@@ -107,6 +108,10 @@ def main():
     batteries = sorted(find_all_batteries(10), key=lambda x: x.name())
 
     logger.info(f"Found batteries {batteries}")
+
+    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
+    mqtt_thread.daemon = True
+    mqtt_thread.start()
 
     monitor_batteries(batteries)
 
