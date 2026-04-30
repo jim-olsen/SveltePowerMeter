@@ -1,5 +1,6 @@
 import logging
 import time
+import threading
 import asyncio
 import paho.mqtt.client as mqtt
 import json
@@ -107,6 +108,10 @@ def main():
     batteries = sorted(find_all_batteries(10), key=lambda x: x.name())
 
     logger.info(f"Found batteries {batteries}")
+
+    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
+    mqtt_thread.daemon = True
+    mqtt_thread.start()
 
     monitor_batteries(batteries)
 
