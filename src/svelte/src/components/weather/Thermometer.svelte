@@ -8,7 +8,7 @@
     export let title = temperatureField;
     export let minTemp = -20;
     export let maxTemp = 100;
-    export let height = 240;
+    export let height = 140;
 
     let temperatureDiv, temperatureMinDiv, temperatureMaxDiv;
     let wxData = {};
@@ -38,65 +38,127 @@
         unsubscribeWeatherMinMax();
     });
 </script>
+
+<div class="thermo-wrap">
+    <span class="thermo-title">{title}</span>
+    <div class="thermometer" style="height: {height}px; width: {Math.max(14, height / 8)}px;">
+        <div class="temperatureMin" bind:this={temperatureMinDiv} style="height:0" data-value="---"></div>
+        <div class="temperatureMax" bind:this={temperatureMaxDiv} style="height:0" data-value="---"></div>
+        <div class="temperature" bind:this={temperatureDiv} style="height:0" data-value="---"></div>
+        <div class="graduations"></div>
+    </div>
+    <span class="thermo-value">{temperature ? Number(temperature).toFixed(1) : "---"}<span class="thermo-unit">°F</span></span>
+    <span class="thermo-range">{minTemperature ? Number(minTemperature).toFixed(0) : "---"}° / {maxTemperature ? Number(maxTemperature).toFixed(0) : "---"}°</span>
+</div>
+
 <style>
-    .thermometerWrapper {
+    .thermo-wrap {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: center;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
+        padding: 6px 4px;
     }
+
+    .thermo-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #b0b9c8;
+    }
+
+    .thermo-value {
+        font-size: 42px;
+        font-weight: 700;
+        color: #fca503;
+        line-height: 1;
+        font-variant-numeric: tabular-nums;
+        font-stretch: 90%;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .thermo-unit {
+        font-size: 22px;
+        font-weight: 500;
+        color: #e6eaf2;
+        margin-left: 1px;
+    }
+
+    @media (min-width: 1280px) and (min-height: 720px) {
+        .thermo-value { font-size: 56px; height: 56px; }
+        .thermo-unit { font-size: 30px; }
+    }
+
+    .thermo-range {
+        font-size: 11px;
+        font-weight: 600;
+        color: #8892A6;
+        font-variant-numeric: tabular-nums;
+    }
+
     .thermometer {
         background: #38383f;
         position: relative;
-        border: 9px solid #2a2a2e;
-        border-radius: 20px;
+        border: 6px solid #2a2a2e;
+        border-radius: 14px;
         z-index: 1;
-        margin-bottom: 20%;
+        margin-bottom: 15%;
     }
+
     .thermometer:before, .thermometer:after {
         position: absolute;
         content: "";
         border-radius: 50%;
     }
+
     .thermometer:before {
         width: 100%;
-        height: 34px;
-        bottom: 9px;
+        height: 24px;
+        bottom: 6px;
         background: #38383f;
         z-index: -1;
     }
+
     .thermometer:after {
         transform: translateX(-50%);
         width: 160%;
         height: 20%;
         background-color: #3dcadf;
         bottom: -15%;
-        border: 9px solid #2a2a2e;
+        border: 6px solid #2a2a2e;
         z-index: -3;
         left: 50%;
     }
+
     .thermometer .graduations {
         height: 59%;
         top: 20%;
         width: 50%;
     }
+
     .thermometer .graduations, .thermometer .graduations:before {
         position: absolute;
         border-top: 2px solid rgba(0, 0, 0, 0.5);
         border-bottom: 2px solid rgba(0, 0, 0, 0.5);
     }
+
     .thermometer .graduations:before {
         content: "";
         height: 34%;
         width: 100%;
         top: 32%;
     }
+
     .thermometer .temperature {
         bottom: 0;
         background: linear-gradient(#f17a65, #3dcadf) no-repeat bottom;
         width: 100%;
-        border-radius: 20px;
+        border-radius: 14px;
         background-size: 100% 240px;
         transition: all 0.2s ease-in-out;
     }
@@ -105,7 +167,7 @@
         bottom: 0;
         background: rgba(0,0,0,0) no-repeat bottom;
         width: 100%;
-        border-radius: 20px;
+        border-radius: 14px;
         background-size: 100% 240px;
         transition: all 0.2s ease-in-out;
     }
@@ -114,7 +176,7 @@
         bottom: 0;
         background: rgba(0,0,0,0) no-repeat bottom;
         width: 100%;
-        border-radius: 20px;
+        border-radius: 14px;
         background-size: 100% 240px;
         transition: all 0.2s ease-in-out;
     }
@@ -153,20 +215,8 @@
         content: "";
         border-top: 0.4545454545em solid transparent;
         border-bottom: 0.4545454545em solid transparent;
-        border-right: 0.6666666667em solid rgba(0, 0, 0, 0.7);
+        border-right: 0.6666666667em solid rgba(230, 234, 242, 0.85);
         left: 100%;
         top: calc(-1em / 2.2 + 5px);
     }
 </style>
-<div class="thermometerWrapper">
-    <span class="mediumSmallText">{title}</span>
-    <div class="thermometer" style="height: {height}px; width: {height / 10}px;">
-        <div class="temperatureMin" bind:this={temperatureMinDiv} style="height:0" data-value="---"></div>
-        <div class="temperatureMax" bind:this={temperatureMaxDiv} style="height:0" data-value="---"></div>
-        <div class="temperature" bind:this={temperatureDiv} style="height:0" data-value="---"></div>
-        <div class="graduations"></div>
-    </div>
-    <span class="mediumSmallText">{temperature ? Number(temperature).toFixed(1) : "---"}°F</span>
-    <span class="smallText">{minTemperature ? Number(minTemperature).toFixed(1) : "---"}°F / {maxTemperature ? Number(maxTemperature).toFixed(1) : "---"}°F</span>
-
-</div>

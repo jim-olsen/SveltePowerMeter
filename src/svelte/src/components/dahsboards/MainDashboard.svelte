@@ -413,7 +413,7 @@
     }
 
     .metric-value {
-        font-size: 56px;
+        font-size: 42px;
         font-weight: 700;
         color: #fca503;
         line-height: 1;
@@ -422,25 +422,31 @@
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         font-variant-numeric: tabular-nums;
         font-stretch: 90%;
-        height: 56px;
+        height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
     .metric-value .unit {
-        font-size: 30px;
+        font-size: 22px;
         font-weight: 500;
         color: #e6eaf2;
         margin-left: 2px;
     }
 
     .metric-label {
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         color: #b0b9c8;
+    }
+
+    @media (min-width: 1280px) and (min-height: 720px) {
+        .metric-value { font-size: 56px; height: 56px; }
+        .metric-value .unit { font-size: 30px; }
+        .metric-label { font-size: 14px; }
     }
 
     .battery-bar {
