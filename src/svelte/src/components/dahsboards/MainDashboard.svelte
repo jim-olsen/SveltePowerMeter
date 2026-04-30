@@ -341,7 +341,7 @@
     }
 
     .tile-badge {
-        font-size: 26px;
+        font-size: 22px;
         font-weight: 700;
         padding: 6px 14px;
         border-radius: 999px;
@@ -412,7 +412,7 @@
     }
 
     .metric-value {
-        font-size: 64px;
+        font-size: 56px;
         font-weight: 700;
         color: #fca503;
         line-height: 1;
@@ -421,14 +421,14 @@
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         font-variant-numeric: tabular-nums;
         font-stretch: 90%;
-        height: 64px;
+        height: 56px;
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
     .metric-value .unit {
-        font-size: 34px;
+        font-size: 30px;
         font-weight: 500;
         color: #e6eaf2;
         margin-left: 2px;
@@ -541,11 +541,11 @@
 
     /* Phone-size tuning — keep numbers BIG for at-a-distance readability */
     @media (max-width: 500px) {
-        .metric-value { font-size: 54px; height: 54px; }
-        .metric-value .unit { font-size: 28px; }
+        .metric-value { font-size: 48px; height: 48px; }
+        .metric-value .unit { font-size: 24px; }
         .metric-label { font-size: 12px; letter-spacing: 0.4px; }
         .tile-title { font-size: 20px; }
-        .tile-badge { font-size: 22px; padding: 5px 12px; }
+        .tile-badge { font-size: 20px; padding: 5px 12px; }
         .tile-icon { width: 50px; height: 50px; font-size: 28px; border-radius: 12px; }
         .tile-header { height: 60px; }
         .tile-top-extra { height: 38px; }
@@ -563,8 +563,8 @@
     /* Very short screens — shrink chrome but keep numbers large & readable */
     @media (max-height: 700px) {
         .metric { min-height: 78px; padding: 5px 3px; }
-        .metric-value { font-size: 48px; height: 48px; }
-        .metric-value .unit { font-size: 26px; }
+        .metric-value { font-size: 42px; height: 42px; }
+        .metric-value .unit { font-size: 22px; }
         .metric-label { font-size: 12px; }
         .metric-icon { font-size: 26px; }
         .tile { padding: 5px 8px; }
@@ -579,8 +579,8 @@
 
     /* Very small screens — keep numbers as big as possible */
     @media (max-width: 380px) {
-        .metric-value { font-size: 44px; height: 44px; }
-        .metric-value .unit { font-size: 24px; }
+        .metric-value { font-size: 38px; height: 38px; }
+        .metric-value .unit { font-size: 20px; }
         .metric-icon { font-size: 24px; }
         .metric { min-height: 78px; }
     }
