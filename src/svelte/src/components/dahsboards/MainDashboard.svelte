@@ -502,10 +502,9 @@
         inset: 0;
         padding: 0;
         font-size: 14px;
-        color: #0b0f18;
+        color: #167cbd !important;
         font-weight: 700;
-        mix-blend-mode: screen;
-        text-shadow: 0 0 2px rgba(0,0,0,0.4);
+        text-shadow: 0 0 2px rgba(0,0,0,0.8);
         font-variant-numeric: tabular-nums;
         z-index: 4;
         pointer-events: none;
@@ -517,6 +516,7 @@
         transform: translate(-50%, -50%);
         white-space: nowrap;
         transition: left 0.4s ease;
+        color: inherit;
     }
 
     .sub-row {
