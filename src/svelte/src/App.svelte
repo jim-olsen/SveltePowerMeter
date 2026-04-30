@@ -172,7 +172,7 @@
 </script>
 
 <svelte:window bind:outerWidth bind:outerHeight bind:innerWidth on:keydown={onKeyDown}/>
-<div style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px;"
+<div style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px; overflow: hidden;"
         on:dblclick={onDoubleTap}>
     {#if $currentView === 'dashboard'}
         <MainDashboard></MainDashboard>

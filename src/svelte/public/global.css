@@ -32,7 +32,7 @@ html, body {
     margin: 0;
 }
 
-body {
+    body {
     color: var(--text);
     background:
         radial-gradient(1200px 800px at 10% -10%, rgba(124, 199, 255, 0.10), transparent 60%),
@@ -48,7 +48,7 @@ body {
     display: flex;
     flex-flow: column;
     justify-content: flex-start;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 a {

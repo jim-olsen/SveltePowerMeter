@@ -262,6 +262,7 @@
         color: #e6eaf2;
         font-family: inherit;
         grid-auto-rows: 1fr;
+        overflow: hidden;
     }
 
     @media (min-width: 720px) {
