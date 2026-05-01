@@ -23,7 +23,7 @@ VICTRON_BLE_KEYS = {'FA:66:AD:B2:8C:E4': '932d4be6e50cb7f03148f8529b05f58b',
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
-MQTT_CLIENT: mqtt.Client
+MQTT_CLIENT: mqtt.Client = None
 
 # When we receive a bluetooth advertising packet from the victron charger, decode the available data and post to the
 # correct MQTT topic
@@ -224,11 +224,12 @@ def start_mqtt_client():
     while retries > 0:
         try:
             client.connect(MQTT_SERVER_ADDR, 1883, 60)
+            break
         except:
             logger.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
             retries -= 1
             time.sleep(10)
-    if not client.is_connected():
+    if retries <= 0:
         logger.error("Failed to connect to MQTT server, exiting....")
         os._exit(1)
     client.loop_forever()
