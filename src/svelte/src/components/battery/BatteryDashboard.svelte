@@ -134,8 +134,8 @@
     .dash-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 10px;
+        gap: 14px;
+        padding: 10px 16px;
         border-radius: 10px;
         background: linear-gradient(145deg, rgba(34, 40, 56, 0.85), rgba(20, 24, 36, 0.85));
         border: 1px solid rgba(255, 255, 255, 0.06);
@@ -148,10 +148,10 @@
     }
     .dash-header:active { transform: scale(0.985); }
 
-    .back-btn { font-size: 16px; color: #8892A6; }
-    .header-icon { font-size: 20px; display: flex; align-items: center; }
-    .header-title { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; }
-    .header-pct { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .back-btn { font-size: 26px; color: #8892A6; }
+    .header-icon { font-size: 34px; display: flex; align-items: center; }
+    .header-title { font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; }
+    .header-pct { font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
     /* ── Card grid — 2 cols ── */
     .card-grid {
@@ -194,7 +194,7 @@
         justify-content: space-between;
     }
     .card-name {
-        font-size: 14px;
+        font-size: 28px;
         font-weight: 700;
         letter-spacing: 0.3px;
         white-space: nowrap;
@@ -202,7 +202,7 @@
         text-overflow: ellipsis;
     }
     .card-status {
-        font-size: 11px;
+        font-size: 22px;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.3px;

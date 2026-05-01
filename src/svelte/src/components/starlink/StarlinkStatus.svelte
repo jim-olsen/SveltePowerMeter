@@ -113,7 +113,7 @@
     }
 
     .panel-title {
-        font-size: clamp(0.78rem, 1.45vw, 1rem);
+        font-size: clamp(1.56rem, 2.9vw, 2rem);
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -196,7 +196,7 @@
         }
 
         .panel-title {
-            font-size: clamp(0.7rem, 1.8vw, 0.86rem);
+            font-size: clamp(1.4rem, 3.6vw, 1.72rem);
         }
 
         .toggle-button {
