@@ -111,17 +111,17 @@
         <div class="metric-grid three">
             <div class="metric" on:click|stopPropagation={go('solarWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faSolarPanel}/></div>
-                <div class="metric-value">{fmt($powerCurrentData?.solar_watts)}</div>
+                <div class="metric-value">{fmt($powerCurrentData?.solar_watts, 0)}</div>
                 <div class="metric-label">Solar W</div>
             </div>
             <div class="metric" on:click|stopPropagation={go('loadGraph')}>
                 <div class="metric-icon"><Fa icon={faPlug}/></div>
-                <div class="metric-value">{fmt($powerCurrentData?.load_watts)}</div>
+                <div class="metric-value">{fmt($powerCurrentData?.load_watts, 0)}</div>
                 <div class="metric-label">Load W</div>
             </div>
             <div class="metric">
                 <div class="metric-icon"><Fa icon={faChartLine}/></div>
-                <div class="metric-value">{fmt($powerStatsData?.day_solar_wh)}</div>
+                <div class="metric-value">{fmt($powerStatsData?.day_solar_wh, 0)}</div>
                 <div class="metric-label">Solar Wh</div>
             </div>
         </div>
@@ -158,12 +158,12 @@
         <div class="metric-grid two">
             <div class="metric" on:click|stopPropagation={go('batteryWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faBolt}/></div>
-                <div class="metric-value">{fmt($powerStatsData?.day_batt_wh)}</div>
+                <div class="metric-value">{fmt($powerStatsData?.day_batt_wh, 0)}</div>
                 <div class="metric-label">Batt Wh</div>
             </div>
             <div class="metric">
                 <div class="metric-icon"><Fa icon={faPlug}/></div>
-                <div class="metric-value">{fmt($powerStatsData?.day_load_wh)}</div>
+                <div class="metric-value">{fmt($powerStatsData?.day_load_wh, 0)}</div>
                 <div class="metric-label">Load Wh</div>
             </div>
         </div>
