@@ -141,6 +141,7 @@ def start_mqtt_client():
     while retries > 0:
         try:
             client.connect(MQTT_SERVER_ADDR, 1883, 60)
+            break
         except:
             logger.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
             retries -= 1
