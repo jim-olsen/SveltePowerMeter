@@ -23,7 +23,7 @@ VICTRON_BLE_KEYS = {'FA:66:AD:B2:8C:E4': '932d4be6e50cb7f03148f8529b05f58b',
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 LAST_BEACON_RECEIVED = time.time()
-MQTT_CLIENT: mqtt.Client
+MQTT_CLIENT: mqtt.Client = None
 
 # When we receive a bluetooth advertising packet from the victron charger, decode the available data and post to the
 # correct MQTT topic

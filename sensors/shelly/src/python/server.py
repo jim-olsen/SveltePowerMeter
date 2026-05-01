@@ -8,6 +8,7 @@ import paho.mqtt.client as mqtt
 import requests
 
 MQTT_SERVER_ADDR = '10.0.10.31'
+MQTT_CLIENT: mqtt.Client = None
 SHELLY_DEVICES = {}
 
 logger = logging.getLogger('test_mqtt')
