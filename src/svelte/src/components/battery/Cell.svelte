@@ -30,8 +30,8 @@
 
             if (battery && batteryFill) {
                 voltage = battery.cell_block_voltages[voltageIndex];
-                percentage = ((voltage / 3.6) * 100) * 1.45;
-                batteryFill.style.width = percentage;
+                percentage = Math.min(100, Math.max(0, ((voltage - 2.5) / (3.65 - 2.5)) * 100));
+                batteryFill.style.width = percentage + '%';
             }
         }
     }
@@ -43,47 +43,50 @@
     .battery {
         position: relative;
         display: block;
-        margin: 0 0 0 5px;
-        width: 50px;
-        height: 28px;
-        float: left;
+        margin: 0;
+        width: 100%;
+        height: 48px;
+        flex-shrink: 0;
     }
 
     .battery:before {
         content: "";
         display: block;
         background: transparent;
-        border: 6px solid #ffffff;
-        margin: 0px;
-        width: 85px;
-        height: 40px;
+        border: 3px solid #ffffff;
+        margin: 0;
+        width: 100%;
+        height: 100%;
         position: absolute;
         border-radius: 2px;
+        box-sizing: border-box;
     }
 
     .battery:after {
         content: "";
         display: block;
         background: transparent;
-        border: 6px solid #ffffff;
-        margin: 12px 93px;
-        width: 6px;
-        height: 16px;
+        border: 3px solid #ffffff;
         position: absolute;
-        border-radius: 2px;
+        top: 25%;
+        left: 100%;
+        width: 8px;
+        height: 50%;
+        margin: 0;
+        border-radius: 0 2px 2px 0;
+        box-sizing: border-box;
     }
 
     .battery_level {
-        margin: 12px;
+        margin: 3px;
         background: #059669;
         content: "";
         display: block;
         position: absolute;
-        height: 100%;
+        height: calc(100% - 6px);
+        max-width: calc(100% - 6px);
     }
 </style>
-<div style="height: 60px;">
-    <div class="battery">
-        <div bind:this={batteryFill} class="battery_level" style="width: {percentage}%;"></div>
-    </div>
+<div class="battery">
+    <div bind:this={batteryFill} class="battery_level" style="width: {percentage}%;"></div>
 </div>
