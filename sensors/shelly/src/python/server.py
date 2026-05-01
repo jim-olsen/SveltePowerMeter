@@ -3,6 +3,7 @@ import re
 import threading
 import time
 import json
+import os
 import paho.mqtt.client as mqtt
 import requests
 
@@ -135,7 +136,17 @@ def start_mqtt_client():
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
     client.on_message = on_message
-    client.connect(MQTT_SERVER_ADDR, 1883, 60)
+    retries = 5
+    while retries > 0:
+        try:
+            client.connect(MQTT_SERVER_ADDR, 1883, 60)
+        except:
+            logger.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
+            retries -= 1
+            time.sleep(10)
+    if not client.is_connected():
+        logger.error("Failed to connect to MQTT server, exiting....")
+        os._exit(1)
     client.loop_forever()
 
 def main():

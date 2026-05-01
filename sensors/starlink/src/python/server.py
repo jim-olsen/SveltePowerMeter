@@ -2,6 +2,7 @@ import time
 import logging
 import threading
 import json
+import os
 import paho.mqtt.client as mqtt
 from Starlink import Starlink
 
@@ -34,7 +35,17 @@ def start_mqtt_client():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    client.connect(MQTT_SERVER_ADDR, 1883, 60)
+    retries = 5
+    while retries > 0:
+        try:
+            client.connect(MQTT_SERVER_ADDR, 1883, 60)
+        except:
+            LOG.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
+            retries -= 1
+            time.sleep(10)
+    if not client.is_connected():
+        LOG.error("Failed to connect to MQTT server, exiting....")
+        os._exit(1)
     client.loop_forever()
 
 def publish_starlink_data(dishy):

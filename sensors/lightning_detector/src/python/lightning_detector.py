@@ -2,6 +2,7 @@ import logging
 import time
 import paho.mqtt.client as mqtt
 import json
+import os
 import RPi.GPIO as GPIO
 
 from DFRobot_AS3935_Lib import DFRobot_AS3935
@@ -39,7 +40,17 @@ def start_mqtt_client():
     client = mqtt.Client()
     client.on_connect = on_connect
     client.on_disconnect = on_disconnect
-    client.connect(MQTT_SERVER_ADDR, 1883, 60)
+    retries = 5
+    while retries > 0:
+        try:
+            client.connect(MQTT_SERVER_ADDR, 1883, 60)
+        except:
+            logger.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
+            retries -= 1
+            time.sleep(10)
+    if not client.is_connected():
+        logger.error("Failed to connect to MQTT server, exiting....")
+        os._exit(1)
     client.loop_forever()
 
 def lightning_sensor_callback_handler(channel):
