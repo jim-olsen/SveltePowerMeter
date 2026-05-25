@@ -155,7 +155,12 @@
                 </div>
             </div>
         </div>
-        <div class="metric-grid two">
+        <div class="metric-grid three">
+            <div class="metric" on:click|stopPropagation={go('battery_dashboard')}>
+                <div class="metric-icon" style="color: {batteryColor};"><Fa icon={faCarBattery}/></div>
+                <div class="metric-value">{fmt(batteryPct, 1, '%')}</div>
+                <div class="metric-label">Battery</div>
+            </div>
             <div class="metric" on:click|stopPropagation={go('batteryWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faBolt}/></div>
                 <div class="metric-value">{fmt($powerStatsData?.day_batt_wh, 0)}</div>
