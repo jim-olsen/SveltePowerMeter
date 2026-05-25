@@ -69,6 +69,39 @@
         return () => $currentView = view;
     }
 
+    /*
+     * autoScale: Svelte action that watches an element's width with a
+     * ResizeObserver and sets CSS custom properties --mv (metric-value
+     * font-size, px) and --ml (metric-label font-size, px) on the element.
+     *
+     * Sizing strategy mirrors the previous container-query approach but
+     * works without `container-type` / `cqi` units (which can be flaky in
+     * some Svelte build pipelines / older browsers):
+     *   value font-size  ~= width / 3.4  (fits "9999.9" with tabular-nums +
+     *                                      font-stretch 90% glyphs ~0.50em)
+     *   label font-size  ~= value * 12/42  (preserve original ratio)
+     * Each is clamped to a sensible min/max.
+     */
+    function autoScale(node) {
+        const apply = (w) => {
+            if (!w) return;
+            const value = Math.max(28, Math.min(64, w / 3.4));
+            const label = Math.max(9, Math.min(18, value * 12 / 42));
+            node.style.setProperty('--mv', value.toFixed(2) + 'px');
+            node.style.setProperty('--ml', label.toFixed(2) + 'px');
+        };
+        apply(node.clientWidth);
+        const ro = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                apply(entry.contentRect.width);
+            }
+        });
+        ro.observe(node);
+        return {
+            destroy() { ro.disconnect(); }
+        };
+    }
+
     $: batteryPct = $powerCurrentData?.battery_percent;
     $: batteryLevel = batteryPct != null ? Math.max(0, Math.min(100, batteryPct)) : 0;
     $: batteryMin = $powerStatsData?.battery_min_percent != null ? Math.max(0, Math.min(100, $powerStatsData.battery_min_percent)) : 0;
@@ -109,17 +142,17 @@
         </div>
         <div class="tile-top-extra"></div>
         <div class="metric-grid three">
-            <div class="metric" on:click|stopPropagation={go('solarWattsGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('solarWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faSolarPanel}/></div>
                 <div class="metric-value">{fmt($powerCurrentData?.solar_watts, 0)}</div>
                 <div class="metric-label">Solar W</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('loadGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('loadGraph')}>
                 <div class="metric-icon"><Fa icon={faPlug}/></div>
                 <div class="metric-value">{fmt($powerCurrentData?.load_watts, 0)}</div>
                 <div class="metric-label">Load W</div>
             </div>
-            <div class="metric">
+            <div class="metric" use:autoScale>
                 <div class="metric-icon"><Fa icon={faChartLine}/></div>
                 <div class="metric-value">{fmt($powerStatsData?.day_solar_wh, 0)}</div>
                 <div class="metric-label">Solar Wh</div>
@@ -156,17 +189,17 @@
             </div>
         </div>
         <div class="metric-grid three">
-            <div class="metric" on:click|stopPropagation={go('battery_dashboard')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('battery_dashboard')}>
                 <div class="metric-icon" style="color: {batteryColor};"><Fa icon={faCarBattery}/></div>
                 <div class="metric-value">{fmt(batteryPct, 1, '%')}</div>
                 <div class="metric-label">Battery</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('batteryWattsGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('batteryWattsGraph')}>
                 <div class="metric-icon"><Fa icon={faBolt}/></div>
                 <div class="metric-value">{fmt($powerStatsData?.day_batt_wh, 0)}</div>
                 <div class="metric-label">Batt Wh</div>
             </div>
-            <div class="metric">
+            <div class="metric" use:autoScale>
                 <div class="metric-icon"><Fa icon={faPlug}/></div>
                 <div class="metric-value">{fmt($powerStatsData?.day_load_wh, 0)}</div>
                 <div class="metric-label">Load Wh</div>
@@ -188,17 +221,17 @@
         </div>
         <div class="tile-top-extra"></div>
         <div class="metric-grid three">
-            <div class="metric" on:click|stopPropagation={go('outTempGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('outTempGraph')}>
                 <div class="metric-icon"><Fa icon={faTemperatureHigh}/></div>
                 <div class="metric-value">{fmt($weatherData?.outTemp_F, 1)}<span class="unit">°F</span></div>
                 <div class="metric-label">Out Temp</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('inTempGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('inTempGraph')}>
                 <div class="metric-icon"><Fa icon={faTemperatureLow}/></div>
                 <div class="metric-value">{fmt($weatherData?.inTemp_F, 1)}<span class="unit">°F</span></div>
                 <div class="metric-label">In Temp</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('windGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('windGraph')}>
                 <div class="metric-icon"><Fa icon={faWind}/></div>
                 <div class="metric-value">{fmt($weatherData?.wind_average)}</div>
                 <div class="metric-label">Wind Avg</div>
@@ -221,17 +254,17 @@
         </div>
         <div class="tile-top-extra"></div>
         <div class="metric-grid three">
-            <div class="metric" on:click|stopPropagation={go('starlinkSpeedGraphs')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('starlinkSpeedGraphs')}>
                 <div class="metric-icon"><Fa icon={faArrowDown}/></div>
                 <div class="metric-value">{$starlinkStatus?.downlink_throughput_bps ? ($starlinkStatus.downlink_throughput_bps / 1e6).toFixed(1) : '---'}</div>
                 <div class="metric-label">Down Mbps</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('starlinkSpeedGraphs')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('starlinkSpeedGraphs')}>
                 <div class="metric-icon"><Fa icon={faArrowUp}/></div>
                 <div class="metric-value">{$starlinkStatus?.uplink_throughput_bps ? ($starlinkStatus.uplink_throughput_bps / 1e6).toFixed(1) : '---'}</div>
                 <div class="metric-label">Up Mbps</div>
             </div>
-            <div class="metric" on:click|stopPropagation={go('starlinkPingGraphs')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('starlinkPingGraphs')}>
                 <div class="metric-icon"><Fa icon={faSignal}/></div>
                 <div class="metric-value">{starlinkHistoryData?.average_ping_drop_rate != null ? (starlinkHistoryData.average_ping_drop_rate * 100).toFixed(1) + '%' : '---'}</div>
                 <div class="metric-label">Avg Drop</div>
@@ -417,8 +450,24 @@
         margin-bottom: 2px;
     }
 
+    /*
+     * Dynamic font scaling for metric values.
+     *
+     * Goal: scale the value font-size to be as large as possible while still
+     * fitting up to 4 digits + 1 decimal point + 1 fractional digit (e.g.
+     * "9999.9" -> 6 glyphs) inside the metric column at any viewport.
+     *
+     * With tabular-nums + font-stretch:90%, each glyph occupies roughly
+     * ~0.50em of horizontal space, so 6 glyphs ~= 3.0em. Allowing a small
+     * inner padding margin, picking font-size ~= containerWidth / 3.4
+     * (i.e. ~29.4cqi) gives the largest size that still fits "9999.9".
+     *
+     * The clamp() bounds preserve the previous visual range (42px base,
+     * 56px on large screens) as min/max so very narrow or very wide
+     * containers still look sensible.
+     */
     .metric-value {
-        font-size: 42px;
+        font-size: var(--mv, 42px);
         font-weight: 700;
         color: #fca503;
         line-height: 1;
@@ -427,31 +476,31 @@
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         font-variant-numeric: tabular-nums;
         font-stretch: 90%;
-        height: 42px;
+        /* Height tracks font-size so the row keeps its proportions. */
+        height: 1em;
         display: flex;
         align-items: center;
         justify-content: center;
+        white-space: nowrap;
     }
 
     .metric-value .unit {
-        font-size: 22px;
+        /* Unit glyphs (e.g. "°F") scale with the value, matching the
+           original 22/42 ~= 52% ratio. */
+        font-size: 0.52em;
         font-weight: 500;
         color: #e6eaf2;
         margin-left: 2px;
     }
 
     .metric-label {
-        font-size: 12px;
+        /* Label scales proportionally to the value to keep the original
+           label/value size ratio (12/42 ~= 28.6%). */
+        font-size: var(--ml, 12px);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.6px;
         color: #b0b9c8;
-    }
-
-    @media (min-width: 1280px) and (min-height: 720px) {
-        .metric-value { font-size: 56px; height: 56px; }
-        .metric-value .unit { font-size: 30px; }
-        .metric-label { font-size: 14px; }
     }
 
     .battery-bar {
@@ -553,9 +602,9 @@
 
     /* Phone-size tuning — keep numbers BIG for at-a-distance readability */
     @media (max-width: 500px) {
-        .metric-value { font-size: 48px; height: 48px; }
-        .metric-value .unit { font-size: 24px; }
-        .metric-label { font-size: 12px; letter-spacing: 0.4px; }
+        /* .metric-value / .metric-label sizes are driven by the autoScale
+           action (CSS vars --mv / --ml); no fixed overrides here. */
+        .metric-label { letter-spacing: 0.4px; }
         .tile-title { font-size: 20px; }
         .tile-badge { font-size: 20px; padding: 5px 12px; }
         .tile-icon { width: 50px; height: 50px; font-size: 28px; border-radius: 12px; }
@@ -575,9 +624,6 @@
     /* Very short screens — shrink chrome but keep numbers large & readable */
     @media (max-height: 700px) {
         .metric { min-height: 78px; padding: 5px 3px; }
-        .metric-value { font-size: 42px; height: 42px; }
-        .metric-value .unit { font-size: 22px; }
-        .metric-label { font-size: 12px; }
         .metric-icon { font-size: 26px; }
         .tile { padding: 5px 8px; }
         .tile-header { margin-bottom: 3px; height: 52px; }
@@ -591,8 +637,6 @@
 
     /* Very small screens — keep numbers as big as possible */
     @media (max-width: 380px) {
-        .metric-value { font-size: 38px; height: 38px; }
-        .metric-value .unit { font-size: 20px; }
         .metric-icon { font-size: 24px; }
         .metric { min-height: 78px; }
     }
