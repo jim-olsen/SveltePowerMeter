@@ -154,7 +154,7 @@
             </div>
             <div class="metric" use:autoScale>
                 <div class="metric-icon"><Fa icon={faChartLine}/></div>
-                <div class="metric-value">{fmt($powerStatsData?.day_solar_wh, 0)}</div>
+                <div class="metric-value">{fmt($powerCurrentData?.day_solar_wh, 0)}</div>
                 <div class="metric-label">Solar Wh</div>
             </div>
         </div>
