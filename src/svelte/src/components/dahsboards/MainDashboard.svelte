@@ -107,13 +107,6 @@
     $: batteryMin = $powerStatsData?.battery_min_percent != null ? Math.max(0, Math.min(100, $powerStatsData.battery_min_percent)) : 0;
     $: batteryMax = $powerStatsData?.battery_max_percent != null ? Math.max(0, Math.min(100, $powerStatsData.battery_max_percent)) : 0;
     
-    // Logic to keep min/max text readable if they are too close
-    // Labels are centered on the dots. Each label is roughly 7-8% wide on a 100% bar.
-    // We want at least ~25% gap between the text centers for readability.
-    // We also clamp them so they don't go off-screen (approx 10% margin for half-label width)
-    $: minTextPos = Math.max(10, Math.min(batteryMin, batteryMax - 25));
-    $: maxTextPos = Math.min(90, Math.max(batteryMax, batteryMin + 25));
-
     $: batteryRangeWidth = Math.max(0, batteryMax - batteryMin);
     $: batteryColor = batteryPct == null
         ? '#8892A6'
@@ -168,8 +161,8 @@
                 <Fa icon={faCarBattery}/>
             </div>
             <div class="tile-title">Battery</div>
-            <div class="tile-badge" style="color: {batteryColor};">
-                {batteryPct != null ? batteryPct.toFixed(1) + '%' : '---'}
+            <div class="tile-badge" style="color: {batteryColor}; font-size: 16px;">
+                {fmt($powerStatsData?.battery_min_percent, 1, '%')} / {fmt($powerStatsData?.battery_max_percent, 1, '%')}
             </div>
         </div>
         <div class="tile-top-extra">
@@ -181,10 +174,6 @@
                             background: linear-gradient(90deg, #FF5C5C 0%, #FFE45E 33%, #7CFF9A 66%, #7CFF9A 100%); 
                             background-size: {(100 / (batteryLevel || 0.1)) * 100}% 100%;
                             box-shadow: 0 0 12px {batteryColor}55;">
-                </div>
-                <div class="battery-bar-labels">
-                    <span class="min-label" style="left: {minTextPos}%;">Min {fmt($powerStatsData?.battery_min_percent, 2, '%')}</span>
-                    <span class="max-label" style="left: {maxTextPos}%;">Max {fmt($powerStatsData?.battery_max_percent, 2, '%')}</span>
                 </div>
             </div>
         </div>
@@ -558,27 +547,6 @@
         box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
     }
 
-    .battery-bar-labels {
-        position: absolute;
-        inset: 0;
-        padding: 0;
-        font-size: 14px;
-        color: #167cbd !important;
-        font-weight: 700;
-        text-shadow: 0 0 2px rgba(0,0,0,0.8);
-        font-variant-numeric: tabular-nums;
-        z-index: 4;
-        pointer-events: none;
-    }
-
-    .battery-bar-labels span {
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        white-space: nowrap;
-        transition: left 0.4s ease;
-        color: inherit;
-    }
 
     .sub-row {
         display: flex;
@@ -618,7 +586,6 @@
         .dash { gap: 5px; padding: 1px; }
         .sub-chip { font-size: 12px; padding: 3px 8px; }
         .battery-bar { height: 24px; margin: 0; }
-        .battery-bar-labels { font-size: 13px; padding: 0 10px; }
     }
 
     /* Very short screens — shrink chrome but keep numbers large & readable */
