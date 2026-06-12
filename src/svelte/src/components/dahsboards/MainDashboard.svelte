@@ -161,7 +161,7 @@
                 <Fa icon={faCarBattery}/>
             </div>
             <div class="tile-title">Battery</div>
-            <div class="tile-badge" style="color: {batteryColor}; font-size: 16px;">
+            <div class="tile-badge" style="color: {batteryColor}">
                 {fmt($powerStatsData?.battery_min_percent, 1, '%')} / {fmt($powerStatsData?.battery_max_percent, 1, '%')}
             </div>
         </div>
