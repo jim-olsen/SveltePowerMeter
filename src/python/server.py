@@ -495,6 +495,7 @@ def start_mqtt_client():
         CURRENT_DATA.battery_charge_current = charger_data.get("battery_charge_current", 0)
         CURRENT_DATA.charge_state = charger_data.get("charge_state", "OTHER")
         CURRENT_DATA.battery_voltage = charger_data.get("battery_voltage", 0)
+        CURRENT_DATA.day_solar_wh = charger_data.get("day_solar_wh", 0)
         socketio.emit('current_data', CURRENT_DATA.__dict__)
         # We need to protect against the charge controller resetting this running stat before we increment the day,
         # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
