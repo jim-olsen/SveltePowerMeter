@@ -205,7 +205,9 @@
             </div>
             <div class="tile-title">Weather</div>
             <div class="tile-badge">
-                {$weatherData?.outTemp_F ? Number($weatherData.outTemp_F).toFixed(0) + '°F' : '---'}
+                {$weatherData?.outTemp_F_min != null && $weatherData?.outTemp_F_max != null
+                    ? Number($weatherData.outTemp_F_min).toFixed(0) + '°/' + Number($weatherData.outTemp_F_max).toFixed(0) + '°F'
+                    : '---'}
             </div>
         </div>
         <div class="tile-top-extra"></div>
