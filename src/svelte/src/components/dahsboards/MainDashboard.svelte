@@ -24,6 +24,7 @@
         powerCurrentData,
         powerStatsData,
         weatherData,
+        weatherDailyMinMax,
         starlinkStatus,
         starlinkHistory,
         currentView
@@ -205,8 +206,8 @@
             </div>
             <div class="tile-title">Weather</div>
             <div class="tile-badge">
-                {$weatherData?.outTemp_F_min != null && $weatherData?.outTemp_F_max != null
-                    ? Number($weatherData.outTemp_F_min).toFixed(0) + '°/' + Number($weatherData.outTemp_F_max).toFixed(0) + '°F'
+                {$weatherDailyMinMax?.outTemp_F_min != null && $weatherDailyMinMax?.outTemp_F_max != null
+                    ? Number($weatherDailyMinMax.outTemp_F_min).toFixed(0) + '°/' + Number($weatherDailyMinMax.outTemp_F_max).toFixed(0) + '°F'
                     : '---'}
             </div>
         </div>
