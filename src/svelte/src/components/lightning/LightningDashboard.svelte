@@ -1,5 +1,6 @@
 <script>
-    import {lightningData, currentView} from "../../stores";
+    import {lightningData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
     import {faBoltLightning} from "@fortawesome/free-solid-svg-icons";
     import Fa from "svelte-fa";
     import FaLayers from "svelte-fa/src/fa-layers.svelte";
@@ -8,7 +9,7 @@
 <div style="display:flex; flex-flow:column; justify-content: space-evenly; align-items: center; width: 100%; gap: 5px;">
     <div style="display:flex; flex-flow:row; justify-content: space-evenly; align-items: center; width: 100%; gap: 5px;">
         <div style="display:flex; flex-flow: row; justify-content: center; align-items: center; flex: 1; color: yellow; font-size: 6vh;"
-            on:click={() => $currentView = 'dashboard'}>
+            on:click={() => currentView.value = 'dashboard'}>
             <FaLayers size="10x" style="color: darkgoldenrod;">
                 <Fa icon="{faBoltLightning}"/>
                 <FaLayersText scale="{1.1}" style="color:greenyellow;font-weight: bolder;">{$lightningData?.last_strike_24hr?.distance}</FaLayersText>
@@ -31,3 +32,5 @@
         <div><span class="mediumSmallText">{$lightningData?.summary?.total_noise ? $lightningData?.summary?.total_noise : '0'} total noise</span></div>
     </div>
 </div>
+
+

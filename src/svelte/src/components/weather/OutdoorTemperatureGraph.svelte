@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {temperatureGraphData, weatherGraphDuration} from "../../stores";
+    import {temperatureGraphData, weatherGraphDuration} from "../../stores.svelte.js";
     import DurationalLineChart from "../d3/DurationalLineChart.svelte";
 
     export let chartWidth=800
@@ -26,3 +26,5 @@
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Degrees F"
                          graphDataSets={graphData} duration={weatherGraphDuration} />
 </div>
+
+

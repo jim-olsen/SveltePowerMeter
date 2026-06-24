@@ -1,7 +1,7 @@
 <script>
     import ShellyRelayDevice from "./ShellyRelayDevice.svelte";
     import {onDestroy, onMount} from "svelte";
-    import {currentView} from "../../stores";
+    import {currentView} from "../../states.svelte.js";
 
     let shellyDevices = []
 
@@ -30,9 +30,11 @@
     onDestroy(() => { clearInterval(deviceInterval)})
 </script>
 <div role="button" tabindex="0" style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 15px; gap: 15px;"
-     on:click={(e) => {if (e.target === this) {$currentView = 'dashboard'}}}
-     on:keydown={(e) => {if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {$currentView = 'dashboard'}}}>
+     on:click={(e) => {if (e.target === this) {currentView.value = 'dashboard'}}}
+     on:keydown={(e) => {if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {currentView.value = 'dashboard'}}}>
 {#each shellyDevices as device}
         <ShellyRelayDevice shellyDeviceName={device.name} />
 {/each}
 </div>
+
+

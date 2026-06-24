@@ -1,8 +1,8 @@
 <script>
     import {onDestroy} from 'svelte';
     import LineChart from "../d3/LineChart.svelte";
-    import {starlinkStatus} from "../../stores";
-    import {starlinkGraphHistory} from "../../stores";
+    import {starlinkStatus} from "../../stores.svelte.js";
+    import {starlinkGraphHistory} from "../../stores.svelte.js";
 
     export let chartWidth = 600;
     export let chartHeight = 300;
@@ -44,3 +44,6 @@
         </div>
     </div>
 </div>
+
+
+

@@ -8,8 +8,6 @@ let lastBlueIrisAlert = {};
 let lastADSBData = {};
 let websocket = io();
 
-export const currentView = writable('dashboard');
-
 /**
  * Retrieve the graph data for battery voltage over time.  The powerGraphDuration writeable provides the number of
  * days over which to fetch the data.
@@ -679,3 +677,6 @@ export const lightningData = writable({}, () => {
         websocket.removeAllListeners('lightning_data');
     }
 })
+
+
+

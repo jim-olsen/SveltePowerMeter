@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte';
-    import {starlinkStatus} from "../../stores";
+    import {starlinkStatus} from "../../stores.svelte.js";
 
     let services = [];
     let state = "UNKNOWN";
@@ -132,3 +132,5 @@
         }
     }
     </style>
+
+

@@ -1,5 +1,6 @@
 <script>
-    import {batteryCurrentData, currentView} from "../../stores";
+    import {batteryCurrentData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
 
     export let voltageIndex = 0;
     export let battery_name;
@@ -90,3 +91,5 @@
 <div class="battery">
     <div bind:this={batteryFill} class="battery_level" style="width: {percentage}%;"></div>
 </div>
+
+

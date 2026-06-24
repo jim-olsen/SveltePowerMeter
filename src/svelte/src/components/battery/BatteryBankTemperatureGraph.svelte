@@ -1,7 +1,7 @@
 <script>
     import {onDestroy} from 'svelte'
     import {group} from "d3"
-    import {batteryBankTemperatureGraphData, powerGraphDuration} from "../../stores";
+    import {batteryBankTemperatureGraphData, powerGraphDuration} from "../../stores.svelte.js";
     import DurationalLineChart from "../d3/DurationalLineChart.svelte";
 
     export let chartWidth=800
@@ -29,3 +29,5 @@
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Volts"
                          graphDataSets={graphData} duration={powerGraphDuration}/>
 </div>
+
+

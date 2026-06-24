@@ -1,5 +1,5 @@
 <script>
-    import {weatherData, weatherDailyMinMax} from "../../stores";
+    import {weatherData, weatherDailyMinMax} from "../../stores.svelte.js";
     import {onDestroy} from "svelte";
 
     export let temperatureField = "outTemp_F";
@@ -220,3 +220,6 @@
         top: calc(-1em / 2.2 + 5px);
     }
 </style>
+
+
+

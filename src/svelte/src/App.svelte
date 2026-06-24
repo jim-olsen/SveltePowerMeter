@@ -13,7 +13,8 @@
     import LoadGraph from "./components/powermeter/LoadGraph.svelte";
     import BlueIrisAlert from "./components/blueiris/BlueIrisAlert.svelte";
 
-    import {blueIrisAlert, currentView, lightningData, adsbData} from "./stores";
+    import {blueIrisAlert, lightningData, adsbData} from "./stores.svelte.js";
+    import {currentView} from "./states.svelte.js";
     import MainDashboard from "./components/dahsboards/MainDashboard.svelte";
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
     import WxDashboard from "./components/weather/WxDashboard.svelte";
@@ -49,10 +50,10 @@
      * @param previousView The previous view to restore to before the popup happened.
      */
     function restoreView(callingView, previousView) {
-        if ($currentView !== callingView) {
+        if (currentView.value !== callingView) {
             setTimeout(restoreView, 500, callingView, previousView);
         } else {
-            $currentView = previousView;
+            currentView.value = previousView;
         }
     }
 
@@ -60,9 +61,9 @@
      * Cause the Blue iris alert to pop up and display the view of the new alert we have received
      */
     function displayBlueIrisAlert() {
-        if ($currentView !== 'alerts') {
-            let previousView = $currentView;
-            $currentView = 'alerts';
+        if (currentView.value !== 'alerts') {
+            let previousView = currentView.value;
+            currentView.value = 'alerts';
             setTimeout(restoreView, 30000, 'alerts', previousView);
         }
     }
@@ -71,9 +72,9 @@
      * Display a new ADSB alert of incoming plane
      */
     function displayADSBData() {
-        if ($currentView !== 'adsb') {
-            let previousView = $currentView;
-            $currentView = 'adsb';
+        if (currentView.value !== 'adsb') {
+            let previousView = currentView.value;
+            currentView.value = 'adsb';
             setTimeout(restoreView, 30000, 'adsb', previousView);
         }
     }
@@ -82,9 +83,9 @@
      * Cause the lightning alert screen to display the new lightning data we received
      */
     function displayLightningAlert() {
-        if ($currentView !== 'lightningDashboard') {
-            let previousView = $currentView;
-            $currentView = 'lightningDashboard';
+        if (currentView.value !== 'lightningDashboard') {
+            let previousView = currentView.value;
+            currentView.value = 'lightningDashboard';
             setTimeout(restoreView, 30000, 'lightningDashboard', previousView);
         }
     }
@@ -98,7 +99,7 @@
             lastBlueIrisAlert = data;
         } else if (data.hasOwnProperty("id") && lastBlueIrisAlert.id !== data.id) {
             lastBlueIrisAlert = data;
-            if (alertAllowedViews.includes($currentView)) {
+            if (alertAllowedViews.includes(currentView.value)) {
                 displayBlueIrisAlert()
             }
         }
@@ -113,7 +114,7 @@
             lastADSBData = data;
         } else if (data.hasOwnProperty("id") && lastADSBData.id !== data.id) {
             lastADSBData = data;
-            if (alertAllowedViews.includes($currentView)) {
+            if (alertAllowedViews.includes(currentView.value)) {
                 displayADSBData();
             }
         }
@@ -128,7 +129,7 @@
             data.hasOwnProperty("last_strike_24hr") &&
             data?.last_strike_24hr?.hasOwnProperty("intensity") &&
             data?.last_strike_24hr?.intensity != lastLightningData?.last_strike_24hr?.intensity &&
-            alertAllowedViews.includes($currentView)) {
+            alertAllowedViews.includes(currentView.value)) {
                 displayLightningAlert();
         }
         lastLightningData = data;
@@ -159,14 +160,14 @@
         if (!event.repeat) {
             switch(event.key) {
                 case "f":
-                    $currentView = "navigation";
+                    currentView.value = "navigation";
                     break;
             }
         }
     }
 
     function onDoubleTap() {
-        $currentView = "navigation";
+        currentView.value = "navigation";
     }
 
 </script>
@@ -174,101 +175,104 @@
 <svelte:window bind:outerWidth bind:outerHeight bind:innerWidth on:keydown={onKeyDown}/>
 <div role="application" style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px; overflow: hidden;"
         on:dblclick={onDoubleTap}>
-    {#if $currentView === 'dashboard'}
+    {#if currentView.value === 'dashboard'}
         <MainDashboard></MainDashboard>
-    {:else if graphViews.includes($currentView)}
+    {:else if graphViews.includes(currentView.value)}
         <div style="display:flex; flex-flow: column;justify-content: space-between; width: 100%; gap: 4px">
             <CurrentValues/>
             <div bind:clientWidth={graphWidth} bind:clientHeight={graphHeight} style="height: 100%; width:100%;">
-                {#if $currentView === 'voltageGraph'}
+                {#if currentView.value === 'voltageGraph'}
                     <VoltageGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'loadGraph'}
+                {#if currentView.value === 'loadGraph'}
                     <LoadGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'solarWattsGraph'}
+                {#if currentView.value === 'solarWattsGraph'}
                     <SolarWattsGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'batteryWattsGraph'}
+                {#if currentView.value === 'batteryWattsGraph'}
                     <BatteryWattsGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'statistics'}
+                {#if currentView.value === 'statistics'}
                     <Statistics />
                 {/if}
-                {#if $currentView === 'outTempGraph'}
+                {#if currentView.value === 'outTempGraph'}
                     <OutdoorTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'inTempGraph'}
+                {#if currentView.value === 'inTempGraph'}
                     <IndoorTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'windGraph'}
+                {#if currentView.value === 'windGraph'}
                     <WindGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'batteryBankVoltageGraph'}
+                {#if currentView.value === 'batteryBankVoltageGraph'}
                     <BatteryBankVoltageGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'batteryCellPressureGraph'}
+                {#if currentView.value === 'batteryCellPressureGraph'}
                     <BatteryBankCellPressureDiffGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
-                {#if $currentView === 'batteryBankTemperatureGraph'}
+                {#if currentView.value === 'batteryBankTemperatureGraph'}
                     <BatteryBankTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>
     {/if}
-    {#if $currentView === 'starlinkStatus'}
+    {#if currentView.value === 'starlinkStatus'}
         <StarlinkStatus />
     {/if}
-    {#if $currentView === 'starlinkOutages'}
-        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+    {#if currentView.value === 'starlinkOutages'}
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <StarlinkOutageDurationChart chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={outerHeight - (outerHeight * 0.1)}/>
         </div>
     {/if}
-    {#if $currentView === 'starlinkSpeedGraphs'}
-        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+    {#if currentView.value === 'starlinkSpeedGraphs'}
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <StarlinkUploadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
             <StarlinkDownloadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
         </div>
     {/if}
-    {#if $currentView === 'starlinkPingGraphs'}
-        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+    {#if currentView.value === 'starlinkPingGraphs'}
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <StarlinkPingLatency chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
             <StarlinkPingDrop chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
         </div>
     {/if}
-    {#if $currentView === 'starlinkPowerGraphs'}
-        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+    {#if currentView.value === 'starlinkPowerGraphs'}
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <StarlinkPower chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight) - (outerHeight * 0.15)} />
         </div>
     {/if}
-    {#if $currentView === 'shelley'}
+    {#if currentView.value === 'shelley'}
         <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;"
-             on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+             on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <ShellyDeviceList/>
         </div>
     {/if}
-    {#if $currentView === 'alerts'}
+    {#if currentView.value === 'alerts'}
         <BlueIrisAlert />
     {/if}
-    {#if $currentView === 'adsb'}
+    {#if currentView.value === 'adsb'}
         <ADSBInfo />
     {/if}
-    {#if $currentView === 'weather'}
+    {#if currentView.value === 'weather'}
         <WxDashboard />
     {/if}
-    {#if $currentView === 'navigation'}
+    {#if currentView.value === 'navigation'}
         <MainNavigation />
     {/if}
-    {#if $currentView === 'battery_dashboard'}
+    {#if currentView.value === 'battery_dashboard'}
         <BatteryDashboard />
     {/if}
-    {#if $currentView.startsWith('battery_details_')}
+    {#if currentView.value.startsWith('battery_details_')}
         <BatteryDetails />
     {/if}
-    {#if $currentView.startsWith('battery_cell_graph_')}
+    {#if currentView.value.startsWith('battery_cell_graph_')}
         <BatteryCellVoltageGraph />
     {/if}
-    {#if $currentView === 'lightningDashboard'}
+    {#if currentView.value === 'lightningDashboard'}
         <LightningDashboard />
     {/if}
 </div>
+
+
+

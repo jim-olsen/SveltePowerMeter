@@ -1,11 +1,12 @@
 <script>
-    import {batteryCurrentData, currentView} from "../../stores";
+    import {batteryCurrentData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
     import {onMount} from "svelte";
     import Fa from "svelte-fa";
     import {faCarBattery, faThermometerHalf, faShieldAlt, faSync, faCheckCircle} from "@fortawesome/free-solid-svg-icons";
     import Cell from "./Cell.svelte";
 
-    let battery_name = $currentView.replace('battery_details_', '')
+    let battery_name = currentView.value.replace('battery_details_', '')
     let battery = {};
     let cells = [];
     let temps = [];
@@ -31,7 +32,7 @@
     }
 </script>
 
-<div class="details" on:click={() => currentView.set('battery_dashboard')}>
+<div class="details" on:click={() => currentView.value = 'battery_dashboard'}>
     <!-- HEADER -->
     <div class="tile-header">
         <div class="tile-icon">
@@ -269,3 +270,6 @@
         .cell-voltage { font-size: 12px; }
     }
 </style>
+
+
+

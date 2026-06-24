@@ -1,13 +1,14 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {currentView, powerGraphDuration} from "../../stores";
+    import {powerGraphDuration} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
     import DurationalLineChart from "../d3/DurationalLineChart.svelte";
     import {get} from "svelte/store";
 
     export let chartWidth=800
     export let chartHeight=300
 
-    let battery_name = $currentView.replace('battery_cell_graph_', '')
+    let battery_name = currentView.value.replace('battery_cell_graph_', '')
     let graphData = [];
     let graphInterval;
     let titleHeight = 0;
@@ -61,7 +62,9 @@
 </script>
 <div bind:clientWidth={chartWidth} bind:clientHeight={chartHeight}
      style="display:flex; flex-flow:column; justify-content: center; align-items: center; width: 100%;">
-    <div on:click={() => currentView.set('battery_dashboard')}  bind:clientHeight={titleHeight} ><span class="normalText">{battery_name} Cell Voltages</span></div>
+    <div on:click={() => currentView.value = 'battery_dashboard'}  bind:clientHeight={titleHeight} ><span class="normalText">{battery_name} Cell Voltages</span></div>
     <DurationalLineChart chartHeight={chartHeight - (titleHeight + (titleHeight * 0.1))} chartWidth={chartWidth - (chartWidth * 0.03)} yAxisLabel="Volts"
                          graphDataSets={graphData} duration={powerGraphDuration} curveType="curveBundle"/>
 </div>
+
+

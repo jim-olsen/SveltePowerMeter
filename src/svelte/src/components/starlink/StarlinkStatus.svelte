@@ -4,7 +4,7 @@
     import StarlinkFirmwareVersion from "./StarlinkFirmwareVersion.svelte";
     import StarlinkUpTime from "./StarlinkUpTime.svelte";
     import StarlinkAlerts from "./StarlinkAlerts.svelte";
-    import {currentView} from "../../stores";
+    import {currentView} from "../../states.svelte.js";
     import StarlinkAntenna from "./StarlinkAntenna.svelte";
 
     let displayAntenna = false;
@@ -16,9 +16,9 @@
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="starlink-page" role="button" tabindex="0" on:click|self={() => $currentView = 'dashboard'} on:keydown|self={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+<div class="starlink-page" role="button" tabindex="0" on:click|self={() => currentView.value = 'dashboard'} on:keydown|self={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
     <div class="top-row">
-        <div on:click={() => $currentView = 'dashboard'} class="status-panel card"
+        <div on:click={() => currentView.value = 'dashboard'} class="status-panel card"
              bind:clientHeight={outerHeight} bind:clientWidth={outerWidth}>
             <div class="panel-title">Current Status</div>
             <StarlinkStatusIndicator />
@@ -46,7 +46,7 @@
         </div>
 
     </div>
-    <div on:click|self={() => $currentView = 'dashboard'} class="meta-row card">
+    <div on:click|self={() => currentView.value = 'dashboard'} class="meta-row card">
         <div class="meta-item"><StarlinkFirmwareVersion/></div>
         <div class="meta-item"><StarlinkUpTime/></div>
     </div>
@@ -242,3 +242,6 @@
         }
     }
 </style>
+
+
+

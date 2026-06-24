@@ -10,7 +10,8 @@
         faInfoCircle,
         faImage
     } from "@fortawesome/free-solid-svg-icons";
-    import {adsbData, currentView} from "../../stores";
+    import {adsbData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
 
     let categories = {
         "A0": "No Info",
@@ -44,7 +45,7 @@
     }
 </script>
 
-<div class="adsb-dash" on:click={() => currentView.set('dashboard')}>
+<div class="adsb-dash" on:click={() => currentView.value = 'dashboard'}>
     <!-- COMPACT HEADER BAR -->
     <div class="tile tile-flight">
         <div class="header-row">
@@ -261,3 +262,6 @@
         .adsb-dash { gap: 3px; padding: 1px; }
     }
 </style>
+
+
+

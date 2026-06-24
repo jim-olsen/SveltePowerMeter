@@ -1,7 +1,7 @@
 <script>
     import { onDestroy } from 'svelte';
     import BarChart from "../d3/BarChart.svelte";
-    import {starlinkHistory} from "../../stores";
+    import {starlinkHistory} from "../../stores.svelte.js";
 
     let outageDurationChartData = [];
     export let chartWidth = 1200;
@@ -31,3 +31,6 @@
 <div class="center" style="display:flex; flex-flow:column; justify-content: center; align-items: center">
     <BarChart XAxisTitle="Outage Type" YAxisTitle="Duration (s)" dataset={outageDurationChartData} width={chartWidth} height={chartHeight} />
 </div>
+
+
+

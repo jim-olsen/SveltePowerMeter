@@ -1,6 +1,6 @@
 <script>
     import { onDestroy } from 'svelte';
-    import { starlinkStatus } from "../../stores";
+    import { starlinkStatus } from "../../stores.svelte.js";
     let alerts = [];
 
     const unsubscribeStatus = starlinkStatus.subscribe(status => {
@@ -126,3 +126,5 @@
         }
     }
     </style>
+
+

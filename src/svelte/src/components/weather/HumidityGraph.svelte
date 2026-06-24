@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte'
-    import {humidityGraphData, weatherGraphDuration} from "../../stores";
+    import {humidityGraphData, weatherGraphDuration} from "../../stores.svelte.js";
     import DurationalLineChart from "../d3/DurationalLineChart.svelte";
 
     export let chartWidth = 800;
@@ -24,3 +24,5 @@
     <DurationalLineChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Humidity %"
                          graphDataSets={graphData} duration={weatherGraphDuration} />
 </div>
+
+

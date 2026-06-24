@@ -4,3 +4,6 @@
 </script>
 
 <img width={width} height={height} src={imageUrl} alt="Could not load obstruction map"/>
+
+
+

@@ -1,11 +1,12 @@
 <script>
-    import { powerStatsData, currentView } from "../../stores";
+    import { powerStatsData } from "../../stores.svelte.js";
+    import { currentView } from "../../states.svelte.js";
 
     // Helper for formatting
     const format = (val, dec = 1) => (val !== undefined && val !== null) ? val.toFixed(dec) : '---';
 </script>
 
-<div class="stats-container" role="button" tabindex="0" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+<div class="stats-container" role="button" tabindex="0" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
     <!-- Row 1: Load / Usage Stats -->
     <div class="stats-grid">
         <div class="card stat-item">
@@ -179,3 +180,6 @@
         }
     }
 </style>
+
+
+

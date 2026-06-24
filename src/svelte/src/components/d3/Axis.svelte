@@ -46,3 +46,6 @@
 </script>
 
 <g class="axis" bind:this={g} {transform} />
+
+
+

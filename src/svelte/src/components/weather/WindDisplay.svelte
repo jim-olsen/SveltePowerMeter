@@ -1,5 +1,5 @@
 <script>
-    import {weatherData} from "../../stores";
+    import {weatherData} from "../../stores.svelte.js";
 
     export let size = 200;
 
@@ -129,3 +129,6 @@
         font-variant-numeric: tabular-nums;
     }
 </style>
+
+
+

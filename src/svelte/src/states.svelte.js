@@ -1,0 +1,1 @@
+export const currentView = $state({ value: 'dashboard' });

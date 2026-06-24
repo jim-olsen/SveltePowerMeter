@@ -1,5 +1,6 @@
 <script>
-    import {currentView, weatherData} from "../../stores";
+    import {weatherData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
     import Fa from "svelte-fa";
     import {faArrowLeftLong, faWind, faTemperatureHigh, faTemperatureLow, faDroplet, faCloudRain, faGauge} from "@fortawesome/free-solid-svg-icons";
     import WindDisplay from "./WindDisplay.svelte";
@@ -22,7 +23,7 @@
 {#if display === 'dashboard'}
     <div class="wx-dash">
         <!-- WIND TILE -->
-        <div class="tile tile-wind" role="button" tabindex="0" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
+        <div class="tile tile-wind" role="button" tabindex="0" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && (currentView.value = 'dashboard')}>
             <div class="tile-header">
                 <div class="tile-icon"><Fa icon={faWind}/></div>
                 <div class="tile-title">Wind</div>
@@ -440,3 +441,6 @@
         .wx-dash { gap: 4px; padding: 1px; }
     }
 </style>
+
+
+

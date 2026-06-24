@@ -1,6 +1,6 @@
 <script>
     import { onDestroy } from 'svelte';
-    import {starlinkHistory} from "../../stores";
+    import {starlinkHistory} from "../../stores.svelte.js";
 
     let outages = []
 
@@ -26,3 +26,6 @@
     {/each}
     </table>
 </div>
+
+
+

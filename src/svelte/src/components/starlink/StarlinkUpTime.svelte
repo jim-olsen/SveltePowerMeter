@@ -1,6 +1,6 @@
 <script>
     import {onDestroy} from 'svelte';
-    import {starlinkStatus} from "../../stores";
+    import {starlinkStatus} from "../../stores.svelte.js";
 
     let uptime = "";
 
@@ -18,3 +18,6 @@
 <div style="display:flex; flex-flow: column;justify-content: center;">
     <span class="mediumSmallText">Uptime: {uptime}</span>
 </div>
+
+
+

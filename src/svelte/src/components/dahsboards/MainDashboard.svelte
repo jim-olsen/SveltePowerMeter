@@ -26,9 +26,9 @@
         weatherData,
         weatherDailyMinMax,
         starlinkStatus,
-        starlinkHistory,
-        currentView
-    } from "../../stores";
+        starlinkHistory
+    } from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
 
     let starlinkHistoryData = {};
 
@@ -67,7 +67,7 @@
     }
 
     function go(view) {
-        return () => $currentView = view;
+        return () => currentView.value = view;
     }
 
     /*
@@ -611,3 +611,6 @@
         .metric { min-height: 78px; }
     }
 </style>
+
+
+

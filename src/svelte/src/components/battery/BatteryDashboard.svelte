@@ -1,5 +1,6 @@
 <script>
-    import {batteryCurrentData, currentView} from "../../stores";
+    import {batteryCurrentData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
     import Fa from "svelte-fa";
     import {
         faCarBattery,
@@ -48,7 +49,7 @@
     }
 
     function go(view) {
-        return () => $currentView = view;
+        return () => currentView.value = view;
     }
 </script>
 
@@ -306,3 +307,6 @@
         .metric b { font-size: 20px; }
     }
 </style>
+
+
+

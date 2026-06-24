@@ -21,3 +21,6 @@
     <button on:click={getStatus}>Get Dishy Status</button>
     <button on:click={getHistory}>Get Dishy History</button>
 </div>
+
+
+

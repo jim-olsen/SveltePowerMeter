@@ -1,8 +1,9 @@
 <script>
-    import {powerCurrentData, currentView} from "../../stores";
+    import {powerCurrentData} from "../../stores.svelte.js";
+    import {currentView} from "../../states.svelte.js";
 
 </script>
-<div class="current-values-card card" role="button" tabindex="0" on:click={() => currentView.set('dashboard')} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && currentView.set('dashboard')}>
+<div class="current-values-card card" role="button" tabindex="0" on:click={() => currentView.value = 'dashboard'} on:keydown={(event) => {if (event.key === 'Enter' || event.key === ' ') currentView.value = 'dashboard'}}>
     <div class="value-item">
         <span class="normalText">{$powerCurrentData?.battery_voltage ? ($powerCurrentData?.battery_voltage)?.toFixed(1) : '---'}</span>
         <div class="label-group">
@@ -92,3 +93,6 @@
         }
     }
 </style>
+
+
+

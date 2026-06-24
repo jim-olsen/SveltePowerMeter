@@ -1,6 +1,6 @@
 <script>
     import Guage from '../d3/Gauge.svelte'
-    import {starlinkStatus} from "../../stores";
+    import {starlinkStatus} from "../../stores.svelte.js";
     import {onDestroy} from "svelte";
 
     let elevation = 0.0;
@@ -24,3 +24,5 @@
            majorTicks="10" clipWidth={chartHeight ? chartHeight : 20} clipHeight={chartHeight ? chartHeight : 20}
            value="{elevation}" transitionMs="0"/>
 </div>
+
+
