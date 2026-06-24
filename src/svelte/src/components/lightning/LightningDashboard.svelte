@@ -1,4 +1,4 @@
-<script xmlns="http://www.w3.org/1999/html">
+<script>
     import {lightningData, currentView} from "../../stores";
     import {faBoltLightning} from "@fortawesome/free-solid-svg-icons";
     import Fa from "svelte-fa";

@@ -15,7 +15,8 @@
     $: antennaSize = Math.max(90, Math.min((outerWidth || 0) / 2.6, (outerHeight || 0) / 2.8, 150));
 </script>
 
-<div class="starlink-page" on:click|self={() => $currentView = 'dashboard'}>
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="starlink-page" role="button" tabindex="0" on:click|self={() => $currentView = 'dashboard'} on:keydown|self={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
     <div class="top-row">
         <div on:click={() => $currentView = 'dashboard'} class="status-panel card"
              bind:clientHeight={outerHeight} bind:clientWidth={outerWidth}>

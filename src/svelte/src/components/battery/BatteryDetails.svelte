@@ -1,4 +1,4 @@
-<script xmlns="http://www.w3.org/1999/html">
+<script>
     import {batteryCurrentData, currentView} from "../../stores";
     import {onMount} from "svelte";
     import Fa from "svelte-fa";

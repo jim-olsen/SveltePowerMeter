@@ -1,8 +1,8 @@
-<script xmlns="http://www.w3.org/1999/html">
+<script>
     import {powerCurrentData, currentView} from "../../stores";
 
 </script>
-<div class="current-values-card card" on:click={() => currentView.set('dashboard')}>
+<div class="current-values-card card" role="button" tabindex="0" on:click={() => currentView.set('dashboard')} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && currentView.set('dashboard')}>
     <div class="value-item">
         <span class="normalText">{$powerCurrentData?.battery_voltage ? ($powerCurrentData?.battery_voltage)?.toFixed(1) : '---'}</span>
         <div class="label-group">

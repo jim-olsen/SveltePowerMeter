@@ -22,7 +22,7 @@
 {#if display === 'dashboard'}
     <div class="wx-dash">
         <!-- WIND TILE -->
-        <div class="tile tile-wind" on:click={() => $currentView = 'dashboard'}>
+        <div class="tile tile-wind" role="button" tabindex="0" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <div class="tile-header">
                 <div class="tile-icon"><Fa icon={faWind}/></div>
                 <div class="tile-title">Wind</div>

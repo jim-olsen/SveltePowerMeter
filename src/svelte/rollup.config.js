@@ -1,13 +1,60 @@
 import svelte from 'rollup-plugin-svelte';
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
 import livereload from 'rollup-plugin-livereload';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import css from 'rollup-plugin-css-only'
 import dev from 'rollup-plugin-dev'
 //import serve from 'rollup-plugin-serve-proxy'
 
 const production = !process.env.ROLLUP_WATCH;
+
+const svelteInternalPathToken = 'node_modules/svelte/src/internal/';
+const d3SelectionPathToken = 'node_modules/d3-selection/src/selection/';
+
+function isSvelteInternalCircularWarning(warning) {
+    if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        return false;
+    }
+
+    if (warning.ids?.length) {
+        return warning.ids.every((id) => id.includes(svelteInternalPathToken));
+    }
+
+    return warning.message?.includes(svelteInternalPathToken) || warning.importer?.includes(svelteInternalPathToken);
+}
+
+function isD3SelectionCircularWarning(warning) {
+    if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        return false;
+    }
+
+    if (warning.ids?.length) {
+        return warning.ids.every((id) => id.includes(d3SelectionPathToken));
+    }
+
+    return warning.message?.includes(d3SelectionPathToken) || warning.importer?.includes(d3SelectionPathToken);
+}
+
+function isNodeModulesCircularWarning(warning) {
+    if (warning.code !== 'CIRCULAR_DEPENDENCY') {
+        return false;
+    }
+
+    if (warning.ids?.length) {
+        return warning.ids.every((id) => id.includes('node_modules'));
+    }
+
+    return warning.message?.includes('node_modules/') || warning.importer?.includes('node_modules/');
+}
+
+function isNonBlockingSvelteWarning(warning) {
+    if (warning.plugin === 'svelte') {
+        return true;
+    }
+
+    return warning.message?.startsWith('Plugin svelte:') || warning.code?.startsWith('a11y_') || warning.code === 'script_unknown_attribute';
+}
 
 export default {
     input: 'src/main.js',
@@ -17,15 +64,23 @@ export default {
         name: 'app',
         file: 'public/bundle.js'
     },
+    onwarn(warning, warn) {
+        if (isSvelteInternalCircularWarning(warning) || isD3SelectionCircularWarning(warning) || isNodeModulesCircularWarning(warning) || isNonBlockingSvelteWarning(warning)) {
+            return;
+        }
+
+        warn(warning);
+    },
     plugins: [
         svelte({
             // enable run-time checks when not in production
-            dev: !production,
-            // we'll extract any component CSS out into
-            // a separate file — better for performance
-            css: css => {
-                css.write('public/bundle.css');
-            }
+            emitCss: true,
+            compilerOptions: {
+                dev: !production,
+                compatibility: {
+                    componentApi: 4
+                }
+            },
         }),
 
         css({"output": 'bundle.css'}),
@@ -35,7 +90,7 @@ export default {
         // some cases you'll need additional configuration —
         // consult the documentation for details:
         // https://github.com/rollup/rollup-plugin-commonjs
-        resolve({
+        nodeResolve({
             browser: true,
             dedupe: importee => importee === 'svelte' || importee.startsWith('svelte/')
         }),

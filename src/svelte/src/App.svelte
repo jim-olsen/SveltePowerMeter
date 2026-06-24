@@ -172,7 +172,7 @@
 </script>
 
 <svelte:window bind:outerWidth bind:outerHeight bind:innerWidth on:keydown={onKeyDown}/>
-<div style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px; overflow: hidden;"
+<div role="application" style="display:flex; flex-flow: row; align-content: center; gap: 4px; width: 100%; height:{outerHeight}px; overflow: hidden;"
         on:dblclick={onDoubleTap}>
     {#if $currentView === 'dashboard'}
         <MainDashboard></MainDashboard>
@@ -220,30 +220,30 @@
         <StarlinkStatus />
     {/if}
     {#if $currentView === 'starlinkOutages'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <StarlinkOutageDurationChart chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={outerHeight - (outerHeight * 0.1)}/>
         </div>
     {/if}
     {#if $currentView === 'starlinkSpeedGraphs'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <StarlinkUploadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
             <StarlinkDownloadDataRates chartWidth={outerWidth - (outerWidth * 0.1)} chartHeight={(outerHeight / 2) - (outerHeight * 0.1)} />
         </div>
     {/if}
     {#if $currentView === 'starlinkPingGraphs'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <StarlinkPingLatency chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
             <StarlinkPingDrop chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight / 2) - (outerHeight * 0.15)} />
         </div>
     {/if}
     {#if $currentView === 'starlinkPowerGraphs'}
-        <div style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'}>
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: flex-start; width: 100%;" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <StarlinkPower chartWidth={outerWidth - (outerWidth * 0.15)} chartHeight={(outerHeight) - (outerHeight * 0.15)} />
         </div>
     {/if}
     {#if $currentView === 'shelley'}
-        <div style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;"
-             on:click={() => $currentView = 'dashboard'}>
+        <div role="button" tabindex="0" style="display:flex; flex-flow: column; justify-content: space-between; height:100%; flex-grow: 9;"
+             on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
             <ShellyDeviceList/>
         </div>
     {/if}

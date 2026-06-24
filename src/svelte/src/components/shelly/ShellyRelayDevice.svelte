@@ -1,4 +1,4 @@
-<script xmlns="http://www.w3.org/1999/xhtml">
+<script>
     import {onDestroy, onMount} from "svelte";
     import {faLightbulb, faRefresh} from "@fortawesome/free-solid-svg-icons";
     import Fa from "svelte-fa";

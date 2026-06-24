@@ -1,4 +1,4 @@
-<script xmlns="http://www.w3.org/1999/html">
+<script>
     import {batteryCurrentData, currentView} from "../../stores";
 
     export let voltageIndex = 0;

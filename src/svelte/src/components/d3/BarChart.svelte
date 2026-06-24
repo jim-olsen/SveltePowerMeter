@@ -50,11 +50,3 @@
     </svg>
 </main>
 
-<style>
-    path {
-        fill: transparent;
-        stroke: rgb(18, 153, 90);
-        stroke-width: 2.5;
-        stroke-linejoin: round;
-    }
-</style>

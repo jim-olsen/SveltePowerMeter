@@ -5,7 +5,7 @@
     const format = (val, dec = 1) => (val !== undefined && val !== null) ? val.toFixed(dec) : '---';
 </script>
 
-<div class="stats-container" on:click={() => $currentView = 'dashboard'}>
+<div class="stats-container" role="button" tabindex="0" on:click={() => $currentView = 'dashboard'} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && ($currentView = 'dashboard')}>
     <!-- Row 1: Load / Usage Stats -->
     <div class="stats-grid">
         <div class="card stat-item">

@@ -1,4 +1,4 @@
-<script xmlns="http://www.w3.org/1999/html">
+<script>
     import {batteryCurrentData, currentView} from "../../stores";
     import Fa from "svelte-fa";
     import {
@@ -54,7 +54,7 @@
 
 <div class="battery-dash">
     <!-- Header -->
-    <div class="dash-header" on:click={go('dashboard')}>
+    <div class="dash-header" role="button" tabindex="0" on:click={go('dashboard')} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('dashboard')()}>
         <div class="back-btn"><Fa icon={faArrowLeft}/></div>
         <div class="header-icon" style="color: {batteryColor(battery_overall_percent)};">
             <Fa icon={faCarBattery}/>
@@ -68,7 +68,7 @@
     <!-- Battery Grid -->
     <div class="card-grid">
         {#each $batteryCurrentData as battery}
-            <div class="card" on:click={go('battery_details_' + battery.name)}>
+            <div class="card" role="button" tabindex="0" on:click={go('battery_details_' + battery.name)} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('battery_details_' + battery.name)()}>
                 <div class="card-body">
                     <!-- Row 1: Name + Status -->
                     <div class="card-row-top">
@@ -77,7 +77,7 @@
                     </div>
 
                     <!-- Row 2: Big percentage + capacity bar -->
-                    <div class="card-row-main" on:click|stopPropagation={go('batteryBankVoltageGraph')}>
+                    <div class="card-row-main" role="button" tabindex="0" on:click|stopPropagation={go('batteryBankVoltageGraph')} on:keydown|stopPropagation={(event) => (event.key === 'Enter' || event.key === ' ') && go('batteryBankVoltageGraph')()}>
                         <span class="big-pct" style="color: {batteryColor(battery.capacity_percent)};">{battery.capacity_percent}<small>%</small></span>
                         <div class="cap-bar-wrap">
                             <div class="cap-bar">
@@ -93,15 +93,15 @@
 
                     <!-- Row 3: Key metrics -->
                     <div class="card-row-metrics">
-                        <span class="metric" on:click|stopPropagation={go('batteryBankVoltageGraph')}>
+                        <span class="metric" role="button" tabindex="0" on:click|stopPropagation={go('batteryBankVoltageGraph')} on:keydown|stopPropagation={(event) => (event.key === 'Enter' || event.key === ' ') && go('batteryBankVoltageGraph')()}>
                             <Fa icon={faBolt} style="color:#FFE45E;font-size:10px;"/>
                             <b>{fmt(battery.voltage, 1)}</b><small>V</small>
                         </span>
-                        <span class="metric" on:click|stopPropagation={go('batteryCellPressureGraph')}>
+                        <span class="metric" role="button" tabindex="0" on:click|stopPropagation={go('batteryCellPressureGraph')} on:keydown|stopPropagation={(event) => (event.key === 'Enter' || event.key === ' ') && go('batteryCellPressureGraph')()}>
                             <Fa icon={faChartBar} style="color:#5EC6FF;font-size:10px;"/>
                             <b>{fmt(battery.current, 1)}</b><small>A</small>
                         </span>
-                        <span class="metric" on:click|stopPropagation={go('batteryBankTemperatureGraph')}>
+                        <span class="metric" role="button" tabindex="0" on:click|stopPropagation={go('batteryBankTemperatureGraph')} on:keydown|stopPropagation={(event) => (event.key === 'Enter' || event.key === ' ') && go('batteryBankTemperatureGraph')()}>
                             <Fa icon={faThermometerHalf} style="color:#FF5C5C;font-size:10px;"/>
                             <b>{#if battery.battery_temps_f && battery.battery_temps_f.length > 0}{fmt(battery.battery_temps_f[0], 0)}{:else}---{/if}</b><small>°F</small>
                         </span>
