@@ -468,6 +468,7 @@ def start_mqtt_client():
             file.close()
         except Exception as e:
             logger.error(f"Error handling blueiris message: {e}")
+            logger.error(f"Invalid json: {msg.payload}")
 
     def handle_adsb(c, userdata, msg):
         global ADSB_DATA
