@@ -705,5 +705,16 @@ export const birdData = writable({}, () => {
     }
 })
 
+/**
+ * A subscribable that contains the latest newly detected bird species
+ * @type {Writable<{}>}
+ */
+export const newBirdAlert = writable({}, () => {
+    websocket.on('newbird', (data) => newBirdAlert.set(data));
+    return () => {
+        websocket.removeAllListeners('newbird');
+    }
+})
+
 
 

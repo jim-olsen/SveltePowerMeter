@@ -13,7 +13,7 @@
     import LoadGraph from "./components/powermeter/LoadGraph.svelte";
     import BlueIrisAlert from "./components/blueiris/BlueIrisAlert.svelte";
 
-    import {blueIrisAlert, lightningData, adsbData} from "./stores.svelte.js";
+    import {blueIrisAlert, lightningData, adsbData, newBirdAlert} from "./stores.svelte.js";
     import {currentView} from "./states.svelte.js";
     import MainDashboard from "./components/dahsboards/MainDashboard.svelte";
     import StarlinkStatus from "./components/starlink/StarlinkStatus.svelte";
@@ -45,6 +45,7 @@
     let lastBlueIrisAlert = {};
     let lastADSBData = {};
     let lastLightningData = {};
+    let lastNewBirdAlert = {};
 
     /**
      * Restore to the previous view only if the current view is the original calling view
@@ -89,6 +90,18 @@
             let previousView = currentView.value;
             currentView.value = 'lightningDashboard';
             setTimeout(restoreView, 30000, 'lightningDashboard', previousView);
+        }
+    }
+
+    /**
+     * Cause the bird details screen to display the newly detected bird species
+     */
+    function displayNewBirdAlert(scientificName) {
+        let birdView = 'bird_details_' + scientificName;
+        if (currentView.value !== birdView) {
+            let previousView = currentView.value;
+            currentView.value = birdView;
+            setTimeout(restoreView, 30000, birdView, previousView);
         }
     }
 
@@ -138,6 +151,21 @@
     });
 
     /**
+     * Monitor for any newly detected bird species that come in, and switch over to the bird details screen if we
+     * receive a new one, and return to the previous screen after 30 seconds.
+     */
+    const unsubscribeNewBirdAlert = newBirdAlert.subscribe(data => {
+        if (!lastNewBirdAlert.hasOwnProperty("id")) {
+            lastNewBirdAlert = data;
+        } else if (data.hasOwnProperty("id") && lastNewBirdAlert.id !== data.id) {
+            lastNewBirdAlert = data;
+            if (alertAllowedViews.includes(currentView.value) && data.scientific_name) {
+                displayNewBirdAlert(data.scientific_name);
+            }
+        }
+    });
+
+    /**
      * If there is not any currently defined alerts on the server after a delay to let it try and get the latest one,
      * then set a dummy id so that we do receive the first real alert to come in.
      */
@@ -149,6 +177,9 @@
             if (!lastADSBData.hasOwnProperty("id")) {
                 lastADSBData = {"id": "dummyid"};
             }
+            if (!lastNewBirdAlert.hasOwnProperty("id")) {
+                lastNewBirdAlert = {"id": "dummyid"};
+            }
         }, 15000)
     })
 
@@ -156,6 +187,7 @@
         unsubscribeBlueIris();
         unsubscribeLightningData();
         unsubscribeADSBData();
+        unsubscribeNewBirdAlert();
     });
 
     function onKeyDown(event) {

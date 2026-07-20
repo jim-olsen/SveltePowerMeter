@@ -517,6 +517,7 @@ def start_mqtt_client():
             else:
                 BIRDS_DETECTED[scientific_name] = {'count': 1, 'bird': bird_data}
                 last_persisted = 0
+                socketio.emit('newbird', bird_data)
 
             if now - last_persisted >= bird_persist_threshold_ms:
                 sql_manager.add_bird_data(bird_data)
