@@ -1,10 +1,11 @@
 <script>
     import Fa from "svelte-fa";
-    import {faClockRotateLeft, faArrowLeft} from "@fortawesome/free-solid-svg-icons";
-    import {birdHistoryData} from "../../stores.svelte.js";
+    import {faClockRotateLeft, faArrowLeft, faTrash} from "@fortawesome/free-solid-svg-icons";
+    import {birdHistoryData, getBirdHistoryData} from "../../stores.svelte.js";
     import {currentView} from "../../states.svelte.js";
 
     let birds = [];
+    let birdToDelete = null;
 
     $: birds = $birdHistoryData;
 
@@ -18,6 +19,30 @@
 
     function fmtConfidence(v) {
         return v === undefined || v === null ? '---' : (Number(v) * 100).toFixed(1) + '%';
+    }
+
+    function confirmDelete(entry) {
+        return (event) => {
+            event.stopPropagation();
+            birdToDelete = entry;
+        };
+    }
+
+    function cancelDelete() {
+        birdToDelete = null;
+    }
+
+    function performDelete() {
+        if (!birdToDelete) {
+            return;
+        }
+        fetch(`/birdHistory?scientificName=${encodeURIComponent(birdToDelete.scientific_name)}`, {
+            method: 'DELETE'
+        })
+            .then(() => {
+                birdToDelete = null;
+                getBirdHistoryData();
+            });
     }
 </script>
 
@@ -38,16 +63,36 @@
                     <span class="common-name">{entry.common_name}</span>
                     <span class="scientific-name">{entry.scientific_name}</span>
                 </div>
-                <div class="bird-stats">
-                    <span class="last-heard">{fmtTime(entry.last_heard)}</span>
-                    <span class="bird-confidence">{fmtConfidence(entry.confidence)}</span>
-                    <span class="bird-count">{entry.count}</span>
+                <div class="bird-right">
+                    <div class="bird-stats">
+                        <span class="last-heard">{fmtTime(entry.last_heard)}</span>
+                        <span class="bird-confidence">{fmtConfidence(entry.confidence)}</span>
+                        <span class="bird-count">{entry.count}</span>
+                    </div>
+                    <div class="delete-btn" role="button" tabindex="0"
+                         on:click={confirmDelete(entry)}
+                         on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && confirmDelete(entry)(event)}>
+                        <Fa icon={faTrash}/>
+                    </div>
                 </div>
             </div>
         {:else}
             <div class="no-birds">No Birds Recorded Yet</div>
         {/each}
     </div>
+
+    {#if birdToDelete}
+        <div class="modal-overlay" role="button" tabindex="0" on:click={cancelDelete} on:keydown={(event) => event.key === 'Escape' && cancelDelete()}>
+            <div class="modal" role="dialog" on:click|stopPropagation on:keydown|stopPropagation>
+                <div class="modal-title">Delete Bird History</div>
+                <div class="modal-message">Delete all recorded entries for {birdToDelete.common_name}?</div>
+                <div class="modal-actions">
+                    <button class="modal-btn cancel-btn" on:click={cancelDelete}>Cancel</button>
+                    <button class="modal-btn delete-confirm-btn" on:click={performDelete}>Yes, Delete</button>
+                </div>
+            </div>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -98,7 +143,6 @@
     .bird-row {
         display: flex;
         align-items: center;
-        justify-content: space-between;
         gap: 10px;
         padding: 10px 16px;
         border-radius: 10px;
@@ -116,6 +160,14 @@
         display: flex;
         flex-direction: column;
         min-width: 0;
+        flex: 1;
+    }
+
+    .bird-right {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
     }
     .common-name {
         font-size: 24px;
@@ -170,6 +222,88 @@
         font-weight: 600;
     }
 
+    .delete-btn {
+        font-size: 20px;
+        color: #8892A6;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        margin: -10px -10px -10px 0;
+        flex-shrink: 0;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: color 0.15s ease;
+    }
+    .delete-btn:hover, .delete-btn:active {
+        color: #FF5C5C;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        cursor: default;
+    }
+
+    .modal {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        width: min(320px, 85vw);
+        padding: 20px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, rgba(34, 40, 56, 0.97), rgba(20, 24, 36, 0.97));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        color: #e6eaf2;
+    }
+
+    .modal-title {
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .modal-message {
+        font-size: 14px;
+        color: #c3c9d6;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .modal-btn {
+        font-size: 14px;
+        font-weight: 700;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 16px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+
+    .cancel-btn {
+        background: rgba(255, 255, 255, 0.08);
+        color: #e6eaf2;
+    }
+
+    .delete-confirm-btn {
+        background: #FF5C5C;
+        color: #1a1a1a;
+    }
+
     @media (max-width: 400px) {
         .header-title { font-size: 18px; }
         .header-count { font-size: 22px; }
@@ -178,5 +312,6 @@
         .bird-count { font-size: 20px; }
         .last-heard { font-size: 11px; }
         .bird-confidence { font-size: 11px; }
+        .delete-btn { font-size: 16px; }
     }
 </style>

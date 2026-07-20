@@ -301,8 +301,21 @@ def get_bird_data():
 # name, common name, the time the bird was most recently heard, and the total number of times it has been heard.
 # The list is ordered by the time most recently heard, descending.
 #
-@app.route("/birdHistory")
+@app.route("/birdHistory", methods=["GET", "DELETE"])
 def get_bird_history():
+    global BIRDS_DETECTED
+
+    if request.method == "DELETE":
+        scientific_name = request.args.get('scientificName', None)
+
+        if not scientific_name:
+            return {"success": False, "error": "scientificName is required"}, 400
+
+        sql_manager.delete_bird_data(scientific_name)
+        BIRDS_DETECTED.pop(scientific_name, None)
+
+        return {"success": True}
+
     return sql_manager.get_bird_history()
 
 

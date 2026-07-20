@@ -621,6 +621,14 @@ def get_bird_history():
         ''')
         return [dict(row) for row in cursor.fetchall()]
 
+def delete_bird_data(scientific_name):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        bird_sql_connection.execute(
+            "DELETE FROM bird_data WHERE scientific_name = ?", [scientific_name])
+        bird_sql_connection.execute(
+            "DELETE FROM bird_pictures WHERE scientific_name = ?", [scientific_name])
+
 def refresh_daily_data(stats_data):
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.row_factory = sqlite3.Row

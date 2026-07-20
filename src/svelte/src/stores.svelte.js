@@ -720,7 +720,7 @@ export const newBirdAlert = writable({}, () => {
  * Retrieve the full history of birds ever seen, as recorded in the sql database.  Each entry contains the
  * scientific name, common name, the time most recently heard, and the total number of times heard.
  */
-function getBirdHistoryData() {
+export function getBirdHistoryData() {
     fetch("/birdHistory", {
         headers: {
             "Accept": "application/json"
