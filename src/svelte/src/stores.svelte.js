@@ -182,7 +182,7 @@ function getBatteryCurrentData() {
  */
 export const batteryCurrentData = writable([], () => {
     getBatteryCurrentData();
-    websocket.on('battery_data', (data) => batteryCurrentData.set(data));
+    websocket.on('battery_data', (data) => batteryCurrentData.set(data.sort((a, b) => a.name.localeCompare(b.name))));
     return () => {
         websocket.removeAllListeners('battery_data');
     };
