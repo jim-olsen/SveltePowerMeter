@@ -13,6 +13,10 @@
     function go(view) {
         return () => currentView.value = view;
     }
+
+    function fmtConfidence(v) {
+        return v === undefined || v === null ? '---' : (Number(v) * 100).toFixed(1) + '%';
+    }
 </script>
 
 <div class="bird-dash">
@@ -40,7 +44,10 @@
                 {#if entry.bird.is_new}
                     <div class="new-badge">NEW</div>
                 {/if}
-                <div class="bird-count">{entry.count}</div>
+                <div class="bird-stats">
+                    <span class="bird-confidence">{fmtConfidence(entry.bird.confidence)}</span>
+                    <span class="bird-count">{entry.count}</span>
+                </div>
             </div>
         {:else}
             <div class="no-birds">No Birds Detected Yet</div>
@@ -162,6 +169,19 @@
         box-shadow: 0 0 6px rgba(57, 255, 20, 0.6);
     }
 
+    .bird-stats {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .bird-confidence {
+        font-size: 14px;
+        color: #8892A6;
+        white-space: nowrap;
+    }
+
     .bird-count {
         font-size: 28px;
         font-weight: 800;
@@ -186,5 +206,6 @@
         .common-name { font-size: 18px; }
         .scientific-name { font-size: 13px; }
         .bird-count { font-size: 20px; }
+        .bird-confidence { font-size: 11px; }
     }
 </style>

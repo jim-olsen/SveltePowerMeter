@@ -607,10 +607,17 @@ def get_bird_history():
     bird_sql_connection.row_factory = sqlite3.Row
     with bird_sql_connection:
         cursor = bird_sql_connection.execute('''
-            SELECT scientific_name, common_name, MAX(record_time) AS last_heard, COUNT(*) AS count
+            SELECT bird_data.scientific_name, bird_data.common_name, bird_data.confidence,
+                   summary.last_heard, summary.count
             FROM bird_data
-            GROUP BY scientific_name
-            ORDER BY last_heard DESC
+            JOIN (
+                SELECT scientific_name, MAX(record_time) AS last_heard, COUNT(*) AS count
+                FROM bird_data
+                GROUP BY scientific_name
+            ) AS summary
+            ON bird_data.scientific_name = summary.scientific_name
+               AND bird_data.record_time = summary.last_heard
+            ORDER BY summary.last_heard DESC
         ''')
         return [dict(row) for row in cursor.fetchall()]
 

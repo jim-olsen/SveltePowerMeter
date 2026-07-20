@@ -15,6 +15,10 @@
     function fmtTime(v) {
         return v === undefined || v === null ? '---' : new Date(v).toLocaleString();
     }
+
+    function fmtConfidence(v) {
+        return v === undefined || v === null ? '---' : (Number(v) * 100).toFixed(1) + '%';
+    }
 </script>
 
 <div class="bird-dash">
@@ -36,6 +40,7 @@
                 </div>
                 <div class="bird-stats">
                     <span class="last-heard">{fmtTime(entry.last_heard)}</span>
+                    <span class="bird-confidence">{fmtConfidence(entry.confidence)}</span>
                     <span class="bird-count">{entry.count}</span>
                 </div>
             </div>
@@ -141,6 +146,12 @@
         white-space: nowrap;
     }
 
+    .bird-confidence {
+        font-size: 14px;
+        color: #8892A6;
+        white-space: nowrap;
+    }
+
     .bird-count {
         font-size: 28px;
         font-weight: 800;
@@ -166,5 +177,6 @@
         .scientific-name { font-size: 13px; }
         .bird-count { font-size: 20px; }
         .last-heard { font-size: 11px; }
+        .bird-confidence { font-size: 11px; }
     }
 </style>
