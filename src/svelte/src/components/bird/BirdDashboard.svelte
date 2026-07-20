@@ -34,9 +34,12 @@
                  on:click={go('bird_details_' + entry.bird.scientific_name)}
                  on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('bird_details_' + entry.bird.scientific_name)()}>
                 <div class="bird-names">
-                    <span class="common-name">{entry.bird.common_name}</span>
+                    <span class="common-name" class:new-bird={entry.bird.is_new}>{entry.bird.common_name}</span>
                     <span class="scientific-name">{entry.bird.scientific_name}</span>
                 </div>
+                {#if entry.bird.is_new}
+                    <div class="new-badge">NEW</div>
+                {/if}
                 <div class="bird-count">{entry.count}</div>
             </div>
         {:else}
@@ -138,6 +141,25 @@
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+    }
+
+    .common-name.new-bird {
+        color: #39FF14;
+    }
+
+    .new-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        color: #0B1E10;
+        background: #39FF14;
+        border-radius: 999px;
+        padding: 3px 12px;
+        flex-shrink: 0;
+        box-shadow: 0 0 6px rgba(57, 255, 20, 0.6);
     }
 
     .bird-count {

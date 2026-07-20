@@ -538,10 +538,12 @@ def start_mqtt_client():
             bird_persist_threshold_ms = 5 * 60 * 1000
 
             if scientific_name in BIRDS_DETECTED:
+                bird_data['is_new'] = False
                 BIRDS_DETECTED[scientific_name]['count'] += 1
                 BIRDS_DETECTED[scientific_name]['bird'] = bird_data
                 last_persisted = BIRDS_DETECTED[scientific_name].get('last_persisted', 0)
             else:
+                bird_data['is_new'] = not sql_manager.bird_seen_before(scientific_name)
                 BIRDS_DETECTED[scientific_name] = {'count': 1, 'bird': bird_data}
                 last_persisted = 0
                 socketio.emit('newbird', bird_data)

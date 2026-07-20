@@ -535,6 +535,13 @@ def add_lightning_event(record_time, event, distance, intensity):
         sql_connection.execute("INSERT INTO lightning_data(record_time, event, distance, intensity) VALUES (?,?,?,?)",
                                (record_time, event, distance, intensity))
 
+def bird_seen_before(scientific_name):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        cursor = bird_sql_connection.execute(
+            "SELECT scientific_name FROM bird_data WHERE scientific_name = ? LIMIT 1", [scientific_name])
+        return cursor.fetchone() is not None
+
 def bird_picture_exists(scientific_name):
     bird_sql_connection = sqlite3.connect("birds.db")
     with bird_sql_connection:
