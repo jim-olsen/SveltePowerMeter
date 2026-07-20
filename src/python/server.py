@@ -297,6 +297,33 @@ def get_bird_data():
 
 
 #
+# Get the full history of birds ever seen, as recorded in the sql database.  Each entry contains the scientific
+# name, common name, the time the bird was most recently heard, and the total number of times it has been heard.
+# The list is ordered by the time most recently heard, descending.
+#
+@app.route("/birdHistory")
+def get_bird_history():
+    return sql_manager.get_bird_history()
+
+
+#
+# Get the details (most recent sighting and total count) of a single bird, keyed by scientific name, as recorded
+# in the sql database.  This is used to display bird details for birds that are no longer held in the in-memory
+# BIRDS_DETECTED store.
+#
+@app.route("/birdDetails")
+def get_bird_details():
+    scientific_name = request.args.get('scientificName', None)
+
+    if not scientific_name:
+        return {}
+
+    bird = sql_manager.get_bird_details(scientific_name)
+
+    return bird or {}
+
+
+#
 # Get the picture of a bird stored in the database, keyed by scientific name
 #
 @app.route("/birdPicture")

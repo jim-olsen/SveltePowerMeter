@@ -9,6 +9,7 @@
     let count = 0;
     let image = null;
     let lastFetchedName = '';
+    let lastFetchedDetailsName = '';
 
     $: scientificName = currentView.value.startsWith('bird_details_')
         ? currentView.value.substring('bird_details_'.length)
@@ -16,8 +17,28 @@
 
     $: {
         let entry = $birdData[scientificName];
-        bird = entry?.bird ?? {};
-        count = entry?.count ?? 0;
+        if (entry) {
+            bird = entry.bird ?? {};
+            count = entry.count ?? 0;
+        }
+    }
+
+    $: if (scientificName && !$birdData[scientificName] && scientificName !== lastFetchedDetailsName) {
+        lastFetchedDetailsName = scientificName;
+        bird = {};
+        count = 0;
+        fetch(`/birdDetails?scientificName=${encodeURIComponent(scientificName)}`, {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+            .then(d => d.json())
+            .then(d => {
+                if (d && Object.keys(d).length > 0) {
+                    bird = d;
+                    count = d.count ?? 0;
+                }
+            });
     }
 
     $: if (scientificName && scientificName !== lastFetchedName) {

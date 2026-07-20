@@ -1,46 +1,46 @@
 <script>
     import Fa from "svelte-fa";
-    import {faCrow, faArrowLeft, faClockRotateLeft} from "@fortawesome/free-solid-svg-icons";
-    import {birdData} from "../../stores.svelte.js";
+    import {faClockRotateLeft, faArrowLeft} from "@fortawesome/free-solid-svg-icons";
+    import {birdHistoryData} from "../../stores.svelte.js";
     import {currentView} from "../../states.svelte.js";
 
     let birds = [];
 
-    $: birds = Object.values($birdData)
-        .filter(entry => entry?.bird?.scientific_name)
-        .sort((a, b) => b.count - a.count);
+    $: birds = $birdHistoryData;
 
     function go(view) {
         return () => currentView.value = view;
     }
+
+    function fmtTime(v) {
+        return v === undefined || v === null ? '---' : new Date(v).toLocaleString();
+    }
 </script>
 
 <div class="bird-dash">
-    <div class="dash-header" role="button" tabindex="0" on:click={go('dashboard')} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('dashboard')()}>
+    <div class="dash-header" role="button" tabindex="0" on:click={go('birdDashboard')} on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('birdDashboard')()}>
         <div class="back-btn"><Fa icon={faArrowLeft}/></div>
-        <div class="header-icon"><Fa icon={faCrow}/></div>
-        <div class="header-title">Birds</div>
+        <div class="header-icon"><Fa icon={faClockRotateLeft}/></div>
+        <div class="header-title">Bird History</div>
         <div class="header-count">{birds.length}</div>
-        <div class="history-btn" role="button" tabindex="0"
-             on:click|stopPropagation={go('birdHistory')}
-             on:keydown|stopPropagation={(event) => (event.key === 'Enter' || event.key === ' ') && go('birdHistory')()}>
-            <Fa icon={faClockRotateLeft}/>
-        </div>
     </div>
 
     <div class="bird-list">
         {#each birds as entry}
             <div class="bird-row" role="button" tabindex="0"
-                 on:click={go('bird_details_' + entry.bird.scientific_name)}
-                 on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('bird_details_' + entry.bird.scientific_name)()}>
+                 on:click={go('bird_details_' + entry.scientific_name)}
+                 on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('bird_details_' + entry.scientific_name)()}>
                 <div class="bird-names">
-                    <span class="common-name">{entry.bird.common_name}</span>
-                    <span class="scientific-name">{entry.bird.scientific_name}</span>
+                    <span class="common-name">{entry.common_name}</span>
+                    <span class="scientific-name">{entry.scientific_name}</span>
                 </div>
-                <div class="bird-count">{entry.count}</div>
+                <div class="bird-stats">
+                    <span class="last-heard">{fmtTime(entry.last_heard)}</span>
+                    <span class="bird-count">{entry.count}</span>
+                </div>
             </div>
         {:else}
-            <div class="no-birds">No Birds Detected Yet</div>
+            <div class="no-birds">No Birds Recorded Yet</div>
         {/each}
     </div>
 </div>
@@ -80,18 +80,6 @@
     .header-icon { font-size: 34px; display: flex; align-items: center; color: #7CFF9A; }
     .header-title { font-size: 26px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; flex: 1; }
     .header-count { font-size: 36px; font-weight: 700; font-variant-numeric: tabular-nums; color: #fca503; }
-    .history-btn {
-        font-size: 26px;
-        color: #8892A6;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        margin: -10px;
-        -webkit-tap-highlight-color: transparent;
-        touch-action: manipulation;
-    }
 
     .bird-list {
         display: flex;
@@ -140,6 +128,19 @@
         text-overflow: ellipsis;
     }
 
+    .bird-stats {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+
+    .last-heard {
+        font-size: 14px;
+        color: #8892A6;
+        white-space: nowrap;
+    }
+
     .bird-count {
         font-size: 28px;
         font-weight: 800;
@@ -164,5 +165,6 @@
         .common-name { font-size: 18px; }
         .scientific-name { font-size: 13px; }
         .bird-count { font-size: 20px; }
+        .last-heard { font-size: 11px; }
     }
 </style>

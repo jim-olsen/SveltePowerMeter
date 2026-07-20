@@ -577,6 +577,36 @@ def add_bird_data(bird_data):
                                     bird_data.get('description'),
                                     bird_data.get('source')))
 
+def get_bird_details(scientific_name):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    bird_sql_connection.row_factory = sqlite3.Row
+    with bird_sql_connection:
+        cursor = bird_sql_connection.execute('''
+            SELECT *, COUNT(*) OVER () AS count
+            FROM bird_data
+            WHERE scientific_name = ?
+            ORDER BY record_time DESC
+            LIMIT 1
+        ''', [scientific_name])
+        row = cursor.fetchone()
+        if row is None:
+            return None
+        bird = dict(row)
+        bird['time'] = bird.pop('record_time', None)
+        return bird
+
+def get_bird_history():
+    bird_sql_connection = sqlite3.connect("birds.db")
+    bird_sql_connection.row_factory = sqlite3.Row
+    with bird_sql_connection:
+        cursor = bird_sql_connection.execute('''
+            SELECT scientific_name, common_name, MAX(record_time) AS last_heard, COUNT(*) AS count
+            FROM bird_data
+            GROUP BY scientific_name
+            ORDER BY last_heard DESC
+        ''')
+        return [dict(row) for row in cursor.fetchall()]
+
 def refresh_daily_data(stats_data):
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.row_factory = sqlite3.Row

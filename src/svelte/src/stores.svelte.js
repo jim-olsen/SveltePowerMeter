@@ -716,5 +716,33 @@ export const newBirdAlert = writable({}, () => {
     }
 })
 
+/**
+ * Retrieve the full history of birds ever seen, as recorded in the sql database.  Each entry contains the
+ * scientific name, common name, the time most recently heard, and the total number of times heard.
+ */
+function getBirdHistoryData() {
+    fetch("/birdHistory", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            birdHistoryData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the full history of birds ever seen, ordered by the time most recently heard.
+ * @type {Writable<[]>}
+ */
+export const birdHistoryData = writable([], () => {
+    getBirdHistoryData();
+    websocket.on('birdnet', (data) => getBirdHistoryData());
+    return () => {
+        websocket.removeAllListeners('birdnet');
+    }
+})
+
 
 

@@ -33,6 +33,7 @@
     import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
     import StarlinkPower from "./components/starlink/StarlinkPower.svelte";
     import BirdDashboard from "./components/bird/BirdDashboard.svelte";
+    import BirdHistory from "./components/bird/BirdHistory.svelte";
     import BirdDetails from "./components/bird/BirdDetails.svelte";
 
     let innerWidth = 0;
@@ -308,6 +309,9 @@
     {/if}
     {#if currentView.value === 'birdDashboard'}
         <BirdDashboard />
+    {/if}
+    {#if currentView.value === 'birdHistory'}
+        <BirdHistory />
     {/if}
     {#if currentView.value.startsWith('bird_details_')}
         <BirdDetails />
