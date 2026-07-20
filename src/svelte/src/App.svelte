@@ -32,6 +32,8 @@
     import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
     import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
     import StarlinkPower from "./components/starlink/StarlinkPower.svelte";
+    import BirdDashboard from "./components/bird/BirdDashboard.svelte";
+    import BirdDetails from "./components/bird/BirdDetails.svelte";
 
     let innerWidth = 0;
     let outerWidth = 0
@@ -271,6 +273,12 @@
     {/if}
     {#if currentView.value === 'lightningDashboard'}
         <LightningDashboard />
+    {/if}
+    {#if currentView.value === 'birdDashboard'}
+        <BirdDashboard />
+    {/if}
+    {#if currentView.value.startsWith('bird_details_')}
+        <BirdDetails />
     {/if}
 </div>
 

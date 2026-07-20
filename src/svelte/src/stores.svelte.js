@@ -678,5 +678,32 @@ export const lightningData = writable({}, () => {
     }
 })
 
+/**
+ * Retrieve the current bird data, keyed by scientific name, containing the sighting count and latest bird info.
+ */
+function getBirdData() {
+    fetch("/birdData", {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            birdData.set(d);
+        });
+}
+
+/**
+ * A subscribable that contains the current bird data, keyed by scientific name
+ * @type {Writable<{}>}
+ */
+export const birdData = writable({}, () => {
+    getBirdData();
+    websocket.on('birdnet', (data) => getBirdData());
+    return () => {
+        websocket.removeAllListeners('birdnet');
+    }
+})
+
 
 

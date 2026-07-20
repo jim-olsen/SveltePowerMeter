@@ -9,7 +9,8 @@
         faSnowflake,
         faExclamationTriangle,
         faBoltLightning,
-        faPlane
+        faPlane,
+        faCrow
     } from "@fortawesome/free-solid-svg-icons";
 </script>
     <div style="display: flex; flex-flow: row wrap; justify-content: center; align-content: center; row-gap: 6px; gap: 6px; width: 100%; box-sizing: border-box; padding: 2px;">
@@ -52,6 +53,11 @@
              on:click={()=> currentView.value = 'adsb'}>
             <Fa icon={faPlane} style="font-size: 6vw; color: cadetblue"/>
             <span class="largeText">ADSB</span>
+        </div>
+        <div class="card" style="display: flex; flex-flow: column; justify-content: center;  align-items: center;flex: 1 0 25%;"
+             on:click={()=> currentView.value = 'birdDashboard'}>
+            <Fa icon={faCrow} style="font-size: 6vw; color: cadetblue;"/>
+            <span class="largeText">Birds</span>
         </div>
     </div>
 

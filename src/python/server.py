@@ -52,6 +52,7 @@ BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
 STARLINK = { 'status': {}, 'history': {}, 'obstruction_map': [] }
+BIRDS_DETECTED = {}
 
 # List of valid fields for querying battery graph data.  This protects against sql injection using a dynamic field.
 VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nominal_capacity", "cycles",
@@ -285,6 +286,31 @@ def get_lightning_data():
     return sql_manager.get_lightning_data()
 
 
+#
+# Get the current bird data information stored in the global variable, keyed by scientific name
+#
+@app.route("/birdData")
+def get_bird_data():
+    global BIRDS_DETECTED
+
+    return BIRDS_DETECTED
+
+
+#
+# Get the picture of a bird stored in the database, keyed by scientific name
+#
+@app.route("/birdPicture")
+def get_bird_picture():
+    scientific_name = request.args.get('scientificName', None)
+
+    if not scientific_name:
+        return {}
+
+    image = sql_manager.get_bird_picture(scientific_name)
+
+    return {'scientific_name': scientific_name, 'image': image}
+
+
 @app.route("/statsData")
 def get_stats_data():
     global STATS_DATA
@@ -445,6 +471,7 @@ def start_mqtt_client():
         c.subscribe("battery_monitor_data")
         c.subscribe("starlink")
         c.subscribe("lights")
+        c.subscribe("birdnet")
 
     def handle_weather_loop(c, userdata, msg):
         global WEATHER_DATA
@@ -469,6 +496,38 @@ def start_mqtt_client():
         except Exception as e:
             logger.error(f"Error handling blueiris message: {e}")
             logger.error(f"Invalid json: {msg.payload}")
+
+    def handle_birdnet(c, userdata, msg):
+        global BIRDS_DETECTED
+
+        try:
+            bird_data = json.loads(msg.payload)
+            bird_data['time'] = int(time.time() * 1000)
+            bird_data['id'] = str(uuid.uuid4())
+            image = bird_data.pop('image', None)
+            scientific_name = bird_data.get('scientific_name')
+
+            now = int(time.time() * 1000)
+            bird_persist_threshold_ms = 5 * 60 * 1000
+
+            if scientific_name in BIRDS_DETECTED:
+                BIRDS_DETECTED[scientific_name]['count'] += 1
+                BIRDS_DETECTED[scientific_name]['bird'] = bird_data
+                last_persisted = BIRDS_DETECTED[scientific_name].get('last_persisted', 0)
+            else:
+                BIRDS_DETECTED[scientific_name] = {'count': 1, 'bird': bird_data}
+                last_persisted = 0
+
+            if now - last_persisted >= bird_persist_threshold_ms:
+                sql_manager.add_bird_data(bird_data)
+                BIRDS_DETECTED[scientific_name]['last_persisted'] = now
+
+            if image and scientific_name and not sql_manager.bird_picture_exists(scientific_name):
+                sql_manager.add_bird_picture(scientific_name, image)
+
+            socketio.emit('birdnet', bird_data)
+        except Exception as e:
+            logger.error(f"Error handling birdnet message: {e}")
 
     def handle_adsb(c, userdata, msg):
         global ADSB_DATA
@@ -578,6 +637,7 @@ def start_mqtt_client():
     client = mqtt.Client()
     client.message_callback_add("weather/loop", handle_weather_loop)
     client.message_callback_add("blueiris", handle_blueiris)
+    client.message_callback_add("birdnet", handle_birdnet)
     client.message_callback_add("adsb", handle_adsb)
     client.message_callback_add("battery_status", handle_battery_status)
     client.message_callback_add("lightning_data", handle_lightning_data)

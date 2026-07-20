@@ -97,6 +97,26 @@ def create_sql_tables_if_not_exist():
                 PRIMARY KEY (record_time))
     ''')
 
+    bird_sql_connection = sqlite3.connect("birds.db")
+    bird_sql_connection.execute('''CREATE TABLE IF NOT EXISTS bird_data(record_time INTEGER,
+                id TEXT,
+                common_name TEXT,
+                scientific_name TEXT,
+                start_time REAL,
+                end_time REAL,
+                confidence REAL,
+                label TEXT,
+                query TEXT,
+                media_url TEXT,
+                image_url TEXT,
+                description TEXT,
+                source TEXT,
+                PRIMARY KEY (record_time, id))
+    ''')
+    bird_sql_connection.execute('''CREATE TABLE IF NOT EXISTS bird_pictures(scientific_name TEXT PRIMARY KEY,
+                image TEXT)
+    ''')
+
 def update_sql_tables(current_data, weather_data, stats_data, batteries):
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
@@ -514,6 +534,48 @@ def add_lightning_event(record_time, event, distance, intensity):
     with sql_connection:
         sql_connection.execute("INSERT INTO lightning_data(record_time, event, distance, intensity) VALUES (?,?,?,?)",
                                (record_time, event, distance, intensity))
+
+def bird_picture_exists(scientific_name):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        cursor = bird_sql_connection.execute(
+            "SELECT scientific_name FROM bird_pictures WHERE scientific_name = ?", [scientific_name])
+        return cursor.fetchone() is not None
+
+def add_bird_picture(scientific_name, image):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        bird_sql_connection.execute(
+            "INSERT OR IGNORE INTO bird_pictures (scientific_name, image) VALUES (?, ?)",
+            (scientific_name, image))
+
+def get_bird_picture(scientific_name):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        cursor = bird_sql_connection.execute(
+            "SELECT image FROM bird_pictures WHERE scientific_name = ?", [scientific_name])
+        row = cursor.fetchone()
+        return row[0] if row is not None else None
+
+def add_bird_data(bird_data):
+    bird_sql_connection = sqlite3.connect("birds.db")
+    with bird_sql_connection:
+        bird_sql_connection.execute('''INSERT INTO bird_data (record_time, id, common_name, scientific_name,
+                start_time, end_time, confidence, label, query, media_url, image_url, description, source)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                                   (bird_data.get('time'),
+                                    bird_data.get('id'),
+                                    bird_data.get('common_name'),
+                                    bird_data.get('scientific_name'),
+                                    bird_data.get('start_time'),
+                                    bird_data.get('end_time'),
+                                    bird_data.get('confidence'),
+                                    bird_data.get('label'),
+                                    bird_data.get('query'),
+                                    bird_data.get('media_url'),
+                                    bird_data.get('image_url'),
+                                    bird_data.get('description'),
+                                    bird_data.get('source')))
 
 def refresh_daily_data(stats_data):
     sql_connection = sqlite3.connect("powerdata.db")
