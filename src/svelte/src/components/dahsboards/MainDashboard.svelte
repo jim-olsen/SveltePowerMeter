@@ -1,5 +1,5 @@
 <script>
-    import {onDestroy} from 'svelte';
+    import {onDestroy, onMount} from 'svelte';
     import Fa from "svelte-fa";
     import {
         faCarBattery,
@@ -17,7 +17,8 @@
         faArrowUp,
         faSignal,
         faChartLine,
-        faFire
+        faFire,
+        faLock
     } from "@fortawesome/free-solid-svg-icons";
 
     import {
@@ -28,7 +29,7 @@
         starlinkStatus,
         starlinkHistory
     } from "../../stores.svelte.js";
-    import {currentView} from "../../states.svelte.js";
+    import {currentView, dashboardScreensaver, dashboardScreensaverDisabled} from "../../states.svelte.js";
 
     let starlinkHistoryData = {};
 
@@ -36,8 +37,86 @@
         starlinkHistoryData = data || {};
     });
 
+    /*
+     * Screen saver mode: rotates through the four primary tiles in full
+     * screen every 5 seconds. Activates automatically after 30 seconds of
+     * no interaction. Touching the screen while in screen saver mode
+     * reverts to showing all tiles for 30 seconds before re-entering the
+     * screen saver. The active state is kept in a shared store so it
+     * survives this component being unmounted/remounted (e.g. while an
+     * alert is being displayed full screen).
+     */
+    const cardOrder = ['solar', 'battery', 'weather', 'starlink'];
+    let screensaverIndex = 0;
+    let rotationTimer = null;
+    let idleTimer = null;
+
+    function clearRotation() {
+        if (rotationTimer) {
+            clearInterval(rotationTimer);
+            rotationTimer = null;
+        }
+    }
+
+    function startRotation() {
+        clearRotation();
+        rotationTimer = setInterval(() => {
+            screensaverIndex = (screensaverIndex + 1) % cardOrder.length;
+        }, 5000);
+    }
+
+    function clearIdleTimer() {
+        if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = null;
+        }
+    }
+
+    function scheduleScreensaver() {
+        clearIdleTimer();
+        if (dashboardScreensaverDisabled.value) {
+            return;
+        }
+        idleTimer = setTimeout(() => {
+            if (!dashboardScreensaverDisabled.value) {
+                dashboardScreensaver.value = true;
+            }
+        }, 30000);
+    }
+
+    function disableScreensaver() {
+        dashboardScreensaverDisabled.value = true;
+        dashboardScreensaver.value = false;
+        clearIdleTimer();
+        clearRotation();
+    }
+
+    function exitScreensaver() {
+        if (dashboardScreensaver.value) {
+            dashboardScreensaver.value = false;
+        }
+        scheduleScreensaver();
+    }
+
+    $: if (dashboardScreensaver.value) {
+        clearIdleTimer();
+        startRotation();
+    } else {
+        clearRotation();
+    }
+
+    onMount(() => {
+        if (dashboardScreensaver.value) {
+            startRotation();
+        } else {
+            scheduleScreensaver();
+        }
+    });
+
     onDestroy(() => {
         unsubscribeStarlinkHistory();
+        clearRotation();
+        clearIdleTimer();
     });
 
     function isCharging() {
@@ -67,7 +146,24 @@
     }
 
     function go(view) {
-        return () => currentView.value = view;
+        return () => {
+            if (dashboardScreensaver.value) {
+                exitScreensaver();
+                return;
+            }
+            currentView.value = view;
+        };
+    }
+
+    function onDashClick() {
+        if (dashboardScreensaver.value) {
+            exitScreensaver();
+        }
+    }
+
+    function onLockClick(event) {
+        event.stopPropagation();
+        disableScreensaver();
     }
 
     /*
@@ -86,8 +182,10 @@
     function autoScale(node) {
         const apply = (w) => {
             if (!w) return;
-            const value = Math.max(28, Math.min(64, w / 3.4));
-            const label = Math.max(9, Math.min(18, value * 12 / 42));
+            const isScreensaver = !!node.closest('.screensaver-active');
+            const maxValue = isScreensaver ? 160 : 64;
+            const value = Math.max(28, Math.min(maxValue, w / 3.4));
+            const label = Math.max(9, Math.min(isScreensaver ? 46 : 18, value * 12 / 42));
             node.style.setProperty('--mv', value.toFixed(2) + 'px');
             node.style.setProperty('--ml', label.toFixed(2) + 'px');
         };
@@ -118,9 +216,12 @@
     $: starlinkConnected = $starlinkStatus?.state === 'CONNECTED';
 </script>
 
-<div class="dash">
+<div class="dash" class:screensaver-mode={dashboardScreensaver.value} on:click={onDashClick}>
     <!-- SOLAR / LOAD TILE -->
-    <div class="tile tile-solar" on:click={go('statistics')}>
+    <div class="tile tile-solar"
+         class:screensaver-active={dashboardScreensaver.value && cardOrder[screensaverIndex] === 'solar'}
+         class:screensaver-hidden={dashboardScreensaver.value && cardOrder[screensaverIndex] !== 'solar'}
+         on:click={go('statistics')}>
         <div class="tile-header">
             <div class="tile-icon" style="color: {chargeColor()};">
                 {#if isCharging() || isFloating()}
@@ -153,10 +254,18 @@
             </div>
         </div>
         <div class="tile-bottom-extra"></div>
+        {#if dashboardScreensaver.value}
+            <button type="button" class="screensaver-lock" on:click={onLockClick} aria-label="Disable screensaver">
+                <Fa icon={faLock}/>
+            </button>
+        {/if}
     </div>
 
     <!-- BATTERY TILE -->
-    <div class="tile tile-battery" on:click={go('battery_dashboard')}>
+    <div class="tile tile-battery"
+         class:screensaver-active={dashboardScreensaver.value && cardOrder[screensaverIndex] === 'battery'}
+         class:screensaver-hidden={dashboardScreensaver.value && cardOrder[screensaverIndex] !== 'battery'}
+         on:click={go('battery_dashboard')}>
         <div class="tile-header">
             <div class="tile-icon" style="color: {batteryColor};">
                 <Fa icon={faCarBattery}/>
@@ -196,10 +305,18 @@
             </div>
         </div>
         <div class="tile-bottom-extra"></div>
+        {#if dashboardScreensaver.value}
+            <button type="button" class="screensaver-lock" on:click={onLockClick} aria-label="Disable screensaver">
+                <Fa icon={faLock}/>
+            </button>
+        {/if}
     </div>
 
     <!-- WEATHER TILE -->
-    <div class="tile tile-weather" on:click={go('weather')}>
+    <div class="tile tile-weather"
+         class:screensaver-active={dashboardScreensaver.value && cardOrder[screensaverIndex] === 'weather'}
+         class:screensaver-hidden={dashboardScreensaver.value && cardOrder[screensaverIndex] !== 'weather'}
+         on:click={go('weather')}>
         <div class="tile-header">
             <div class="tile-icon weather-icon">
                 <Fa icon={faSnowflake}/>
@@ -230,10 +347,18 @@
             </div>
         </div>
         <div class="tile-bottom-extra"></div>
+        {#if dashboardScreensaver.value}
+            <button type="button" class="screensaver-lock" on:click={onLockClick} aria-label="Disable screensaver">
+                <Fa icon={faLock}/>
+            </button>
+        {/if}
     </div>
 
     <!-- STARLINK TILE -->
-    <div class="tile tile-starlink" on:click={go('starlinkStatus')}>
+    <div class="tile tile-starlink"
+         class:screensaver-active={dashboardScreensaver.value && cardOrder[screensaverIndex] === 'starlink'}
+         class:screensaver-hidden={dashboardScreensaver.value && cardOrder[screensaverIndex] !== 'starlink'}
+         on:click={go('starlinkStatus')}>
         <div class="tile-header">
             <div class="tile-icon starlink-icon">
                 <Fa icon={faSatelliteDish}/>
@@ -277,6 +402,11 @@
                 </span>
             </div>
         </div>
+        {#if dashboardScreensaver.value}
+            <button type="button" class="screensaver-lock" on:click={onLockClick} aria-label="Disable screensaver">
+                <Fa icon={faLock}/>
+            </button>
+        {/if}
     </div>
 </div>
 
@@ -299,6 +429,87 @@
         .dash {
             grid-template-columns: 1fr 1fr;
         }
+    }
+
+    /* Screen saver mode: only the active tile is shown, filling the
+       whole dashboard area. */
+    .dash.screensaver-mode {
+        grid-template-columns: 1fr;
+        grid-auto-rows: 1fr;
+    }
+
+    .tile.screensaver-hidden {
+        display: none !important;
+    }
+
+    .tile.screensaver-active {
+        grid-column: 1 / -1;
+        grid-row: 1 / -1;
+    }
+
+    .screensaver-active .tile-title {
+        font-size: 42px;
+    }
+
+    .screensaver-active .tile-badge {
+        font-size: 32px;
+        padding: 10px 20px;
+    }
+
+    .screensaver-active .tile-icon {
+        width: 90px;
+        height: 90px;
+        font-size: 50px;
+    }
+
+    .screensaver-active .metric-icon {
+        font-size: 52px;
+    }
+
+    .screensaver-active .sub-chip {
+        font-size: 22px;
+        padding: 8px 16px;
+    }
+
+    .screensaver-active .metric {
+        min-height: 220px;
+        padding: 20px 8px;
+    }
+
+    .screensaver-active .metric-label {
+        letter-spacing: 1px;
+    }
+
+    .screensaver-lock {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        z-index: 5;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: rgba(0, 0, 0, 0.35);
+        color: #e6eaf2;
+        font-size: 18px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .screensaver-lock:active {
+        background: rgba(0, 0, 0, 0.55);
+        transform: scale(0.95);
+    }
+
+    .screensaver-active .screensaver-lock {
+        width: 64px;
+        height: 64px;
+        right: 24px;
+        bottom: 24px;
+        font-size: 28px;
     }
 
     .tile {
