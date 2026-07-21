@@ -72,16 +72,13 @@ app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 
 
-# Update all the sql tables with the latest current data into the database for future processing and analysis
-#
 def update_sql_tables():
+    """Updates all the sql tables with the latest current data into the database for future processing and analysis."""
     sql_manager.update_sql_tables(CURRENT_DATA, WEATHER_DATA, STATS_DATA, BATTERIES)
 
 
-#
-# Update the running stats with the latest data by looping
-#
 def update_running_stats():
+    """Updates the running stats with the latest data by looping indefinitely."""
     global STATS_DATA
     last_update = datetime.today()
     current_day_of_year = datetime.today().timetuple().tm_yday
@@ -121,37 +118,45 @@ def update_running_stats():
         except Exception as e:
             logger.error('Failure in updating stats: ' + str(e))
 
-#
-# Serve up the svelte application
-#
 @app.route("/")
 def base():
+    """Serves up the svelte application.
+
+    Returns:
+        flask.Response: The svelte application's index.html file.
+    """
     return send_from_directory('../svelte/public', 'index.html')
 
 
-#
-# Handle generic svelte application requests
-#
 @app.route("/<path:path>")
 def home(path):
+    """Handles generic svelte application requests.
+
+    Args:
+        path: The path of the static file being requested.
+
+    Returns:
+        flask.Response: The requested static file from the svelte application.
+    """
     return send_from_directory('../svelte/public', path)
 
 
-#
-# Take the requested field and requested number of days, and create graph data for that fields values over the specified
-# time period.
-#
-# PARAMETERS
-#   days - The number of days to fetch all of the data for
-#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
-#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
-#               back empty results
-# RETURN VALUE
-#   An object containing multiple lists.  One list will be the time the value was recorded, and the other lists will be
-#   the corresponding values at the recorded time.  This can be easily utilized to graph the values over time
-#
 @app.route("/graphData")
 def get_graph_data():
+    """Takes the requested field and requested number of days, and creates graph data for that field's values
+    over the specified time period.
+
+    Args:
+        days: The number of days to fetch all of the data for.
+        dataField: The name of the data field to fetch data for. Note that this must be one of the acceptable and
+            defined data fields contained in the current data global variable to be allowed as a query, or you
+            will get back empty results.
+
+    Returns:
+        dict: An object containing multiple lists. One list will be the time the value was recorded, and the other
+        lists will be the corresponding values at the recorded time. This can be easily utilized to graph the
+        values over time.
+    """
     global CURRENT_DATA
 
     days = int(request.args.get('days', 4))
@@ -164,6 +169,11 @@ def get_graph_data():
 
 @app.route("/currentData")
 def get_current_data():
+    """Gets the current power meter data.
+
+    Returns:
+        dict: The current power data attributes.
+    """
     global CURRENT_DATA
 
     return CURRENT_DATA.__dict__
@@ -171,27 +181,33 @@ def get_current_data():
 
 @app.route("/batteryData")
 def get_battery_data():
+    """Gets the current data for all known batteries.
+
+    Returns:
+        list: The list of battery data objects currently tracked.
+    """
     global BATTERIES
 
     return list(BATTERIES.values())
 
 
-#
-# Take the requested field and requested number of days, and create graph data for that fields values over the specified
-# time period.
-#
-# PARAMETERS
-#   days - The number of days to fetch all of the data for
-#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
-#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
-#               back empty results
-#   batteryName - The name of the battery to fetch the data for
-# RETURN VALUE
-#   An object containing multiple lists.  One list will be the time the value was recorded, and the other lists will be
-#   the corresponding values at the recorded time.  This can be easily utilized to graph the values over time
-#
 @app.route("/graphBatteryData")
 def get_battery_graph_data():
+    """Takes the requested field and requested number of days, and creates graph data for that field's values
+    over the specified time period.
+
+    Args:
+        days: The number of days to fetch all of the data for.
+        dataField: The name of the data field to fetch data for. Note that this must be one of the acceptable and
+            defined acceptable data fields contained in the global variable for it to be allowed as a query, or
+            you will get back empty results.
+        batteryName: The name of the battery to fetch the data for.
+
+    Returns:
+        dict: An object containing multiple lists. One list will be the time the value was recorded, and the other
+        lists will be the corresponding values at the recorded time. This can be easily utilized to graph the
+        values over time.
+    """
     global VALID_BATTERY_FIELDS
 
     days = int(request.args.get('days', 4))
@@ -205,6 +221,11 @@ def get_battery_graph_data():
 
 @app.route("/weatherData")
 def get_weather_data():
+    """Gets the current weather data.
+
+    Returns:
+        dict: The current weather data attributes.
+    """
     global WEATHER_DATA
 
     return WEATHER_DATA.__dict__
@@ -212,6 +233,11 @@ def get_weather_data():
 
 @app.route("/weatherDailyMinMax")
 def get_weather_max_min():
+    """Gets the daily minimum and maximum weather values recorded so far today.
+
+    Returns:
+        dict: The daily minimum and maximum weather values, or an empty dict if none are available.
+    """
     min_max_data = sql_manager.get_weather_max_min()
     if min_max_data is None:
         min_max_data = {}
@@ -219,21 +245,22 @@ def get_weather_max_min():
     return dict(min_max_data)
 
 
-#
-# Take the requested field and requested number of days, and create graph data for that fields values over the specified
-# time period.
-#
-# PARAMETERS
-#   days - The number of days to fetch all of the data for
-#   dataField - the name of the data field to fetch data for.  Note that this must be one of the acceptable and defined
-#               acceptable data fields contained in the global variable for it to be allowed as a query, or you will get
-#               back empty results
-# RETURN VALUE
-#   An object containing two lists.  One list will be the time the value was recorded, and the second list will be the
-#   corresponding value at the recorded time.  This can be easily utilized to graph the values over time
-#
 @app.route("/graphWxData")
 def graph_wx_data():
+    """Takes the requested field and requested number of days, and creates graph data for that field's values
+    over the specified time period.
+
+    Args:
+        days: The number of days to fetch all of the data for.
+        dataField: The name of the data field to fetch data for. Note that this must be one of the acceptable and
+            defined acceptable data fields contained in the global variable for it to be allowed as a query, or
+            you will get back empty results.
+
+    Returns:
+        dict: An object containing two lists. One list will be the time the value was recorded, and the second
+        list will be the corresponding value at the recorded time. This can be easily utilized to graph the
+        values over time.
+    """
     global WEATHER_DATA
 
     days = int(request.args.get('days', 1))
@@ -244,11 +271,16 @@ def graph_wx_data():
     return {'time': []}
 
 
-#
-# Get the last blue iris alert that we received from MQTT
-#
 @app.route("/blueIrisAlert")
 def get_blueiris_alert():
+    """Gets the last blue iris alert that we received from MQTT.
+
+    Args:
+        noImage: If 'true', the alert image will be excluded from the returned data.
+
+    Returns:
+        dict: The last blue iris alert data.
+    """
     global BLUEIRIS_ALERT
 
     no_image = request.args.get('noImage', 'False').lower() == 'true'
@@ -261,11 +293,16 @@ def get_blueiris_alert():
     return return_value
 
 
-#
-# Get the last in range ADSB packet we received
-#
 @app.route("/adsbData")
 def get_adsb_data():
+    """Gets the last in range ADSB packet we received.
+
+    Args:
+        noImage: If 'true', the picture will be excluded from the returned data.
+
+    Returns:
+        dict: The last ADSB data received.
+    """
     global ADSB_DATA
 
     no_image = request.args.get('noImage', 'False').lower() == 'true'
@@ -278,31 +315,44 @@ def get_adsb_data():
     return return_value
 
 
-#
-# Return both the last lightning event seen, as well as summary data for the day
-#
 @app.route("/lightningData")
 def get_lightning_data():
+    """Returns both the last lightning event seen, as well as summary data for the day.
+
+    Returns:
+        dict: The last lightning event and the day's summary data.
+    """
     return sql_manager.get_lightning_data()
 
 
-#
-# Get the current bird data information stored in the global variable, keyed by scientific name
-#
 @app.route("/birdData")
 def get_bird_data():
+    """Gets the current bird data information stored in the global variable, keyed by scientific name.
+
+    Returns:
+        dict: The currently detected birds, keyed by scientific name.
+    """
     global BIRDS_DETECTED
 
     return BIRDS_DETECTED
 
 
-#
-# Get the full history of birds ever seen, as recorded in the sql database.  Each entry contains the scientific
-# name, common name, the time the bird was most recently heard, and the total number of times it has been heard.
-# The list is ordered by the time most recently heard, descending.
-#
 @app.route("/birdHistory", methods=["GET", "DELETE"])
 def get_bird_history():
+    """Gets the full history of birds ever seen, as recorded in the sql database, or deletes a bird's history.
+
+    Each entry contains the scientific name, common name, the time the bird was most recently heard, and the
+    total number of times it has been heard. The list is ordered by the time most recently heard, descending.
+    When the request method is DELETE, removes the bird matching scientificName from the database and from the
+    in-memory store.
+
+    Args:
+        scientificName: (DELETE only) The scientific name of the bird whose history should be deleted.
+
+    Returns:
+        dict or tuple: The bird history list on GET, or a success/error dict (with a 400 status on error) on
+        DELETE.
+    """
     global BIRDS_DETECTED
 
     if request.method == "DELETE":
@@ -319,13 +369,18 @@ def get_bird_history():
     return sql_manager.get_bird_history()
 
 
-#
-# Get the details (most recent sighting and total count) of a single bird, keyed by scientific name, as recorded
-# in the sql database.  This is used to display bird details for birds that are no longer held in the in-memory
-# BIRDS_DETECTED store.
-#
 @app.route("/birdDetails")
 def get_bird_details():
+    """Gets the details (most recent sighting and total count) of a single bird, keyed by scientific name, as
+    recorded in the sql database. This is used to display bird details for birds that are no longer held in the
+    in-memory BIRDS_DETECTED store.
+
+    Args:
+        scientificName: The scientific name of the bird to fetch details for.
+
+    Returns:
+        dict: The bird's details, or an empty dict if scientificName is missing or no bird is found.
+    """
     scientific_name = request.args.get('scientificName', None)
 
     if not scientific_name:
@@ -336,11 +391,16 @@ def get_bird_details():
     return bird or {}
 
 
-#
-# Get the picture of a bird stored in the database, keyed by scientific name
-#
 @app.route("/birdPicture")
 def get_bird_picture():
+    """Gets the picture of a bird stored in the database, keyed by scientific name.
+
+    Args:
+        scientificName: The scientific name of the bird to fetch the picture for.
+
+    Returns:
+        dict: The scientific name and image data, or an empty dict if scientificName is missing.
+    """
     scientific_name = request.args.get('scientificName', None)
 
     if not scientific_name:
@@ -353,24 +413,37 @@ def get_bird_picture():
 
 @app.route("/statsData")
 def get_stats_data():
+    """Gets the current accumulated stats data.
+
+    Returns:
+        dict: The current stats data attributes.
+    """
     global STATS_DATA
 
     return STATS_DATA.__dict__
 
 
-#
-# provide the generic dishy status data through REST
-#
 @app.route("/starlink/status")
 def starlink_status():
+    """Provides the generic dishy status data through REST.
+
+    Returns:
+        str: The JSON serialized Starlink status data.
+    """
     return json.dumps(STARLINK['status'], indent=3)
 
 
-#
-# provide the dishy historical data through REST
-#
 @app.route("/starlink/history")
 def starlink_history():
+    """Provides the dishy historical data through REST.
+
+    Args:
+        skipGraphs: If 'true', the graph-heavy history fields (ping drop rate, ping latency, downlink/uplink bps,
+            and power in) will be excluded from the returned data.
+
+    Returns:
+        str: The JSON serialized Starlink history data.
+    """
     skip_graphs = request.args.get('skipGraphs', "False").lower() == 'true'
     history = copy.deepcopy(STARLINK['history'])
     if skip_graphs:
@@ -382,11 +455,13 @@ def starlink_history():
     return json.dumps(history, indent=3)
 
 
-#
-# Get the obstruction image data, and transform into a png file and return through the get request
-#
 @app.route("/starlink/obstruction_image")
 def starlink_obstruction_image():
+    """Gets the obstruction image data, and transforms it into a png file and returns it through the get request.
+
+    Returns:
+        flask.Response: The obstruction map rendered as a PNG image.
+    """
     obstruction_image = STARLINK['obstruction_map']
     numpy_image = np.array(obstruction_image).astype('uint8')
     img = Image.fromarray(numpy_image)
@@ -395,10 +470,15 @@ def starlink_obstruction_image():
     file_object.seek(0)
     return send_file(file_object, mimetype='image/PNG')
 
-#
-# Get the shelly object instance matching the name.  Return none if no matching Shelly
-#
 def get_shelly_by_name(name):
+    """Gets the shelly object instance matching the name.
+
+    Args:
+        name: The name of the shelly device to find.
+
+    Returns:
+        dict or None: The matching shelly device, or None if no matching Shelly is found.
+    """
     global AVAILABLE_SHELLEYS
 
     for shelly in AVAILABLE_SHELLEYS:
@@ -407,21 +487,28 @@ def get_shelly_by_name(name):
     return None
 
 
-#
-# Get the list of available shellys
-#
 @app.route("/shelly")
 def get_all_shellys():
+    """Gets the list of available shellys.
+
+    Returns:
+        str: The JSON serialized list of available Shelly devices.
+    """
     global AVAILABLE_SHELLEYS
 
     return json.dumps(AVAILABLE_SHELLEYS)
 
 
-#
-# Get the current relay status of a given device
-#
 @app.route("/shelly/relay/status", methods=['GET'])
 def relay_status():
+    """Gets the current relay status of a given device.
+
+    Args:
+        name: The name of the shelly device to fetch the status for.
+
+    Returns:
+        dict: The shelly device data, or an empty dict if no matching device is found.
+    """
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
@@ -429,11 +516,16 @@ def relay_status():
     return {}
 
 
-#
-# turn the relay off of a given device
-#
 @app.route("/shelly/relay/off", methods=['GET'])
 def turn_relay_off():
+    """Turns the relay off of a given device.
+
+    Args:
+        name: The name of the shelly device to turn off.
+
+    Returns:
+        dict: The shelly device data, or an empty dict if no matching device is found.
+    """
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
@@ -442,11 +534,16 @@ def turn_relay_off():
     return {}
 
 
-#
-# turn the relay on of a given device
-#
 @app.route("/shelly/relay/on", methods=['GET'])
 def turn_relay_on():
+    """Turns the relay on of a given device.
+
+    Args:
+        name: The name of the shelly device to turn on.
+
+    Returns:
+        dict: The shelly device data, or an empty dict if no matching device is found.
+    """
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
     if shelly is not None:
@@ -455,11 +552,17 @@ def turn_relay_on():
     return {}
 
 
-#
-# power cycle the relay of a given device
-#
 @app.route("/shelly/relay/cycle", methods=['GET'])
 def power_cycle_relay():
+    """Power cycles the relay of a given device.
+
+    Args:
+        name: The name of the shelly device to power cycle.
+        delay: The number of seconds to wait before turning the relay back on. Defaults to 5.
+
+    Returns:
+        dict: The shelly device data, or an empty dict if no matching device is found.
+    """
     delay : int = request.args.get("delay", default=5, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
@@ -469,17 +572,19 @@ def power_cycle_relay():
 
     return {}
 
-#
-# Update the day accumulated data from the daily table for today.  If none is present for today, just skip updating
-#
 def refresh_daily_data():
+    """Updates the day accumulated data from the daily table for today. If none is present for today, just skips
+    updating.
+    """
     sql_manager.refresh_daily_data(STATS_DATA)
 
 
-#
-# update lightning information in the in memory object and in the sql database
-#
 def update_lightning_data(lightning_event: dict):
+    """Updates lightning information in the in memory object and in the sql database.
+
+    Args:
+        lightning_event: The lightning event data containing event type, distance, and intensity.
+    """
     try:
         sql_manager.add_lightning_event(
             int(time.time()),
@@ -491,11 +596,17 @@ def update_lightning_data(lightning_event: dict):
         logger.error(e)
 
 
-#
-# Connect to the mqtt service and subscribe to the blue iris and weewx weather topics.
-#
 def start_mqtt_client():
+    """Connects to the mqtt service and subscribes to the blue iris and weewx weather topics."""
     def on_connect(c, userdata, flags, rc):
+        """Handles the MQTT client connect event by subscribing to all required topics.
+
+        Args:
+            c: The MQTT client instance that connected.
+            userdata: The private user data as set in the client constructor.
+            flags: Response flags sent by the broker.
+            rc: The connection result code.
+        """
         global MQTT_CLIENT
 
         logger.info("MQTT Client Connected, subscribing...")
@@ -514,6 +625,13 @@ def start_mqtt_client():
         c.subscribe("birdnet")
 
     def handle_weather_loop(c, userdata, msg):
+        """Handles incoming weather loop MQTT messages by updating the weather data and emitting it via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the weather loop JSON payload.
+        """
         global WEATHER_DATA
 
         try:
@@ -523,6 +641,14 @@ def start_mqtt_client():
             logger.error(f"Error handling weather loop message: {e}")
 
     def handle_blueiris(c, userdata, msg):
+        """Handles incoming blue iris alert MQTT messages by updating and persisting the alert data and emitting
+        it via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the blue iris alert JSON payload.
+        """
         global BLUEIRIS_ALERT
 
         try:
@@ -538,6 +664,14 @@ def start_mqtt_client():
             logger.error(f"Invalid json: {msg.payload}")
 
     def handle_birdnet(c, userdata, msg):
+        """Handles incoming birdnet detection MQTT messages by updating the in-memory bird store, persisting new
+        or refreshed detections to the sql database, and emitting the detection via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the birdnet detection JSON payload.
+        """
         global BIRDS_DETECTED
 
         try:
@@ -575,6 +709,14 @@ def start_mqtt_client():
             logger.error(f"Error handling birdnet message: {e}")
 
     def handle_adsb(c, userdata, msg):
+        """Handles incoming ADSB MQTT messages by updating and persisting the ADSB data and emitting it via
+        socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the ADSB JSON payload.
+        """
         global ADSB_DATA
 
         try:
@@ -588,6 +730,14 @@ def start_mqtt_client():
             logger.error(f"Error handling adsb message: {e}")
 
     def handle_battery_status(c, userdata, msg):
+        """Handles incoming battery status MQTT messages by updating the batteries store, recomputing the overall
+        battery percentage, and emitting the updated battery data via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the battery status JSON payload.
+        """
         try:
             logger.debug("Received Battery Status")
             battery_info = json.loads(msg.payload)
@@ -601,6 +751,13 @@ def start_mqtt_client():
             logger.error(f"Error handling battery status message: {e}")
 
     def handle_lightning_data(c, userdata, msg):
+        """Handles incoming lightning data MQTT messages by persisting the event and emitting it via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the lightning data JSON payload.
+        """
         try:
             logger.debug("Received lightning data")
             lightning_data = json.loads(msg.payload)
@@ -610,6 +767,14 @@ def start_mqtt_client():
             logger.error(f"Error handling lightning data message: {e}")
 
     def handle_solar_charger_data(c, userdata, msg):
+        """Handles incoming solar charger data MQTT messages by updating the current and stats data with the
+        latest charger readings, and emitting the current data via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the solar charger data JSON payload.
+        """
         try:
             charger_data = json.loads(msg.payload)
             CURRENT_DATA.solar_watts = charger_data.get("solar_watts", 0)
@@ -627,6 +792,14 @@ def start_mqtt_client():
             logger.error(f"Error handling solar charger data message: {e}")
 
     def handle_dc_meter_data(c, userdata, msg):
+        """Handles incoming DC meter data MQTT messages by updating the current cabin load data and emitting it
+        via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the DC meter data JSON payload.
+        """
         try:
             meter_data = json.loads(msg.payload)
             if meter_data['device_name'] == "Cabin Load":
@@ -638,6 +811,13 @@ def start_mqtt_client():
             logger.error(f"Error handling DC meter data message: {e}")
 
     def handle_battery_monitor_data(c, userdata, msg):
+        """Handles incoming battery monitor data MQTT messages by updating the current battery load data.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the battery monitor data JSON payload.
+        """
         try:
             meter_data = json.loads(msg.payload)
             if meter_data['device_name'] == "Battery Load":
@@ -646,6 +826,13 @@ def start_mqtt_client():
             logger.error(f"Error handling DC meter data message: {e}")
 
     def handle_starlink(c, userdata, msg):
+        """Handles incoming Starlink MQTT messages by updating the Starlink status, history, and obstruction map.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the Starlink data JSON payload.
+        """
         try:
             starlink_data = json.loads(msg.payload)
             STARLINK['status'] = starlink_data.get('status', None)
@@ -655,6 +842,14 @@ def start_mqtt_client():
             logger.error(f"Error handling Starlink data message: {e}")
 
     def handle_lights(c, userdata, msg):
+        """Handles incoming lights MQTT messages by updating an existing Shelly device's state or adding it to
+        the list of available Shellys if it is not already known.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the lights JSON payload.
+        """
         try:
             update = json.loads(msg.payload)
             device = next((d for d in AVAILABLE_SHELLEYS if d['id'] == update['id']), None)
@@ -666,10 +861,24 @@ def start_mqtt_client():
             logger.error(f"Error handling lights data message: {e}")
 
     def on_message(c, userdata, msg):
+        """Handles any MQTT message that does not have a specific callback registered for its topic.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message that has no registered callback.
+        """
         logger.debug(f"Recieved MQTT: {msg.topic}->{msg.payload}")
         logger.warning(f"No callback registered for topic: {msg.topic}")
 
     def on_disconnect(c, userdata, rc):
+        """Handles the MQTT client disconnect event by continually attempting to reconnect until successful.
+
+        Args:
+            c: The MQTT client instance that disconnected.
+            userdata: The private user data as set in the client constructor.
+            rc: The disconnection result code.
+        """
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
         while True:
             try:
@@ -710,10 +919,17 @@ def start_mqtt_client():
 
 
 def create_sql_tables_if_not_exist():
+    """Creates all required sql tables in the database if they do not already exist."""
     sql_manager.create_sql_tables_if_not_exist()
 
 
 def main(proxy=None):
+    """Starts up the power meter server: initializes the database, restores last-known blue iris and ADSB data,
+    refreshes daily stats, starts the background stats and MQTT threads, and runs the Flask application.
+
+    Args:
+        proxy: Unused, reserved for future proxy configuration support.
+    """
     global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA
 
     create_sql_tables_if_not_exist()
@@ -743,9 +959,7 @@ def main(proxy=None):
     app.run(port=8050, host='0.0.0.0')
 
 
-#
-# Startup the flask server on port 9999.  Change the port here if you want it listening somewhere else, and simply
-# execute this python file to startup your server and serve the svelte app
-#
 if __name__ == "__main__":
+    # Startup the flask server on port 9999.  Change the port here if you want it listening somewhere else, and
+    # simply execute this python file to startup your server and serve the svelte app
     main()
