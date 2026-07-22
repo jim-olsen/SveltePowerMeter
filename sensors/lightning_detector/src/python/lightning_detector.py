@@ -101,6 +101,7 @@ def main():
         lightning_sensor.set_watchdog_threshold(2)
         lightning_sensor.set_spike_rejection(2)
         LIGHTNING_SENSOR = lightning_sensor
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(AS3935_IRQ_PIN, GPIO.IN)
         GPIO.add_event_detect(AS3935_IRQ_PIN, GPIO.RISING, callback=lightning_sensor_callback_handler)
     else:
