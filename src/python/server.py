@@ -1,18 +1,21 @@
 import copy
 import os
 import pickle
-from flask import Flask, send_from_directory, send_file, request
+from quart import Quart, send_from_directory, send_file, request
 import time
 import threading
+import asyncio
 import io
 import json
 import numpy as np
 import logging
 import paho.mqtt.client as mqtt
 import uuid
+import socketio
+from hypercorn.asyncio import serve
+from hypercorn.config import Config
 from datetime import datetime, timedelta
 from PIL import Image
-from flask_socketio import SocketIO
 from homemonitor_data import CurrentPowerData, StatsData, WeatherData
 import sql_manager
 
@@ -68,8 +71,26 @@ MQTT_CLIENT : mqtt.Client
 
 AVAILABLE_SHELLEYS = []
 
-app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
+# The main asyncio event loop that runs the Quart/hypercorn server. This is set in main() and is used to safely
+# schedule socketio emissions from background threads (mqtt client, stats updater) that are not running as part
+# of the asyncio event loop.
+MAIN_EVENT_LOOP: asyncio.AbstractEventLoop = None
+
+app = Quart(__name__)
+sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='asgi')
+asgi_app = socketio.ASGIApp(sio, app)
+
+
+def emit(event, data):
+    """Schedules a socketio emit call to run on the main event loop. This is safe to call from any thread,
+    including background threads that are not running as part of the asyncio event loop.
+
+    Args:
+        event: The name of the socketio event to emit.
+        data: The data to emit alongside the event.
+    """
+    if MAIN_EVENT_LOOP is not None:
+        asyncio.run_coroutine_threadsafe(sio.emit(event, data), MAIN_EVENT_LOOP)
 
 
 def update_sql_tables():
@@ -106,43 +127,43 @@ def update_running_stats():
             sql_manager.update_stats_data_from_db(STATS_DATA)
 
             # We serialize then deserialize to get around datetime not being serializable by socketio
-            socketio.emit('stats_data', json.loads(json.dumps(STATS_DATA.__dict__, default=str)))
-            socketio.emit('starlink_status', STARLINK["status"])
+            emit('stats_data', json.loads(json.dumps(STATS_DATA.__dict__, default=str)))
+            emit('starlink_status', STARLINK["status"])
             history = copy.deepcopy(STARLINK["history"])
             history.pop('ping_drop_rate', None)
             history.pop('ping_latency', None)
             history.pop('downlink_bps', None)
             history.pop('uplink_bps', None)
-            socketio.emit('starlink_history', history)
+            emit('starlink_history', history)
             time.sleep(5)
         except Exception as e:
             logger.error('Failure in updating stats: ' + str(e))
 
 @app.route("/")
-def base():
+async def base():
     """Serves up the svelte application.
 
     Returns:
-        flask.Response: The svelte application's index.html file.
+        quart.Response: The svelte application's index.html file.
     """
-    return send_from_directory('../svelte/public', 'index.html')
+    return await send_from_directory('../svelte/public', 'index.html')
 
 
 @app.route("/<path:path>")
-def home(path):
+async def home(path):
     """Handles generic svelte application requests.
 
     Args:
         path: The path of the static file being requested.
 
     Returns:
-        flask.Response: The requested static file from the svelte application.
+        quart.Response: The requested static file from the svelte application.
     """
-    return send_from_directory('../svelte/public', path)
+    return await send_from_directory('../svelte/public', path)
 
 
 @app.route("/graphData")
-def get_graph_data():
+async def get_graph_data():
     """Takes the requested field and requested number of days, and creates graph data for that field's values
     over the specified time period.
 
@@ -168,7 +189,7 @@ def get_graph_data():
 
 
 @app.route("/currentData")
-def get_current_data():
+async def get_current_data():
     """Gets the current power meter data.
 
     Returns:
@@ -180,7 +201,7 @@ def get_current_data():
 
 
 @app.route("/batteryData")
-def get_battery_data():
+async def get_battery_data():
     """Gets the current data for all known batteries.
 
     Returns:
@@ -192,7 +213,7 @@ def get_battery_data():
 
 
 @app.route("/graphBatteryData")
-def get_battery_graph_data():
+async def get_battery_graph_data():
     """Takes the requested field and requested number of days, and creates graph data for that field's values
     over the specified time period.
 
@@ -220,7 +241,7 @@ def get_battery_graph_data():
 
 
 @app.route("/weatherData")
-def get_weather_data():
+async def get_weather_data():
     """Gets the current weather data.
 
     Returns:
@@ -232,7 +253,7 @@ def get_weather_data():
 
 
 @app.route("/weatherDailyMinMax")
-def get_weather_max_min():
+async def get_weather_max_min():
     """Gets the daily minimum and maximum weather values recorded so far today.
 
     Returns:
@@ -246,7 +267,7 @@ def get_weather_max_min():
 
 
 @app.route("/graphWxData")
-def graph_wx_data():
+async def graph_wx_data():
     """Takes the requested field and requested number of days, and creates graph data for that field's values
     over the specified time period.
 
@@ -272,7 +293,7 @@ def graph_wx_data():
 
 
 @app.route("/blueIrisAlert")
-def get_blueiris_alert():
+async def get_blueiris_alert():
     """Gets the last blue iris alert that we received from MQTT.
 
     Args:
@@ -294,7 +315,7 @@ def get_blueiris_alert():
 
 
 @app.route("/adsbData")
-def get_adsb_data():
+async def get_adsb_data():
     """Gets the last in range ADSB packet we received.
 
     Args:
@@ -316,7 +337,7 @@ def get_adsb_data():
 
 
 @app.route("/lightningData")
-def get_lightning_data():
+async def get_lightning_data():
     """Returns both the last lightning event seen, as well as summary data for the day.
 
     Returns:
@@ -326,7 +347,7 @@ def get_lightning_data():
 
 
 @app.route("/birdData")
-def get_bird_data():
+async def get_bird_data():
     """Gets the current bird data information stored in the global variable, keyed by scientific name.
 
     Returns:
@@ -338,7 +359,7 @@ def get_bird_data():
 
 
 @app.route("/birdHistory", methods=["GET", "DELETE"])
-def get_bird_history():
+async def get_bird_history():
     """Gets the full history of birds ever seen, as recorded in the sql database, or deletes a bird's history.
 
     Each entry contains the scientific name, common name, the time the bird was most recently heard, and the
@@ -370,7 +391,7 @@ def get_bird_history():
 
 
 @app.route("/birdDetails")
-def get_bird_details():
+async def get_bird_details():
     """Gets the details (most recent sighting and total count) of a single bird, keyed by scientific name, as
     recorded in the sql database. This is used to display bird details for birds that are no longer held in the
     in-memory BIRDS_DETECTED store.
@@ -392,7 +413,7 @@ def get_bird_details():
 
 
 @app.route("/birdPicture")
-def get_bird_picture():
+async def get_bird_picture():
     """Gets the picture of a bird stored in the database, keyed by scientific name.
 
     Args:
@@ -412,7 +433,7 @@ def get_bird_picture():
 
 
 @app.route("/statsData")
-def get_stats_data():
+async def get_stats_data():
     """Gets the current accumulated stats data.
 
     Returns:
@@ -424,7 +445,7 @@ def get_stats_data():
 
 
 @app.route("/starlink/status")
-def starlink_status():
+async def starlink_status():
     """Provides the generic dishy status data through REST.
 
     Returns:
@@ -434,7 +455,7 @@ def starlink_status():
 
 
 @app.route("/starlink/history")
-def starlink_history():
+async def starlink_history():
     """Provides the dishy historical data through REST.
 
     Args:
@@ -456,11 +477,11 @@ def starlink_history():
 
 
 @app.route("/starlink/obstruction_image")
-def starlink_obstruction_image():
+async def starlink_obstruction_image():
     """Gets the obstruction image data, and transforms it into a png file and returns it through the get request.
 
     Returns:
-        flask.Response: The obstruction map rendered as a PNG image.
+        quart.Response: The obstruction map rendered as a PNG image.
     """
     obstruction_image = STARLINK['obstruction_map']
     numpy_image = np.array(obstruction_image).astype('uint8')
@@ -468,7 +489,7 @@ def starlink_obstruction_image():
     file_object = io.BytesIO()
     img.save(file_object, 'PNG')
     file_object.seek(0)
-    return send_file(file_object, mimetype='image/PNG')
+    return await send_file(file_object, mimetype='image/PNG')
 
 def get_shelly_by_name(name):
     """Gets the shelly object instance matching the name.
@@ -488,7 +509,7 @@ def get_shelly_by_name(name):
 
 
 @app.route("/shelly")
-def get_all_shellys():
+async def get_all_shellys():
     """Gets the list of available shellys.
 
     Returns:
@@ -500,7 +521,7 @@ def get_all_shellys():
 
 
 @app.route("/shelly/relay/status", methods=['GET'])
-def relay_status():
+async def relay_status():
     """Gets the current relay status of a given device.
 
     Args:
@@ -517,7 +538,7 @@ def relay_status():
 
 
 @app.route("/shelly/relay/off", methods=['GET'])
-def turn_relay_off():
+async def turn_relay_off():
     """Turns the relay off of a given device.
 
     Args:
@@ -535,7 +556,7 @@ def turn_relay_off():
 
 
 @app.route("/shelly/relay/on", methods=['GET'])
-def turn_relay_on():
+async def turn_relay_on():
     """Turns the relay on of a given device.
 
     Args:
@@ -553,7 +574,7 @@ def turn_relay_on():
 
 
 @app.route("/shelly/relay/cycle", methods=['GET'])
-def power_cycle_relay():
+async def power_cycle_relay():
     """Power cycles the relay of a given device.
 
     Args:
@@ -636,7 +657,7 @@ def start_mqtt_client():
 
         try:
             WEATHER_DATA = WEATHER_DATA.load_from_json(msg.payload)
-            socketio.emit('weather_data', WEATHER_DATA.__dict__)
+            emit('weather_data', WEATHER_DATA.__dict__)
         except Exception as e:
             logger.error(f"Error handling weather loop message: {e}")
 
@@ -655,7 +676,7 @@ def start_mqtt_client():
             BLUEIRIS_ALERT = json.loads(msg.payload)
             BLUEIRIS_ALERT['time'] = int(time.time() * 1000)
             BLUEIRIS_ALERT['id'] = str(uuid.uuid4())
-            socketio.emit('blueiris_alert', BLUEIRIS_ALERT)
+            emit('blueiris_alert', BLUEIRIS_ALERT)
             file = open(b"last_blue_iris_alert.pkl", "wb")
             pickle.dump(BLUEIRIS_ALERT, file)
             file.close()
@@ -695,7 +716,7 @@ def start_mqtt_client():
                 bird_data['is_new'] = not sql_manager.bird_seen_before(scientific_name)
                 BIRDS_DETECTED[scientific_name] = {'count': 1, 'bird': bird_data}
                 last_persisted = 0
-                socketio.emit('newbird', bird_data)
+                emit('newbird', bird_data)
 
             if now - last_persisted >= bird_persist_threshold_ms:
                 sql_manager.add_bird_data(bird_data)
@@ -704,7 +725,7 @@ def start_mqtt_client():
             if image and scientific_name and not sql_manager.bird_picture_exists(scientific_name):
                 sql_manager.add_bird_picture(scientific_name, image)
 
-            socketio.emit('birdnet', bird_data)
+            emit('birdnet', bird_data)
         except Exception as e:
             logger.error(f"Error handling birdnet message: {e}")
 
@@ -722,7 +743,7 @@ def start_mqtt_client():
         try:
             ADSB_DATA = json.loads(msg.payload)
             ADSB_DATA['id'] = str(uuid.uuid4())
-            socketio.emit('adsb_data', ADSB_DATA)
+            emit('adsb_data', ADSB_DATA)
             file = open(b"last_adsb_data.pkl", "wb")
             pickle.dump(ADSB_DATA, file)
             file.close()
@@ -746,7 +767,7 @@ def start_mqtt_client():
             for battery_name, battery in BATTERIES.items():
                 total_percent += battery.get("capacity_percent", 0)
             CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
-            socketio.emit("battery_data", list(BATTERIES.values()))
+            emit("battery_data", list(BATTERIES.values()))
         except Exception as e:
             logger.error(f"Error handling battery status message: {e}")
 
@@ -762,7 +783,7 @@ def start_mqtt_client():
             logger.debug("Received lightning data")
             lightning_data = json.loads(msg.payload)
             update_lightning_data(lightning_data)
-            socketio.emit('lightning_data', lightning_data)
+            emit('lightning_data', lightning_data)
         except Exception as e:
             logger.error(f"Error handling lightning data message: {e}")
 
@@ -782,7 +803,7 @@ def start_mqtt_client():
             CURRENT_DATA.charge_state = charger_data.get("charge_state", "OTHER")
             CURRENT_DATA.battery_voltage = charger_data.get("battery_voltage", 0)
             CURRENT_DATA.day_solar_wh = charger_data.get("day_solar_wh", 0)
-            socketio.emit('current_data', CURRENT_DATA.__dict__)
+            emit('current_data', CURRENT_DATA.__dict__)
             # We need to protect against the charge controller resetting this running stat before we increment the day,
             # so only capture it if it went up as it should never decrement.  We reset this elsewhere to zero when we
             # recognize a day has passed
@@ -806,7 +827,7 @@ def start_mqtt_client():
                 CURRENT_DATA.load_amps = meter_data['amps']
                 CURRENT_DATA.load_watts = meter_data['watts']
                 CURRENT_DATA.load_volts = meter_data['volts']
-                socketio.emit('current_data', CURRENT_DATA.__dict__)
+                emit('current_data', CURRENT_DATA.__dict__)
         except Exception as e:
             logger.error(f"Error handling DC meter data message: {e}")
 
@@ -925,12 +946,12 @@ def create_sql_tables_if_not_exist():
 
 def main(proxy=None):
     """Starts up the power meter server: initializes the database, restores last-known blue iris and ADSB data,
-    refreshes daily stats, starts the background stats and MQTT threads, and runs the Flask application.
+    refreshes daily stats, starts the background stats and MQTT threads, and runs the Quart application.
 
     Args:
         proxy: Unused, reserved for future proxy configuration support.
     """
-    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA
+    global BLUEIRIS_ALERT, AVAILABLE_SHELLEYS, SHELLY_DEVICE_ADDRESSES, ADSB_DATA, MAIN_EVENT_LOOP
 
     create_sql_tables_if_not_exist()
 
@@ -956,10 +977,17 @@ def main(proxy=None):
     mqtt_thread.daemon = True
     mqtt_thread.start()
 
-    app.run(port=8050, host='0.0.0.0')
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    MAIN_EVENT_LOOP = loop
+
+    config = Config()
+    config.bind = ['0.0.0.0:8050']
+
+    loop.run_until_complete(serve(asgi_app, config))
 
 
 if __name__ == "__main__":
-    # Startup the flask server on port 9999.  Change the port here if you want it listening somewhere else, and
+    # Startup the quart server on port 8050.  Change the port here if you want it listening somewhere else, and
     # simply execute this python file to startup your server and serve the svelte app
     main()
