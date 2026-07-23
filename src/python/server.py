@@ -1,6 +1,8 @@
 import copy
 import os
 import pickle
+from pathlib import Path
+
 from quart import Quart, send_from_directory, send_file, request
 import time
 import threading
@@ -76,6 +78,9 @@ AVAILABLE_SHELLEYS = []
 # of the asyncio event loop.
 MAIN_EVENT_LOOP: asyncio.AbstractEventLoop = None
 
+# Resolves the absolute path to Svelte's public build folder relative to this file
+PUBLIC_DIR = Path(__file__).resolve().parent.parent / "svelte" / "public"
+
 app = Quart(__name__)
 sio = socketio.AsyncServer(cors_allowed_origins='*', async_mode='asgi')
 asgi_app = socketio.ASGIApp(sio, app)
@@ -146,7 +151,9 @@ async def base():
     Returns:
         quart.Response: The svelte application's index.html file.
     """
-    return await send_from_directory('../svelte/public', 'index.html')
+    global PUBLIC_DIR
+
+    return await send_from_directory(PUBLIC_DIR, 'index.html')
 
 
 @app.route("/<path:path>")
@@ -159,7 +166,9 @@ async def home(path):
     Returns:
         quart.Response: The requested static file from the svelte application.
     """
-    return await send_from_directory('../svelte/public', path)
+    global PUBLIC_DIR
+
+    return await send_from_directory(PUBLIC_DIR, path)
 
 
 @app.route("/graphData")
