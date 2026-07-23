@@ -7,7 +7,7 @@ import RPi.GPIO as GPIO
 
 from DFRobot_AS3935_Lib import DFRobot_AS3935
 
-logger = logging.getLogger('energy_monitor')
+logger = logging.getLogger('lightning_monitor')
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
 MQTT_CLIENT: mqtt.Client = None
