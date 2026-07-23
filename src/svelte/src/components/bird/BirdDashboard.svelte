@@ -5,10 +5,32 @@
     import {currentView} from "../../states.svelte.js";
 
     let birds = [];
+    let flashingBirds = {};
+    let previousCounts = {};
 
     $: birds = Object.values($birdData)
         .filter(entry => entry?.bird?.scientific_name)
         .sort((a, b) => b.count - a.count);
+
+    $: {
+        for (const entry of birds) {
+            const name = entry.bird.scientific_name;
+            const prevCount = previousCounts[name];
+            if (prevCount !== undefined && entry.count > prevCount) {
+                flashBird(name);
+            }
+            previousCounts[name] = entry.count;
+        }
+    }
+
+    function flashBird(name) {
+        flashingBirds[name] = true;
+        flashingBirds = flashingBirds;
+        setTimeout(() => {
+            delete flashingBirds[name];
+            flashingBirds = flashingBirds;
+        }, 1000);
+    }
 
     function go(view) {
         return () => currentView.value = view;
@@ -34,7 +56,7 @@
 
     <div class="bird-list">
         {#each birds as entry}
-            <div class="bird-row" role="button" tabindex="0"
+            <div class="bird-row" class:bird-detected={flashingBirds[entry.bird.scientific_name]} role="button" tabindex="0"
                  on:click={go('bird_details_' + entry.bird.scientific_name)}
                  on:keydown={(event) => (event.key === 'Enter' || event.key === ' ') && go('bird_details_' + entry.bird.scientific_name)()}>
                 <div class="bird-names">
@@ -128,6 +150,15 @@
         transition: transform 0.15s ease;
     }
     .bird-row:active { transform: scale(0.985); }
+
+    .bird-row.bird-detected {
+        animation: bird-flash 1s ease-out;
+    }
+
+    @keyframes bird-flash {
+        0% { background: rgba(94, 198, 255, 0.55); }
+        100% { background: linear-gradient(145deg, rgba(34, 40, 56, 0.85), rgba(20, 24, 36, 0.85)); }
+    }
 
     .bird-names {
         display: flex;
