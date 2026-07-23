@@ -1,13 +1,38 @@
 <script>
     import Fa from "svelte-fa";
-    import {faClockRotateLeft, faArrowLeft, faTrash} from "@fortawesome/free-solid-svg-icons";
+    import {faClockRotateLeft, faArrowLeft, faTrash, faImage} from "@fortawesome/free-solid-svg-icons";
     import {birdHistoryData, getBirdHistoryData} from "../../stores.svelte.js";
     import {currentView} from "../../states.svelte.js";
 
     let birds = [];
     let birdToDelete = null;
+    let birdThumbnails = {};
 
     $: birds = $birdHistoryData;
+
+    $: {
+        for (const entry of birds) {
+            fetchThumbnail(entry.scientific_name);
+        }
+    }
+
+    function fetchThumbnail(name) {
+        if (!name || Object.prototype.hasOwnProperty.call(birdThumbnails, name)) {
+            return;
+        }
+        birdThumbnails[name] = null;
+        birdThumbnails = birdThumbnails;
+        fetch(`/birdPicture?scientificName=${encodeURIComponent(name)}`, {
+            headers: {
+                "Accept": "application/json"
+            }
+        })
+            .then(d => d.json())
+            .then(d => {
+                birdThumbnails[name] = d?.image ?? null;
+                birdThumbnails = birdThumbnails;
+            });
+    }
 
     function go(view) {
         return () => currentView.value = view;
@@ -64,6 +89,13 @@
                     <span class="scientific-name">{entry.scientific_name}</span>
                 </div>
                 <div class="bird-right">
+                    <div class="bird-thumb">
+                        {#if birdThumbnails[entry.scientific_name]}
+                            <img src="{'data:image/jpeg;base64, ' + birdThumbnails[entry.scientific_name]}" alt="{entry.common_name}"/>
+                        {:else}
+                            <Fa icon={faImage}/>
+                        {/if}
+                    </div>
                     <div class="bird-stats">
                         <span class="last-heard">{fmtTime(entry.last_heard)}</span>
                         <span class="bird-confidence">{fmtConfidence(entry.confidence)}</span>
@@ -185,11 +217,35 @@
         text-overflow: ellipsis;
     }
 
+    .bird-thumb {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        color: #8892A6;
+        font-size: 18px;
+    }
+
+    .bird-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
     .bird-stats {
         display: flex;
         flex-direction: column;
         align-items: flex-end;
         gap: 2px;
+        flex-shrink: 0;
+        min-width: 70px;
     }
 
     .last-heard {
@@ -313,5 +369,6 @@
         .last-heard { font-size: 11px; }
         .bird-confidence { font-size: 11px; }
         .delete-btn { font-size: 16px; }
+        .bird-stats { min-width: 56px; }
     }
 </style>
