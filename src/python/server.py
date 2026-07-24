@@ -249,6 +249,40 @@ async def get_battery_graph_data():
     return {'time': []}
 
 
+@app.route("/batteryPercentDailyMinMax")
+async def get_battery_percent_daily_min_max():
+    """Gets the minimum and maximum battery percentage recorded for each of the last requested number of days.
+
+    Args:
+        days: The number of days to fetch the daily minimum/maximum battery percentage for.
+        batteryName: The name of the battery to fetch the data for.
+
+    Returns:
+        dict: An object containing three lists: the day the values were recorded on, the minimum battery
+        percentage recorded that day, and the maximum battery percentage recorded that day.
+    """
+    days = int(request.args.get('days', 7))
+    battery_name = request.args.get('batteryName', '')
+
+    return sql_manager.get_battery_percent_daily_min_max(days, battery_name)
+
+
+@app.route("/solarWhDaily")
+async def get_solar_wh_daily():
+    """Gets the total solar Wh recorded for each of the last requested number of days.
+
+    Args:
+        days: The number of days to fetch the daily total solar Wh for.
+
+    Returns:
+        dict: An object containing two lists: the day the values were recorded on, and the total solar Wh
+        generated that day.
+    """
+    days = int(request.args.get('days', 7))
+
+    return sql_manager.get_solar_wh_daily(days)
+
+
 @app.route("/weatherData")
 async def get_weather_data():
     """Gets the current weather data.

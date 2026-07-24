@@ -247,7 +247,7 @@
                 <div class="metric-value">{fmt($powerCurrentData?.load_watts, 0)}</div>
                 <div class="metric-label">Load W</div>
             </div>
-            <div class="metric" use:autoScale>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('solarWhGraph')}>
                 <div class="metric-icon"><Fa icon={faChartLine}/></div>
                 <div class="metric-value">{fmt($powerCurrentData?.day_solar_wh, 0)}</div>
                 <div class="metric-label">Solar Wh</div>
@@ -288,7 +288,7 @@
             </div>
         </div>
         <div class="metric-grid three">
-            <div class="metric" use:autoScale on:click|stopPropagation={go('battery_dashboard')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('batteryPercentGraph')}>
                 <div class="metric-icon" style="color: {batteryColor};"><Fa icon={faCarBattery}/></div>
                 <div class="metric-value">{fmt(batteryPct, 1, '%')}</div>
                 <div class="metric-label">Battery</div>

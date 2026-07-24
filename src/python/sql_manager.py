@@ -440,6 +440,49 @@ def get_battery_graph_data(days, data_fields, battery_name):
                 graph_data[field].append(rowdict.get(field, 0))
     return graph_data
 
+def get_battery_percent_daily_min_max(days, battery_name=''):
+    graph_data = {'time': [], 'min_percent': [], 'max_percent': []}
+    sql_connection = sqlite3.connect("battery.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        sql_statement = '''
+            SELECT date(record_time, 'unixepoch', 'localtime') AS day,
+                   MIN(capacity_percent) AS min_percent,
+                   MAX(capacity_percent) AS max_percent
+            FROM battery_data
+            WHERE record_time >= ?
+        '''
+        parameters = [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))]
+        if battery_name:
+            sql_statement += " AND name == ?"
+            parameters.append(battery_name)
+        sql_statement += " GROUP BY day ORDER BY day ASC"
+        cursor = sql_connection.execute(sql_statement, parameters)
+        for row in cursor.fetchall():
+            rowdict = dict(row)
+            graph_data['time'].append(rowdict.get('day'))
+            graph_data['min_percent'].append(rowdict.get('min_percent'))
+            graph_data['max_percent'].append(rowdict.get('max_percent'))
+    return graph_data
+
+def get_solar_wh_daily(days):
+    graph_data = {'time': [], 'solar_wh': []}
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute('''
+            SELECT date(record_date, 'unixepoch', 'localtime') AS day, day_solar_wh
+            FROM daily_power_data
+            WHERE record_date >= ?
+            ORDER BY record_date ASC
+            ''',
+            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
+        for row in cursor.fetchall():
+            rowdict = dict(row)
+            graph_data['time'].append(rowdict.get('day'))
+            graph_data['solar_wh'].append(rowdict.get('day_solar_wh'))
+    return graph_data
+
 def get_weather_max_min():
     wx_sql_connection = sqlite3.connect("wxdata.db")
     wx_sql_connection.row_factory = sqlite3.Row

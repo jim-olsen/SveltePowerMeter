@@ -29,6 +29,8 @@
     import BatteryCellVoltageGraph from "./components/battery/BatteryCellVoltageGraph.svelte";
     import BatteryBankCellPressureDiffGraph from "./components/battery/BatteryBankCellPressureDiffGraph.svelte";
     import BatteryBankTemperatureGraph from "./components/battery/BatteryBankTemperatureGraph.svelte";
+    import BatteryPercentGraph from "./components/battery/BatteryPercentGraph.svelte";
+    import SolarWhGraph from "./components/powermeter/SolarWhGraph.svelte";
     import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
     import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
     import StarlinkPower from "./components/starlink/StarlinkPower.svelte";
@@ -41,7 +43,8 @@
     let outerHeight = 0
     let graphWidth, graphHeight;
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
-                        'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph'];
+                        'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph',
+                        'batteryPercentGraph', 'solarWhGraph'];
     let alertAllowedViews = ['dashboard', 'alerts', 'adsb', 'lightningDashboard'];
     let lastBlueIrisAlert = {};
     let lastADSBData = {};
@@ -248,6 +251,12 @@
                 {/if}
                 {#if currentView.value === 'batteryBankTemperatureGraph'}
                     <BatteryBankTemperatureGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if currentView.value === 'batteryPercentGraph'}
+                    <BatteryPercentGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if currentView.value === 'solarWhGraph'}
+                    <SolarWhGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>

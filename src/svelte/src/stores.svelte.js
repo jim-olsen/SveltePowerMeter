@@ -3,6 +3,8 @@ import {io} from 'socket.io-client'
 
 export const powerGraphDuration = writable(2)
 export const weatherGraphDuration = writable(1)
+export const batteryPercentGraphDuration = writable(7)
+export const solarWhGraphDuration = writable(7)
 
 let lastBlueIrisAlert = {};
 let lastADSBData = {};
@@ -36,6 +38,67 @@ export const batteryVoltageGraphData = writable({}, () => {
     return () => {
         unsubscribe();
         clearInterval(batteryVoltageGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the daily minimum/maximum battery percentage over time.  The batteryPercentGraphDuration writeable
+ * provides the number of days over which to fetch the data.
+ */
+function getBatteryPercentMinMaxGraphData() {
+    fetch(`/batteryPercentDailyMinMax?days=${get(batteryPercentGraphDuration)}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryPercentMinMaxGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest daily minimum/maximum battery percentage data, based on
+ * batteryPercentGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryPercentMinMaxGraphData = writable({}, () => {
+    let unsubscribe = batteryPercentGraphDuration.subscribe(getBatteryPercentMinMaxGraphData)
+    getBatteryPercentMinMaxGraphData();
+    let batteryPercentMinMaxGraphInterval = setInterval(getBatteryPercentMinMaxGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryPercentMinMaxGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the daily total solar Wh over time.  The solarWhGraphDuration writeable provides the number of
+ * days over which to fetch the data.
+ */
+function getSolarWhGraphData() {
+    fetch(`/solarWhDaily?days=${get(solarWhGraphDuration)}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            solarWhGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest daily total solar Wh data, based on solarWhGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const solarWhGraphData = writable({}, () => {
+    let unsubscribe = solarWhGraphDuration.subscribe(getSolarWhGraphData)
+    getSolarWhGraphData();
+    let solarWhGraphInterval = setInterval(getSolarWhGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(solarWhGraphInterval);
     };
 });
 
