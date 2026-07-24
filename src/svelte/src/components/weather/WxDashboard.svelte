@@ -94,7 +94,7 @@
                     <div class="metric-label">Today</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">{fmt($weatherData?.rainRate_inch_per_hour, 1)}<span class="unit">in/hr</span></div>
+                    <div class="metric-value">{fmt($weatherData?.rrain_piezo, 1)}<span class="unit">in/hr</span></div>
                     <div class="metric-label">Rate</div>
                 </div>
                 <div class="metric">
