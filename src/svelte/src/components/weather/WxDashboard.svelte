@@ -14,8 +14,10 @@
     let display = 'dashboard';
 
     function fmt(v, digits = 1, suffix = '') {
-        if (v === undefined || v === null || isNaN(Number(v))) return '---';
-        return Number(v).toFixed(digits) + suffix;
+        if (v === undefined || v === null) return '---';
+        const num = typeof v === 'string' ? parseFloat(v) : Number(v);
+        if (isNaN(num)) return '---';
+        return num.toFixed(digits) + suffix;
     }
 </script>
 
@@ -94,7 +96,7 @@
                     <div class="metric-label">Today</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">{fmt(Number.isNaN(parseFloat($weatherData?.rrain_piezo)) ? null : parseFloat($weatherData?.rrain_piezo), 2)}<span class="unit">in/hr</span></div>
+                    <div class="metric-value">{fmt($weatherData?.rrain_piezo, 2)}<span class="unit">in/hr</span></div>
                     <div class="metric-label">Rate</div>
                 </div>
                 <div class="metric">
