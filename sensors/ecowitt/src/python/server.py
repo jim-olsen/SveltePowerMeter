@@ -125,6 +125,7 @@ def dataReport():
             'rain24_in': float(request.form.get('drain_piezo', 0)),
             'dayRain_in': float(request.form.get('drain_piezo', 0)),
             'weekRain_in': float(request.form.get('wrain_piezo', 0)),
+            'rainRate_inch_per_hour': float(request.form.get('rrain_piezo', 0)),
             'solarRadiation': request.form.get('solarradiation', 0),
             'inHumidity': request.form.get('humidity1', 0),
 #            'inHumidity': request.form.get('humidityin', 0),
