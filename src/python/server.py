@@ -70,7 +70,7 @@ VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nomi
 
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
-MQTT_CLIENT : mqtt.Client
+MQTT_CLIENT: mqtt.Client = None
 
 AVAILABLE_SHELLEYS = []
 
@@ -116,8 +116,8 @@ def update_running_stats():
                     CURRENT_DATA.load_watts if CURRENT_DATA.load_watts else 0)
                 # Now comes from the victron....
                 # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
-                STATS_DATA.day_batt_wh += 0.00139 * CURRENT_DATA.battery_load if CURRENT_DATA.battery_load else 0 * \
-                                                                                                                   CURRENT_DATA.battery_voltage if CURRENT_DATA.battery_voltage else 0
+                STATS_DATA.day_batt_wh += 0.00139 * (CURRENT_DATA.battery_load if CURRENT_DATA.battery_load else 0) * \
+                                                     (CURRENT_DATA.battery_voltage if CURRENT_DATA.battery_voltage else 0)
                 STATS_DATA.last_charge_state = CURRENT_DATA.charge_state if CURRENT_DATA.charge_state else 'NIGHT'
 
             if datetime.today() > last_update + timedelta(minutes=1):
@@ -593,7 +593,7 @@ async def turn_relay_off():
     """
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
-    if shelly is not None:
+    if shelly is not None and MQTT_CLIENT is not None:
         MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'off')
         return shelly
     return {}
@@ -611,7 +611,7 @@ async def turn_relay_on():
     """
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
-    if shelly is not None:
+    if shelly is not None and MQTT_CLIENT is not None:
         MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'on')
         return shelly
     return {}
@@ -631,7 +631,7 @@ async def power_cycle_relay():
     delay : int = request.args.get("delay", default=5, type=int)
     shelly_name = request.args.get("name", default="", type=str)
     shelly = get_shelly_by_name(shelly_name)
-    if shelly is not None:
+    if shelly is not None and MQTT_CLIENT is not None:
         MQTT_CLIENT.publish('lights/' + shelly['id'] + '/command', 'cycle ' + str(delay))
         return shelly
 
