@@ -94,7 +94,7 @@
                     <div class="metric-label">Today</div>
                 </div>
                 <div class="metric">
-                    <div class="metric-value">{fmt(Number.isNaN(parseFloat($weatherData?.rrain_piezo) ? null : parseFloat($weatherData?.rrain_piezo)), 2)}<span class="unit">in/hr</span></div>
+                    <div class="metric-value">{fmt(Number.isNaN(parseFloat($weatherData?.rrain_piezo)) ? null : parseFloat($weatherData?.rrain_piezo), 2)}<span class="unit">in/hr</span></div>
                     <div class="metric-label">Rate</div>
                 </div>
                 <div class="metric">
