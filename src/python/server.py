@@ -2,6 +2,7 @@ import copy
 import os
 import pickle
 from pathlib import Path
+from typing import Optional
 
 from quart import Quart, send_from_directory, send_file, request
 import time
@@ -70,14 +71,14 @@ VALID_BATTERY_FIELDS = ["name", "voltage", "current", "residual_capacity", "nomi
 
 # Set the address of the MQTT server to connect to for weather data and blue iris alerts
 MQTT_SERVER_ADDR = '10.0.10.31'
-MQTT_CLIENT: mqtt.Client = None
+MQTT_CLIENT: Optional[mqtt.Client] = None
 
 AVAILABLE_SHELLEYS = []
 
 # The main asyncio event loop that runs the Quart/hypercorn server. This is set in main() and is used to safely
 # schedule socketio emissions from background threads (mqtt client, stats updater) that are not running as part
 # of the asyncio event loop.
-MAIN_EVENT_LOOP: asyncio.AbstractEventLoop = None
+MAIN_EVENT_LOOP: Optional[asyncio.AbstractEventLoop] = None
 
 # Resolves the absolute path to Svelte's public build folder relative to this file
 PUBLIC_DIR = Path(__file__).resolve().parent.parent / "svelte" / "public"
