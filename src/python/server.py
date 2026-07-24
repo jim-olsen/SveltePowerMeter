@@ -56,6 +56,7 @@ WEATHER_DATA: WeatherData = WeatherData(altimeter_inHg=None, appTemp_F=None, bar
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
+EXPECTED_BATTERY_COUNT = 6
 STARLINK = { 'status': {}, 'history': {}, 'obstruction_map': [] }
 BIRDS_DETECTED = {}
 
@@ -806,10 +807,12 @@ def start_mqtt_client():
             logger.debug("Received Battery Status")
             battery_info = json.loads(msg.payload)
             BATTERIES[battery_info["name"]] = battery_info
-            total_percent = 0
-            for battery_name, battery in BATTERIES.items():
-                total_percent += battery.get("capacity_percent", 0)
-            CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
+            if len(BATTERIES) >= EXPECTED_BATTERY_COUNT and all(
+                    battery.get("capacity_percent") is not None for battery in BATTERIES.values()):
+                total_percent = 0
+                for battery_name, battery in BATTERIES.items():
+                    total_percent += battery.get("capacity_percent", 0)
+                CURRENT_DATA.battery_percent = total_percent / len(BATTERIES.items())
             emit("battery_data", list(BATTERIES.values()))
         except Exception as e:
             logger.error(f"Error handling battery status message: {e}")
