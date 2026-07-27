@@ -12,6 +12,7 @@
     export let maxColor = "#FF5C5C";
     export let showMinLabel = true;
     export let unit = "%";
+    export let valueFormat = (v) => v;
 
     let buttonWidth = 0;
 
@@ -45,7 +46,8 @@
 <div style="display:flex; flex-flow:row">
     <RangeBarChart XAxisTitle="Day" YAxisTitle={yAxisLabel} dataset={dataset}
                height={chartHeight} width={chartWidth - buttonWidth}
-               minColor={minColor} maxColor={maxColor} showMinLabel={showMinLabel} unit={unit}/>
+               minColor={minColor} maxColor={maxColor} showMinLabel={showMinLabel} unit={unit}
+               valueFormat={valueFormat}/>
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
         <button on:click={increaseDuration} style="width:8vw; height: 8vw;">
             <Fa icon={faChevronUp} style="font-size: 4vw;" />

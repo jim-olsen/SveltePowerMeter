@@ -25,5 +25,6 @@
 <div style="display:flex; flex-flow:row">
     <DurationalRangeBarChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Battery %"
                              dataset={graphData} duration={batteryPercentGraphDuration}
-                             minColor="#8B0000" maxColor="#7CFF9A"/>
+                             minColor="#8B0000" maxColor="#7CFF9A"
+                             valueFormat={(v) => Number(v).toFixed(1)}/>
 </div>

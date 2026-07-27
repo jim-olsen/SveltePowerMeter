@@ -12,6 +12,7 @@
     export let maxColor = "#FF5C5C";
     export let showMinLabel = true;
     export let unit = "%";
+    export let valueFormat = (v) => v;
     const margin = { top: 40, bottom: 50, left: 50, right: 20 };
 
     $: innerHeight = height - margin.top - margin.bottom;
@@ -50,9 +51,9 @@
                     width = "{barWidth - 4}"
                     height = "{yScale(showMinLabel ? point.yMin : 0) - yScale(point.yMax)}"
                     fill={maxColor}></rect>
-                <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{point.yMax}{unit}</text>
+                <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
                 {#if showMinLabel}
-                    <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{point.yMin}{unit}</text>
+                    <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
                 {/if}
             {/each}
             <text x={innerWidth / 2} y={innerHeight + 35}>{XAxisTitle}</text>
