@@ -440,24 +440,30 @@ def get_battery_graph_data(days, data_fields, battery_name):
                 graph_data[field].append(rowdict.get(field, 0))
     return graph_data
 
-def get_battery_percent_daily_min_max(days, battery_name=''):
+def get_battery_percent_daily_min_max(days):
     graph_data = {'time': [], 'min_percent': [], 'max_percent': []}
     sql_connection = sqlite3.connect("battery.db")
     sql_connection.row_factory = sqlite3.Row
     with sql_connection:
-        sql_statement = '''
-            SELECT date(record_time, 'unixepoch', 'localtime') AS day,
-                   MIN(capacity_percent) AS min_percent,
-                   MAX(capacity_percent) AS max_percent
-            FROM battery_data
-            WHERE record_time >= ?
-        '''
-        parameters = [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))]
-        if battery_name:
-            sql_statement += " AND name == ?"
-            parameters.append(battery_name)
-        sql_statement += " GROUP BY day ORDER BY day ASC"
-        cursor = sql_connection.execute(sql_statement, parameters)
+        sql_statement = f'''
+                        WITH BankAverages AS (
+                            SELECT
+                                DATE(record_time, 'unixepoch', 'localtime') AS day,
+                                (record_time / 5) * 5 AS time_window,
+                                AVG(capacity_percent) AS bank_capacity_percent
+                            FROM battery_data
+                            WHERE record_time >= strftime('%s', 'now', '-{days} days')
+                            GROUP BY day, time_window
+                        )
+                        SELECT
+                            day,
+                            MIN(bank_capacity_percent) AS min_percent,
+                            MAX(bank_capacity_percent) AS max_percent
+                        FROM BankAverages
+                        GROUP BY day
+                        ORDER BY day ASC;
+                        '''
+        cursor = sql_connection.execute(sql_statement)
         for row in cursor.fetchall():
             rowdict = dict(row)
             graph_data['time'].append(rowdict.get('day'))
