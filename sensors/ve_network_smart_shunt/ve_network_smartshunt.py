@@ -1,6 +1,14 @@
 import serial
+import threading
 import time
 import logging
+import os
+import json
+import paho.mqtt.client as mqtt
+from typing import Optional
+
+MQTT_SERVER_ADDR = '10.0.10.31'
+MQTT_CLIENT: Optional[mqtt.Client] = None
 
 logging.basicConfig()
 logger = logging.getLogger('ve_network_smartshunt')
@@ -55,23 +63,62 @@ class VEDirectReader:
                 if key == "Checksum":
                     return frame
 
-
-def display_data(frame):
+def publish_data(frame):
+    global MQTT_CLIENT
+    if MQTT_CLIENT is None:
+        return
+    packet: dict = {}
     for key, (label, unit, conv) in REALTIME_MAP.items():
         if key in frame:
             try:
                 val = conv(frame[key])
                 logger.debug(f" {label:<28}: {val} {unit}")
+                packet[key] = val
             except ValueError:
                 pass
-
     for key, (label, unit, conv) in HISTORY_MAP.items():
         if key in frame:
             try:
                 val = conv(frame[key])
                 logger.debug(f" {label:<28}: {val} {unit}")
+                packet[key] = val
             except ValueError:
                 pass
+    MQTT_CLIENT.publish("ve_smart_shunt", json.dumps(packet))
+
+def start_mqtt_client():
+    def on_connect(c, userdata, flags, rc):
+        global MQTT_CLIENT
+
+        logger.info("MQTT Client Connected")
+        MQTT_CLIENT = c
+
+    def on_disconnect(c, userdata, rc):
+        logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
+        while True:
+            try:
+                c.reconnect()
+                break
+            except Exception as e:
+                logger.error(f"Failed to reconnect: {e}, will retry....")
+            time.sleep(30)
+
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    retries = 5
+    while retries > 0:
+        try:
+            client.connect(MQTT_SERVER_ADDR, 1883, 60)
+            break
+        except:
+            logger.error(f"Failed to connect to MQTT server, retries remaining: {retries}")
+            retries -= 1
+            time.sleep(10)
+    if retries <= 0:
+        logger.error("Failed to connect to MQTT server, exiting....")
+        os._exit(1)
+    client.loop_forever()
 
 
 def main():
@@ -82,11 +129,15 @@ def main():
     reader = VEDirectReader(port=serial_port)
     logger.warning("Connected to Victron SmartShunt.")
 
+    mqtt_thread = threading.Thread(target=start_mqtt_client, args=())
+    mqtt_thread.daemon = True
+    mqtt_thread.start()
+
     try:
         while True:
             frame = reader.read_frame()
             if frame:
-                display_data(frame)
+                publish_data(frame)
             time.sleep(1)
     except KeyboardInterrupt:
         logger.warning("\nStopping reader.")
