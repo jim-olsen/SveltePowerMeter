@@ -321,6 +321,32 @@ def update_sql_tables(current_data, weather_data, stats_data, batteries, battery
                   battery.get("cell_block_voltages", [None, None, None, None])[3]
                   ))
 
+def get_daily_starting_battery_energy():
+    """Fetches the first total_charged_energy and total_discharged_energy readings recorded today from the
+    battery_load_data table. These are used as the baseline values to calculate how much energy has been
+    charged/discharged into/out of the battery so far today.
+
+    Returns:
+        tuple: A tuple of (starting_total_charged_energy, starting_total_discharged_energy). Both values will be
+        None if no readings have been recorded yet today.
+    """
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute(
+            '''
+                SELECT total_charged_energy, total_discharged_energy FROM battery_load_data
+                WHERE record_time >= ? AND total_charged_energy IS NOT NULL AND total_discharged_energy IS NOT NULL
+                ORDER BY record_time ASC LIMIT 1
+                ''',
+            [int(time.mktime(
+                (datetime.today().replace(hour=0, minute=0, second=0, microsecond=0)).timetuple()))
+            ])
+        row = cursor.fetchone()
+        if row is not None:
+            return row['total_charged_energy'], row['total_discharged_energy']
+        return None, None
+
 def update_stats_data_from_db(stats_data):
     sql_connection = sqlite3.connect("powerdata.db")
     sql_connection.row_factory = sqlite3.Row

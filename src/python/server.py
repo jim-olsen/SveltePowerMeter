@@ -64,6 +64,12 @@ BATTERY_LOAD_DATA: SmartShuntData = SmartShuntData(battery_voltage=None, current
                                                    high_voltage_alarms=None, total_discharged_energy=None,
                                                    total_charged_energy=None)
 
+# The first total_charged_energy/total_discharged_energy readings recorded for the current day, used as the
+# baseline for calculating STATS_DATA.day_batt_wh. Reset to None at the start of each new day so they get
+# re-fetched from the database (or seeded from the latest battery load data).
+DAILY_STARTING_TOTAL_CHARGED_ENERGY = None
+DAILY_STARTING_TOTAL_DISCHARGED_ENERGY = None
+
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
@@ -117,7 +123,7 @@ def update_sql_tables():
 
 def update_running_stats():
     """Updates the running stats with the latest data by looping indefinitely."""
-    global STATS_DATA
+    global STATS_DATA, DAILY_STARTING_TOTAL_CHARGED_ENERGY, DAILY_STARTING_TOTAL_DISCHARGED_ENERGY
     last_update = datetime.today()
     current_day_of_year = datetime.today().timetuple().tm_yday
     while True:
@@ -127,9 +133,22 @@ def update_running_stats():
                     CURRENT_DATA.load_watts if CURRENT_DATA.load_watts else 0)
                 # Now comes from the victron....
                 # stats_data['day_solar_wh'] += 0.00139 * current_data.get('solar_watts', 0)
-                STATS_DATA.day_batt_wh += 0.00139 * (CURRENT_DATA.battery_load if CURRENT_DATA.battery_load else 0) * \
-                                                     (CURRENT_DATA.battery_voltage if CURRENT_DATA.battery_voltage else 0)
                 STATS_DATA.last_charge_state = CURRENT_DATA.charge_state if CURRENT_DATA.charge_state else 'NIGHT'
+
+            if DAILY_STARTING_TOTAL_CHARGED_ENERGY is None or DAILY_STARTING_TOTAL_DISCHARGED_ENERGY is None:
+                DAILY_STARTING_TOTAL_CHARGED_ENERGY, DAILY_STARTING_TOTAL_DISCHARGED_ENERGY = \
+                    sql_manager.get_daily_starting_battery_energy()
+                if DAILY_STARTING_TOTAL_CHARGED_ENERGY is None or DAILY_STARTING_TOTAL_DISCHARGED_ENERGY is None:
+                    DAILY_STARTING_TOTAL_CHARGED_ENERGY = BATTERY_LOAD_DATA.total_charged_energy
+                    DAILY_STARTING_TOTAL_DISCHARGED_ENERGY = BATTERY_LOAD_DATA.total_discharged_energy
+
+            if BATTERY_LOAD_DATA.total_charged_energy is not None and \
+                    BATTERY_LOAD_DATA.total_discharged_energy is not None and \
+                    DAILY_STARTING_TOTAL_CHARGED_ENERGY is not None and \
+                    DAILY_STARTING_TOTAL_DISCHARGED_ENERGY is not None:
+                STATS_DATA.day_batt_wh = \
+                    (BATTERY_LOAD_DATA.total_charged_energy - DAILY_STARTING_TOTAL_CHARGED_ENERGY) - \
+                    (BATTERY_LOAD_DATA.total_discharged_energy - DAILY_STARTING_TOTAL_DISCHARGED_ENERGY)
 
             if datetime.today() > last_update + timedelta(minutes=1):
                 update_sql_tables()
@@ -140,6 +159,8 @@ def update_running_stats():
                 STATS_DATA.day_load_wh = 0
                 STATS_DATA.day_batt_wh = 0
                 STATS_DATA.day_solar_wh = 0
+                DAILY_STARTING_TOTAL_CHARGED_ENERGY = None
+                DAILY_STARTING_TOTAL_DISCHARGED_ENERGY = None
 
             sql_manager.update_stats_data_from_db(STATS_DATA)
 
