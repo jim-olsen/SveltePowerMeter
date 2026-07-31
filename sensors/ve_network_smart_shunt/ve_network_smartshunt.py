@@ -8,12 +8,12 @@ import paho.mqtt.client as mqtt
 from typing import Optional
 
 MQTT_SERVER_ADDR = '10.0.10.31'
+MQTT_TOPIC = 'battery_load'
 MQTT_CLIENT: Optional[mqtt.Client] = None
 
 logging.basicConfig()
-logger = logging.getLogger('ve_network_smartshunt')
-logger.setLevel(logging.DEBUG)
-logging.getLogger('werkzeug').setLevel(logging.WARNING)
+logger = logging.getLogger('battery_load')
+logger.setLevel(logging.WARNING)
 
 # History Field Mapping based on Victron VE.Direct Protocol specification
 HISTORY_MAP = {
@@ -64,27 +64,29 @@ class VEDirectReader:
                     return frame
 
 def publish_data(frame):
-    global MQTT_CLIENT
-    if MQTT_CLIENT is None:
-        return
-    packet: dict = {}
-    for key, (label, unit, conv) in REALTIME_MAP.items():
-        if key in frame:
-            try:
-                val = conv(frame[key])
-                logger.debug(f" {key}-{label:<28}: {val} {unit}")
-                packet[key] = val
-            except ValueError:
-                pass
-    for key, (label, unit, conv) in HISTORY_MAP.items():
-        if key in frame:
-            try:
-                val = conv(frame[key])
-                logger.debug(f" {key}-{label:<28}: {val} {unit}")
-                packet[key] = val
-            except ValueError:
-                pass
-    MQTT_CLIENT.publish("ve_smart_shunt", json.dumps(packet))
+    global MQTT_CLIENT, MQTT_TOPIC
+
+    if MQTT_CLIENT is not None:
+        packet: dict = {}
+        for key, (label, unit, conv) in REALTIME_MAP.items():
+            if key in frame:
+                try:
+                    val = conv(frame[key])
+                    logger.debug(f" {key}-{label:<28}: {val} {unit}")
+                    packet[key] = val
+                except ValueError:
+                    pass
+        for key, (label, unit, conv) in HISTORY_MAP.items():
+            if key in frame:
+                try:
+                    val = conv(frame[key])
+                    logger.debug(f" {key}-{label:<28}: {val} {unit}")
+                    packet[key] = val
+                except ValueError:
+                    pass
+        MQTT_CLIENT.publish(MQTT_TOPIC, json.dumps(packet))
+    else:
+        logger.warning("MQTT Client is not initialized, skipping packet")
 
 def start_mqtt_client():
     def on_connect(c, userdata, flags, rc):

@@ -26,7 +26,8 @@ def start_mqtt_client():
 #        c.subscribe('shelly/events/rpc')
 #        c.subscribe('starlink')
 #        c.subscribe('lights')
-        c.subscribe('birdnet')
+#        c.subscribe('birdnet')
+        c.subscribe('battery_load')
 
     def on_disconnect(c, userdata, rc):
         logger.info(f"MQTT Client Disconnected due to {rc}, retrying....")
