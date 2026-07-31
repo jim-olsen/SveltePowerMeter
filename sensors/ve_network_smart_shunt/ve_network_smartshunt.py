@@ -1,5 +1,11 @@
 import serial
 import time
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger('ve_network_smartshunt')
+logger.setLevel(logging.DEBUG)
+logging.getLogger('werkzeug').setLevel(logging.WARNING)
 
 # History Field Mapping based on Victron VE.Direct Protocol specification
 HISTORY_MAP = {
@@ -51,37 +57,30 @@ class VEDirectReader:
 
 
 def display_data(frame):
-    print("\033[H\033[J", end="")  # Clear terminal screen
-    print("============================================")
-    print("     VICTRON SMARTSHUNT - REAL-TIME DATA    ")
-    print("============================================")
     for key, (label, unit, conv) in REALTIME_MAP.items():
         if key in frame:
             try:
                 val = conv(frame[key])
-                print(f" {label:<28}: {val} {unit}")
+                logger.debug(f" {label:<28}: {val} {unit}")
             except ValueError:
                 pass
 
-    print("\n============================================")
-    print("        VICTRON SMARTSHUNT - HISTORY        ")
-    print("============================================")
     for key, (label, unit, conv) in HISTORY_MAP.items():
         if key in frame:
             try:
                 val = conv(frame[key])
-                print(f" {label:<28}: {val} {unit}")
+                logger.debug(f" {label:<28}: {val} {unit}")
             except ValueError:
                 pass
-    print("============================================\n")
 
 
 def main():
     # USB serial port on Raspberry Pi (adjust if using /dev/ttyUSB1 or /dev/ttyAMA0)
     serial_port = "/dev/ttyUSB0"
 
-    print(f"Connecting to Victron SmartShunt on {serial_port}...")
+    logger.warning(f"Connecting to Victron SmartShunt on {serial_port}...")
     reader = VEDirectReader(port=serial_port)
+    logger.warning("Connected to Victron SmartShunt.")
 
     try:
         while True:
@@ -90,7 +89,7 @@ def main():
                 display_data(frame)
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nStopping reader.")
+        logger.warning("\nStopping reader.")
     finally:
         reader.ser.close()
 
