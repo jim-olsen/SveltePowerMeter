@@ -72,7 +72,7 @@ def publish_data(frame):
         if key in frame:
             try:
                 val = conv(frame[key])
-                logger.debug(f" {label:<28}: {val} {unit}")
+                logger.debug(f" {key}-{label:<28}: {val} {unit}")
                 packet[key] = val
             except ValueError:
                 pass
@@ -80,7 +80,7 @@ def publish_data(frame):
         if key in frame:
             try:
                 val = conv(frame[key])
-                logger.debug(f" {label:<28}: {val} {unit}")
+                logger.debug(f" {key}-{label:<28}: {val} {unit}")
                 packet[key] = val
             except ValueError:
                 pass
