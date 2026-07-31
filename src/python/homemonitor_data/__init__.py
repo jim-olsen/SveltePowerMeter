@@ -2,4 +2,5 @@ from homemonitor_data.CurrentPowerData import CurrentPowerData
 from homemonitor_data.StatsData import StatsData
 from homemonitor_data.WeatherData import WeatherData
 from homemonitor_data.ADSBData import ADSBData
+from homemonitor_data.SmartShuntData import SmartShuntData
 

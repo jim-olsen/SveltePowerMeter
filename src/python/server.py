@@ -19,7 +19,7 @@ from hypercorn.asyncio import serve
 from hypercorn.config import Config
 from datetime import datetime, timedelta
 from PIL import Image
-from homemonitor_data import CurrentPowerData, StatsData, WeatherData
+from homemonitor_data import CurrentPowerData, StatsData, WeatherData, SmartShuntData
 import sql_manager
 
 logging.basicConfig()
@@ -54,6 +54,16 @@ WEATHER_DATA: WeatherData = WeatherData(altimeter_inHg=None, appTemp_F=None, bar
                                         pressure_inHg=None, rain24_in=None, rainRate_inch_per_hour=None, rain_in=None,
                                         rain_total=None, usUnits=None, windDir=None, windSpeed_mph=None,
                                         wind_average=None, windchill_F=None)
+BATTERY_LOAD_DATA: SmartShuntData = SmartShuntData(battery_voltage=None, current=None, power=None,
+                                                   state_of_charge=None, time_to_go=None, deepest_discharge=None,
+                                                   last_discharge=None, average_discharge=None,
+                                                   number_of_charge_cycles=None, number_of_full_discharges=None,
+                                                   cumulative_amp_hours_drawn=None, minimum_battery_voltage=None,
+                                                   maximum_battery_voltage=None, time_since_last_full_charge=None,
+                                                   automatic_synchronizations=None, low_voltage_alarms=None,
+                                                   high_voltage_alarms=None, total_discharged_energy=None,
+                                                   total_charged_energy=None)
+
 BLUEIRIS_ALERT = {}
 ADSB_DATA = {}
 BATTERIES = {}
@@ -102,7 +112,7 @@ def emit(event, data):
 
 def update_sql_tables():
     """Updates all the sql tables with the latest current data into the database for future processing and analysis."""
-    sql_manager.update_sql_tables(CURRENT_DATA, WEATHER_DATA, STATS_DATA, BATTERIES)
+    sql_manager.update_sql_tables(CURRENT_DATA, WEATHER_DATA, STATS_DATA, BATTERIES, BATTERY_LOAD_DATA)
 
 
 def update_running_stats():
@@ -684,6 +694,7 @@ def start_mqtt_client():
         c.subscribe("adsb")
         c.subscribe("dc_meter_data")
         c.subscribe("battery_monitor_data")
+        c.subscribe("battery_load")
         c.subscribe("starlink")
         c.subscribe("lights")
         c.subscribe("birdnet")
@@ -891,6 +902,24 @@ def start_mqtt_client():
         except Exception as e:
             logger.error(f"Error handling DC meter data message: {e}")
 
+    def handle_battery_load_data(c, userdata, msg):
+        """Handles incoming smart shunt data MQTT messages by updating the cached smart shunt data with only the
+        fields present in the message, since the real time and history portions are published as two separate
+        chunks, and emitting the updated data via socketio.
+
+        Args:
+            c: The MQTT client instance that received the message.
+            userdata: The private user data as set in the client constructor.
+            msg: The MQTT message containing the smart shunt data JSON payload.
+        """
+        global BATTERY_LOAD_DATA
+
+        try:
+            BATTERY_LOAD_DATA = BATTERY_LOAD_DATA.load_from_json(msg.payload)
+            emit('battery_load_data', BATTERY_LOAD_DATA.__dict__)
+        except Exception as e:
+            logger.error(f"Error handling smart shunt data message: {e}")
+
     def handle_starlink(c, userdata, msg):
         """Handles incoming Starlink MQTT messages by updating the Starlink status, history, and obstruction map.
 
@@ -964,6 +993,7 @@ def start_mqtt_client():
     client.message_callback_add("solar_charger_data", handle_solar_charger_data)
     client.message_callback_add("dc_meter_data", handle_dc_meter_data)
     client.message_callback_add("battery_monitor_data", handle_battery_monitor_data)
+    client.message_callback_add("battery_load", handle_battery_load_data)
     client.message_callback_add("starlink", handle_starlink)
     client.message_callback_add("lights", handle_lights)
     client.on_connect = on_connect

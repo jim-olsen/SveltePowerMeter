@@ -89,6 +89,28 @@ def create_sql_tables_if_not_exist():
                 )
     ''')
 
+    sql_connection.execute('''CREATE TABLE IF NOT EXISTS battery_load_data (record_time INTEGER PRIMARY KEY,
+                battery_voltage REAL,
+                current REAL,
+                power REAL,
+                state_of_charge REAL,
+                time_to_go REAL,
+                deepest_discharge REAL,
+                last_discharge REAL,
+                average_discharge REAL,
+                number_of_charge_cycles INTEGER,
+                number_of_full_discharges INTEGER,
+                cumulative_amp_hours_drawn REAL,
+                minimum_battery_voltage REAL,
+                maximum_battery_voltage REAL,
+                time_since_last_full_charge REAL,
+                automatic_synchronizations INTEGER,
+                low_voltage_alarms INTEGER,
+                high_voltage_alarms INTEGER,
+                total_discharged_energy REAL,
+                total_charged_energy REAL)
+                ''')
+
     lightning_sql_connection = sqlite3.connect("lightning.db")
     lightning_sql_connection.execute('''CREATE TABLE IF NOT EXISTS lightning_data(record_time INTEGER,
                 event TEXT,
@@ -117,7 +139,7 @@ def create_sql_tables_if_not_exist():
                 image TEXT)
     ''')
 
-def update_sql_tables(current_data, weather_data, stats_data, batteries):
+def update_sql_tables(current_data, weather_data, stats_data, batteries, battery_load_data):
     sql_connection = sqlite3.connect("powerdata.db")
     with sql_connection:
         cursor = sql_connection.execute("SELECT record_date FROM daily_power_data where record_date = ?",
@@ -168,6 +190,36 @@ def update_sql_tables(current_data, weather_data, stats_data, batteries):
                                    current_data.seconds_in_absorption_daily,
                                    current_data.seconds_in_float_daily,
                                    current_data.seconds_in_equalization_daily
+                               ))
+
+        sql_connection.execute('''INSERT OR REPLACE INTO battery_load_data (record_time, battery_voltage, current,
+                                power, state_of_charge, time_to_go, deepest_discharge, last_discharge,
+                                average_discharge, number_of_charge_cycles, number_of_full_discharges,
+                                cumulative_amp_hours_drawn, minimum_battery_voltage, maximum_battery_voltage,
+                                time_since_last_full_charge, automatic_synchronizations, low_voltage_alarms,
+                                high_voltage_alarms, total_discharged_energy, total_charged_energy) VALUES
+                                (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''',
+                               (
+                                   int(time.time()),
+                                   battery_load_data.battery_voltage,
+                                   battery_load_data.current,
+                                   battery_load_data.power,
+                                   battery_load_data.state_of_charge,
+                                   battery_load_data.time_to_go,
+                                   battery_load_data.deepest_discharge,
+                                   battery_load_data.last_discharge,
+                                   battery_load_data.average_discharge,
+                                   battery_load_data.number_of_charge_cycles,
+                                   battery_load_data.number_of_full_discharges,
+                                   battery_load_data.cumulative_amp_hours_drawn,
+                                   battery_load_data.minimum_battery_voltage,
+                                   battery_load_data.maximum_battery_voltage,
+                                   battery_load_data.time_since_last_full_charge,
+                                   battery_load_data.automatic_synchronizations,
+                                   battery_load_data.low_voltage_alarms,
+                                   battery_load_data.high_voltage_alarms,
+                                   battery_load_data.total_discharged_energy,
+                                   battery_load_data.total_charged_energy
                                ))
 
     wx_sql_connection = sqlite3.connect("wxdata.db")
