@@ -13,6 +13,7 @@
     export let showMinLabel = true;
     export let unit = "%";
     export let valueFormat = (v) => v;
+    export let signed = false;
     const margin = { top: 40, bottom: 50, left: 50, right: 20 };
 
     $: innerHeight = height - margin.top - margin.bottom;
@@ -37,25 +38,46 @@
             <Axis {innerHeight} {margin} scale={yScale} position="left" />
             <text transform={`translate(${-30},${innerHeight / 2}) rotate(-90)`}>{YAxisTitle}</text>
             {#each dataset as point, i}
-                {#if showMinLabel}
+                {#if signed}
+                    {#if point.yMin !== 0}
+                        <rect
+                            x = "{xScale(i) - (barWidth/2)}"
+                            y = "{yScale(point.yMin)}"
+                            width = "{barWidth - 4}"
+                            height = "{yScale(0) - yScale(point.yMin)}"
+                            fill={minColor}></rect>
+                        <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
+                    {/if}
+                    {#if point.yMax !== 0}
+                        <rect
+                            x = "{xScale(i) - (barWidth/2)}"
+                            y = "{yScale(point.yMax)}"
+                            width = "{barWidth - 4}"
+                            height = "{yScale(0) - yScale(point.yMax)}"
+                            fill={maxColor}></rect>
+                        <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
+                    {/if}
+                {:else}
+                    {#if showMinLabel}
+                        <rect
+                            x = "{xScale(i) - (barWidth/2)}"
+                            y = "{yScale(point.yMin)}"
+                            width = "{barWidth - 4}"
+                            height = "{yScale(0) - yScale(point.yMin)}"
+                            fill={minColor}></rect>
+                    {/if}
                     <rect
                         x = "{xScale(i) - (barWidth/2)}"
-                        y = "{yScale(point.yMin)}"
+                        y = "{yScale(point.yMax)}"
                         width = "{barWidth - 4}"
-                        height = "{yScale(0) - yScale(point.yMin)}"
-                        fill={minColor}></rect>
-                {/if}
-                <rect
-                    x = "{xScale(i) - (barWidth/2)}"
-                    y = "{yScale(point.yMax)}"
-                    width = "{barWidth - 4}"
-                    height = "{yScale(showMinLabel ? point.yMin : 0) - yScale(point.yMax)}"
-                    fill={maxColor}></rect>
-                {#if point.yMax !== 0 || point.yMin === 0}
-                    <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
-                {/if}
-                {#if showMinLabel && point.yMin !== 0}
-                    <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
+                        height = "{yScale(showMinLabel ? point.yMin : 0) - yScale(point.yMax)}"
+                        fill={maxColor}></rect>
+                    {#if point.yMax !== 0 || point.yMin === 0}
+                        <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
+                    {/if}
+                    {#if showMinLabel && point.yMin !== 0}
+                        <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
+                    {/if}
                 {/if}
             {/each}
             <text x={innerWidth / 2} y={innerHeight + 35}>{XAxisTitle}</text>

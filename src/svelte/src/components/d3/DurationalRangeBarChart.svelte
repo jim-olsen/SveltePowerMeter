@@ -13,6 +13,7 @@
     export let showMinLabel = true;
     export let unit = "%";
     export let valueFormat = (v) => v;
+    export let signed = false;
 
     let buttonWidth = 0;
 
@@ -47,7 +48,7 @@
     <RangeBarChart XAxisTitle="Day" YAxisTitle={yAxisLabel} dataset={dataset}
                height={chartHeight} width={chartWidth - buttonWidth}
                minColor={minColor} maxColor={maxColor} showMinLabel={showMinLabel} unit={unit}
-               valueFormat={valueFormat}/>
+               valueFormat={valueFormat} signed={signed}/>
     <div style="display:flex; flex-flow:column" bind:clientWidth={buttonWidth}>
         <button on:click={increaseDuration} style="width:8vw; height: 8vw;">
             <Fa icon={faChevronUp} style="font-size: 4vw;" />
