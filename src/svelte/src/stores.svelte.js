@@ -5,6 +5,7 @@ export const powerGraphDuration = writable(2)
 export const weatherGraphDuration = writable(1)
 export const batteryPercentGraphDuration = writable(7)
 export const solarWhGraphDuration = writable(7)
+export const batteryWhGraphDuration = writable(7)
 
 let lastBlueIrisAlert = {};
 let lastADSBData = {};
@@ -99,6 +100,36 @@ export const solarWhGraphData = writable({}, () => {
     return () => {
         unsubscribe();
         clearInterval(solarWhGraphInterval);
+    };
+});
+
+/**
+ * Retrieve the daily ending battery Wh over time.  The batteryWhGraphDuration writeable provides the number of
+ * days over which to fetch the data.
+ */
+function getBatteryWhGraphData() {
+    fetch(`/batteryWhDaily?days=${get(batteryWhGraphDuration)}`, {
+        headers: {
+            "Accept": "application/json"
+        }
+    })
+        .then(d => d.json())
+        .then(d => {
+            batteryWhGraphData.set(d);
+        });
+}
+
+/**
+ * Subscribable that contains the latest daily battery Wh data, based on batteryWhGraphDuration subscribable.
+ * @type {Writable<{}>}
+ */
+export const batteryWhGraphData = writable({}, () => {
+    let unsubscribe = batteryWhGraphDuration.subscribe(getBatteryWhGraphData)
+    getBatteryWhGraphData();
+    let batteryWhGraphInterval = setInterval(getBatteryWhGraphData, 15000);
+    return () => {
+        unsubscribe();
+        clearInterval(batteryWhGraphInterval);
     };
 });
 

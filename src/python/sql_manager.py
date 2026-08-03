@@ -567,6 +567,24 @@ def get_solar_wh_daily(days):
             graph_data['solar_wh'].append(rowdict.get('day_solar_wh'))
     return graph_data
 
+def get_battery_wh_daily(days):
+    graph_data = {'time': [], 'batt_wh': []}
+    sql_connection = sqlite3.connect("powerdata.db")
+    sql_connection.row_factory = sqlite3.Row
+    with sql_connection:
+        cursor = sql_connection.execute('''
+            SELECT date(record_date, 'unixepoch', 'localtime') AS day, day_batt_wh
+            FROM daily_power_data
+            WHERE record_date >= ?
+            ORDER BY record_date ASC
+            ''',
+            [int(time.mktime((datetime.today() - timedelta(days=days)).timetuple()))])
+        for row in cursor.fetchall():
+            rowdict = dict(row)
+            graph_data['time'].append(rowdict.get('day'))
+            graph_data['batt_wh'].append(rowdict.get('day_batt_wh'))
+    return graph_data
+
 def get_weather_max_min():
     wx_sql_connection = sqlite3.connect("wxdata.db")
     wx_sql_connection.row_factory = sqlite3.Row

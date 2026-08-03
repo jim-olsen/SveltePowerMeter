@@ -30,6 +30,7 @@
     import BatteryBankCellPressureDiffGraph from "./components/battery/BatteryBankCellPressureDiffGraph.svelte";
     import BatteryBankTemperatureGraph from "./components/battery/BatteryBankTemperatureGraph.svelte";
     import BatteryPercentGraph from "./components/battery/BatteryPercentGraph.svelte";
+    import BatteryWhGraph from "./components/battery/BatteryWhGraph.svelte";
     import SolarWhGraph from "./components/powermeter/SolarWhGraph.svelte";
     import LightningDashboard from "./components/lightning/LightningDashboard.svelte";
     import ADSBInfo from "./components/adsb/ADSBInfo.svelte";
@@ -44,7 +45,7 @@
     let graphWidth, graphHeight;
     let graphViews = ['voltageGraph', 'loadGraph', 'solarWattsGraph', 'batteryWattsGraph', 'statistics', 'outTempGraph',
                         'inTempGraph', 'windGraph', 'batteryBankVoltageGraph', 'batteryCellPressureGraph', 'batteryBankTemperatureGraph',
-                        'batteryPercentGraph', 'solarWhGraph'];
+                        'batteryPercentGraph', 'solarWhGraph', 'batteryWhGraph'];
     let alertAllowedViews = ['dashboard', 'alerts', 'adsb', 'lightningDashboard'];
     let lastBlueIrisAlert = {};
     let lastADSBData = {};
@@ -257,6 +258,9 @@
                 {/if}
                 {#if currentView.value === 'solarWhGraph'}
                     <SolarWhGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
+                {/if}
+                {#if currentView.value === 'batteryWhGraph'}
+                    <BatteryWhGraph chartWidth={graphWidth} chartHeight={graphHeight - (outerHeight * 0.03)} />
                 {/if}
             </div>
         </div>

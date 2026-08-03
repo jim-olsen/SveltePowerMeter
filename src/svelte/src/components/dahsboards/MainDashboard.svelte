@@ -293,7 +293,7 @@
                 <div class="metric-value">{fmt(batteryPct, 1, '%')}</div>
                 <div class="metric-label">Battery</div>
             </div>
-            <div class="metric" use:autoScale on:click|stopPropagation={go('batteryWattsGraph')}>
+            <div class="metric" use:autoScale on:click|stopPropagation={go('batteryWhGraph')}>
                 <div class="metric-icon"><Fa icon={faBolt}/></div>
                 <div class="metric-value">{fmt($powerStatsData?.day_batt_wh, 0)}</div>
                 <div class="metric-label">Batt Wh</div>

@@ -314,6 +314,23 @@ async def get_solar_wh_daily():
     return sql_manager.get_solar_wh_daily(days)
 
 
+@app.route("/batteryWhDaily")
+async def get_battery_wh_daily():
+    """Gets the ending (current) battery Wh value recorded for each of the last requested number of days.
+
+    Args:
+        days: The number of days to fetch the daily battery Wh for.
+
+    Returns:
+        dict: An object containing two lists: the day the values were recorded on, and the battery Wh
+        value for that day. This value can be positive or negative depending on whether the battery was
+        net charging or discharging that day.
+    """
+    days = int(request.args.get('days', 7))
+
+    return sql_manager.get_battery_wh_daily(days)
+
+
 @app.route("/weatherData")
 async def get_weather_data():
     """Gets the current weather data.
