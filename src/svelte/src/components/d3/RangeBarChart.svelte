@@ -24,7 +24,7 @@
         .nice();
 
     $: yScale = scaleLinear()
-        .domain([0, Math.max(100, ...dataset.map((d) => d.yMax), 0)])
+        .domain([Math.min(0, ...dataset.map((d) => d.yMin)), Math.max(100, ...dataset.map((d) => d.yMax), 0)])
         .range([innerHeight, 0])
         .nice();
 </script>
@@ -51,8 +51,10 @@
                     width = "{barWidth - 4}"
                     height = "{yScale(showMinLabel ? point.yMin : 0) - yScale(point.yMax)}"
                     fill={maxColor}></rect>
-                <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
-                {#if showMinLabel}
+                {#if point.yMax !== 0 || point.yMin === 0}
+                    <text x={xScale(i)} y={yScale(point.yMax) - 10} text-anchor="middle" class="range-label">{valueFormat(point.yMax)}{unit}</text>
+                {/if}
+                {#if showMinLabel && point.yMin !== 0}
                     <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
                 {/if}
             {/each}

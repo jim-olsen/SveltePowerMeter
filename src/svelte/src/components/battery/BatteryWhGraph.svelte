@@ -26,5 +26,5 @@
 <div style="display:flex; flex-flow:row">
     <DurationalRangeBarChart chartHeight={chartHeight} chartWidth={chartWidth} yAxisLabel="Batt Wh"
                              dataset={graphData} duration={batteryWhGraphDuration}
-                             minColor="#FF5C5C" maxColor="#7CFF9A" showMinLabel={false} unit="Wh"/>
+                             minColor="#FF5C5C" maxColor="#7CFF9A" showMinLabel={true} unit="Wh"/>
 </div>
