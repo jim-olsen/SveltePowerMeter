@@ -147,8 +147,8 @@ def update_running_stats():
                     DAILY_STARTING_TOTAL_CHARGED_ENERGY is not None and \
                     DAILY_STARTING_TOTAL_DISCHARGED_ENERGY is not None:
                 STATS_DATA.day_batt_wh = \
-                    (BATTERY_LOAD_DATA.total_charged_energy - DAILY_STARTING_TOTAL_CHARGED_ENERGY) - \
-                    (BATTERY_LOAD_DATA.total_discharged_energy - DAILY_STARTING_TOTAL_DISCHARGED_ENERGY)
+                    (((BATTERY_LOAD_DATA.total_charged_energy - DAILY_STARTING_TOTAL_CHARGED_ENERGY) -
+                    (BATTERY_LOAD_DATA.total_discharged_energy - DAILY_STARTING_TOTAL_DISCHARGED_ENERGY)) * 10)
 
             if datetime.today() > last_update + timedelta(minutes=1):
                 update_sql_tables()
