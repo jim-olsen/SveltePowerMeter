@@ -42,9 +42,9 @@
                     {#if point.yMin !== 0}
                         <rect
                             x = "{xScale(i) - (barWidth/2)}"
-                            y = "{yScale(point.yMin)}"
+                            y = "{yScale(0)}"
                             width = "{barWidth - 4}"
-                            height = "{yScale(0) - yScale(point.yMin)}"
+                            height = "{yScale(point.yMin) - yScale(0)}"
                             fill={minColor}></rect>
                         <text x={xScale(i)} y={yScale(point.yMin) + 26} text-anchor="middle" class="range-label">{valueFormat(point.yMin)}{unit}</text>
                     {/if}
