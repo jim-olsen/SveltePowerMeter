@@ -28,6 +28,8 @@
         .domain([Math.min(0, ...dataset.map((d) => d.yMin)), Math.max(100, ...dataset.map((d) => d.yMax), 0)])
         .range([innerHeight, 0])
         .nice();
+
+    $: hasNegative = yScale.domain()[0] < 0;
 </script>
 
 <main>
@@ -36,6 +38,9 @@
             <Axis {innerHeight} {margin} scale={xScale} position="bottom" numTicks={dataset.length - 1}
                   tickFormat={function(d) {if (d < dataset.length && Number.isInteger(d)) return dataset[d].x; else return null;}} />
             <Axis {innerHeight} {margin} scale={yScale} position="left" />
+            {#if hasNegative}
+                <line x1={0} x2={innerWidth} y1={yScale(0)} y2={yScale(0)} class="zero-line" />
+            {/if}
             <text transform={`translate(${-30},${innerHeight / 2}) rotate(-90)`}>{YAxisTitle}</text>
             {#each dataset as point, i}
                 {#if signed}
@@ -90,5 +95,8 @@
         font-size: 22px;
         font-weight: 700;
         fill: #fca503;
+    }
+    .zero-line {
+        stroke: #6b7590;
     }
 </style>
